@@ -1,36 +1,127 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+````markdown
+# 🏥 MediGuard
 
-First, run the development server:
+Piattaforma per la gestione dell'inventario farmaceutico domestico con supporto IoT.
+
+## 🚀 Prerequisiti
+
+Prima di iniziare, assicurati di avere installato sul tuo computer:
+
+1.  **Node.js** (versione 18 o superiore) - [Scarica qui](https://nodejs.org/)
+2.  **Git** - [Scarica qui](https://git-scm.com/)
+3.  **Docker Desktop** (necessario per il Database) - [Scarica qui](https://www.docker.com/products/docker-desktop/)
+4.  **VS Code** (consigliato)
+
+---
+
+## 🛠️ Installazione (Solo la prima volta)
+
+Esegui questi passaggi nell'ordine esatto:
+
+### 1. Clona il Repository
+Apri il terminale nella cartella dove vuoi salvare il progetto:
+```bash
+git clone [https://github.com/SebaGra-coder/mediguard.git](https://github.com/SebaGra-coder/mediguard.git)
+cd mediguard
+````
+
+### 2\. Installa le dipendenze
+
+Scarica le librerie di Next.js, React, ecc.
+
+```bash
+npm install
+```
+
+### 3\. Configura le variabili d'ambiente (.env)
+
+Il file `.env` non è su GitHub per sicurezza.
+
+1.  Crea un file chiamato `.env` nella cartella principale del progetto.
+2.  Incollaci dentro le chiavi condivise nel gruppo (o chiedi al Team Lead).
+
+*Esempio di contenuto .env:*
+
+```env
+# URL per connettersi al DB Docker locale
+DATABASE_URL="postgresql://myuser:mypassword@localhost:5432/mediguard"
+
+# URL per Auth (in locale)
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="segreto-temporaneo-sviluppo"
+```
+
+### 4\. Avvia il Database (via Docker)
+
+Non serve avviare tutta l'app con Docker, ci serve solo il Database acceso:
+
+```bash
+docker-compose up -d postgres
+```
+
+*(Assicurati che Docker Desktop sia aperto\!)*
+
+### 5\. Sincronizza il Database (Prisma)
+
+Crea le tabelle nel tuo database locale vuoto:
+
+```bash
+npx prisma db push
+```
+
+-----
+
+## ▶️ Avvio Sviluppo
+
+Ogni volta che vuoi lavorare, esegui:
+
+1.  Assicurati che il container del DB sia acceso (`docker ps`).
+2.  Avvia l'app Next.js:
+
+<!-- end list -->
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3.  Apri il browser su: [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+-----
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ⚠️ Regole del Team
 
-## Learn More
+### 1\. Aggiornamento Database
 
-To learn more about Next.js, take a look at the following resources:
+Se qualcuno modifica il file `prisma/schema.prisma` e fa il push, tu devi:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1.  Scaricare le modifiche: `git pull`
+2.  Aggiornare il tuo DB locale: `npx prisma db push`
+3.  Riavviare il server (`npm run dev`) se necessario.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2\. Struttura Cartelle
 
-## Deploy on Vercel
+  * **Frontend:** Lavorate dentro `app/(pages)/...` e `components/`.
+  * **Backend:** Lavorate dentro `app/api/...`.
+  * **Database:** Modifiche solo concordate su `prisma/schema.prisma`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 3\. Git Flow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+  * **NON** lavorare mai direttamente su `main`.
+  * Crea un branch per la tua feature: `git checkout -b feature/nome-tua-feature`.
+  * Quando hai finito, fai una Pull Request.
+
+-----
+
+## 🧪 Comandi Utili
+
+  * **Vedere il DB con interfaccia grafica:**
+    ```bash
+    npx prisma studio
+    ```
+  * **Resettare il DB (Cancella tutto\!):**
+    ```bash
+    npx prisma migrate reset
+    ```
+
+<!-- end list -->
