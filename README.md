@@ -1,3 +1,8 @@
+Ecco il file `README.md` perfetto per il tuo team. È scritto in modo che chiunque, anche chi è meno esperto, possa seguire i passaggi senza errori.
+
+Crea un file chiamato **`README.md`** (tutto maiuscolo) nella cartella principale del tuo progetto, incollaci dentro questo testo e poi fai il push su GitHub.
+
+-----
 
 ````markdown
 # 🏥 MediGuard
@@ -22,7 +27,7 @@ Esegui questi passaggi nell'ordine esatto:
 ### 1. Clona il Repository
 Apri il terminale nella cartella dove vuoi salvare il progetto:
 ```bash
-git clone [https://github.com/SebaGra-coder/mediguard.git](https://github.com/SebaGra-coder/mediguard.git)
+git clone [https://github.com/TUO_NOME_UTENTE/mediguard.git](https://github.com/TUO_NOME_UTENTE/mediguard.git)
 cd mediguard
 ````
 
@@ -125,3 +130,20 @@ Se qualcuno modifica il file `prisma/schema.prisma` e fa il push, tu devi:
     ```
 
 <!-- end list -->
+
+````
+
+***
+
+### Cosa fare ora?
+1.  Copia questo testo.
+2.  Crea il file `README.md` nel tuo progetto.
+3.  Fai:
+    ```bash
+    git add README.md
+    git commit -m "Aggiunta documentazione installazione team"
+    git push
+    ```
+
+Appena vedrai il file su GitHub, manda il link al gruppo e dì: **"Ragazzi, seguite la guida nel README per installare tutto. Le password per il file .env ve le mando qui in chat".**
+````
