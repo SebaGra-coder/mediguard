@@ -33,6 +33,8 @@ export default function TestConnectionPage() {
   }
 
   return (
+    <html>
+        <body>
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
       <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
         <h1 className="text-2xl font-bold mb-4 text-blue-600">Test Connessione</h1>
@@ -60,5 +62,7 @@ export default function TestConnectionPage() {
         )}
       </div>
     </div>
+    </body>
+    </html>
   );
 }
