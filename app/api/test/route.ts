@@ -8,7 +8,7 @@ export async function GET() {
   
   return NextResponse.json({ 
     status: "success",
-    message: "Connessione riuscita! Il server MediGuard risponde.",
+    message: "Connessione ! Il server MediGuard risponde.",
     timestamp: new Date().toISOString(),
     serverInfo: "API v1.0 - Ready"
   });
