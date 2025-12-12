@@ -1,9 +1,3 @@
-Ecco il file `README.md` perfetto per il tuo team. È scritto in modo che chiunque, anche chi è meno esperto, possa seguire i passaggi senza errori.
-
-Crea un file chiamato **`README.md`** (tutto maiuscolo) nella cartella principale del tuo progetto, incollaci dentro questo testo e poi fai il push su GitHub.
-
------
-
 ````markdown
 # 🏥 MediGuard
 
@@ -77,11 +71,11 @@ npx prisma db push
 
 -----
 
-## ▶️ Avvio Sviluppo
+## ▶️ Avvio Sviluppo (Ogni giorno)
 
 Ogni volta che vuoi lavorare, esegui:
 
-1.  Assicurati che il container del DB sia acceso (`docker ps`).
+1.  Assicurati che il container del DB sia acceso: `docker-compose up -d postgres`
 2.  Avvia l'app Next.js:
 
 <!-- end list -->
@@ -94,27 +88,124 @@ npm run dev
 
 -----
 
+## 🔄 Workflow di Sviluppo (Guida Git)
+
+[Image of git feature branch workflow diagram]
+
+Segui **sempre** questi passaggi per evitare conflitti e non rompere il progetto agli altri.
+
+### 1\. Iniziare una nuova task (Start)
+
+Prima di scrivere codice, scarica gli aggiornamenti degli altri e crea il tuo spazio di lavoro.
+
+```bash
+# 1. Spostati sul ramo principale
+git checkout main
+
+# 2. Scarica gli aggiornamenti dal cloud
+git pull
+
+# 3. Crea il tuo ramo (es. feature/login-page)
+git checkout -b feature/nome-tua-funzionalita
+```
+
+### 2\. Salvare il lavoro (Save)
+
+Hai modificato dei file? Salviamoli nella "scatola" (Commit).
+
+```bash
+# 1. Controlla cosa hai modificato (Rosso = non aggiunto, Verde = aggiunto)
+git status
+
+# 2. Aggiungi tutti i file modificati al carrello
+git add .
+
+# 3. Chiudi il pacco con un messaggio chiaro
+git commit -m "Descrizione breve di cosa ho fatto"
+```
+
+### 3\. Inviare su GitHub (Push)
+
+Manda il tuo ramo nel cloud.
+
+```bash
+# La prima volta che invii un nuovo ramo:
+git push -u origin feature/nome-tua-funzionalita
+
+# Le volte successive basta:
+git push
+```
+
+### 4. Unire il lavoro (Pull Request)
+> **❓ Cos'è una Pull Request (PR)?**
+> È una "Sala d'Attesa" per il tuo codice. Invece di buttare le modifiche direttamente nel progetto finale, chiedi al team di controllarle.
+> 1. **Tu** proponi la modifica (la PR).
+> 2. **I colleghi** leggono il codice per cercare errori (Review).
+> 3. **Solo se approvato**, il codice viene incollato nel progetto principale (Merge).
+
+**Come si fa:**
+1.  Vai sulla pagina GitHub del progetto dopo aver fatto il push.
+2.  Vedrai un banner giallo "Compare & pull request". Cliccalo.
+3.  Scrivi un titolo chiaro (es. "Creata pagina Login") e clicca **Create Pull Request**.
+4.  Avvisa il team: *"Ragazzi ho aperto la PR, mi date un'occhiata?"*.
+5.  Quando ricevi l'approvazione, clicca il tasto verde **Merge**.
+
+
+----
+## 🔍 Come testare una Pull Request (PR)
+
+Se un collega ha aperto una PR e vuoi **provare le modifiche sul tuo PC** (vedere la grafica, cliccare i bottoni) prima di approvarle:
+
+1.  **Scarica i rami aggiornati:**
+    ```bash
+    git fetch
+    ```
+2.  **Entra nel ramo del collega:**
+    ```bash
+    git checkout feature/nome-del-ramo-collega
+    ```
+3.  **Aggiorna l'ambiente (Fondamentale!):**
+    Il collega potrebbe aver aggiunto librerie o cambiato il DB. Se non fai questo, l'app si rompe.
+    ```bash
+    npm install
+    npx prisma db push
+    ```
+4.  **Prova l'app:**
+    Avvia `npm run dev` e testa le nuove funzioni su [http://localhost:3000](http://localhost:3000).
+5.  **Torna indietro:**
+    Quando hai finito il test, spegni il server e torna sul ramo principale:
+    ```bash
+    git checkout main
+    ```
+
+## 🆘 Risoluzione Problemi Comuni
+
+### Errore: "Author identity unknown"
+
+Se Git ti dice che non sa chi sei quando fai il commit:
+
+```bash
+git config --global user.name "Tuo Nome"
+git config --global user.email "tua@email.com"
+```
+
+### Errore: "Updates were rejected because the remote contains work..."
+
+Significa che qualcuno ha modificato il file prima di te.
+
+1.  Fai `git pull` per scaricare le loro modifiche.
+2.  Se ci sono conflitti, apri i file in VS Code, risolvili (scegli quale codice tenere).
+3.  Fai `git add .`, `git commit` e poi `git push`.
+
+-----
+
 ## ⚠️ Regole del Team
 
-### 1\. Aggiornamento Database
-
-Se qualcuno modifica il file `prisma/schema.prisma` e fa il push, tu devi:
-
-1.  Scaricare le modifiche: `git pull`
-2.  Aggiornare il tuo DB locale: `npx prisma db push`
-3.  Riavviare il server (`npm run dev`) se necessario.
-
-### 2\. Struttura Cartelle
-
-  * **Frontend:** Lavorate dentro `app/(pages)/...` e `components/`.
-  * **Backend:** Lavorate dentro `app/api/...`.
-  * **Database:** Modifiche solo concordate su `prisma/schema.prisma`.
-
-### 3\. Git Flow
-
-  * **NON** lavorare mai direttamente su `main`.
-  * Crea un branch per la tua feature: `git checkout -b feature/nome-tua-feature`.
-  * Quando hai finito, fai una Pull Request.
+  * **Database:** Se modifichi `prisma/schema.prisma`, avvisa tutti\! Gli altri dovranno fare `git pull` e `npx prisma db push`.
+  * **Cartelle:**
+      * Backend: `app/api/...`
+      * Frontend: `app/(pages)/...`
+  * **Main:** Vietato fare `push` direttamente su `main`. Si passa sempre dalle Pull Request.
 
 -----
 
@@ -128,22 +219,3 @@ Se qualcuno modifica il file `prisma/schema.prisma` e fa il push, tu devi:
     ```bash
     npx prisma migrate reset
     ```
-
-<!-- end list -->
-
-````
-
-***
-
-### Cosa fare ora?
-1.  Copia questo testo.
-2.  Crea il file `README.md` nel tuo progetto.
-3.  Fai:
-    ```bash
-    git add README.md
-    git commit -m "Aggiunta documentazione installazione team"
-    git push
-    ```
-
-Appena vedrai il file su GitHub, manda il link al gruppo e dì: **"Ragazzi, seguite la guida nel README per installare tutto. Le password per il file .env ve le mando qui in chat".**
-````
