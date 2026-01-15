@@ -1,0 +1,32 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Farmaci {
+  // PK = Primary Key
+  codice_aic          String  @id @unique 
+  
+  codice_atc          String?
+  denominazione       String
+  descrizione         String? @db.Text // Permette testi molto lunghi
+  codice_ditta        Int?
+  ragione_sociale     String?
+  forma               String?
+  principio_attivo    String?
+  quantita_confezione Float?
+  foglio_illustrativo String?
+  unita_misura        String?
+  
+  // Usiamo il tipo JSON nativo di Postgres, perfetto per dati variabili
+  json_dati_grezzi    Json?   
+
+  // Opzionale: mappa il nome "Farmaci" (del codice) alla tabella "farmaci" (minuscolo nel DB)
+  @@map("farmaci")
+}
