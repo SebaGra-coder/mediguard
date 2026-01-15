@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // Questa funzione risponde alle chiamate GET
 export async function GET() {
   
@@ -8,7 +10,7 @@ export async function GET() {
   
   return NextResponse.json({ 
     status: "success",
-    message: "Connessione riuscita! Il server MediGuard risponde.",
+    message: "Connessione di merda riuscita! Il server MediGuard risponde.",
     timestamp: new Date().toISOString(),
     serverInfo: "API v1.0 - Ready"
   });

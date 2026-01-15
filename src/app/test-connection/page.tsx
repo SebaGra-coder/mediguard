@@ -14,7 +14,7 @@ export default function TestConnectionPage() {
 
     try {
       // 1. Chiamata all'API che abbiamo creato prima
-      const res = await fetch('/api/test', {
+      const res = await fetch('../api/farmaci', {
         method: 'GET',
         cache: 'no-store' // Assicura che non legga dalla cache
       });
