@@ -1,41 +1,36 @@
-// app/api/farmaci/route.ts
+// src/app/api/farmaci/route.js
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// Questa riga serve per evitare che Next.js salvi la risposta nella cache
+// Questa riga rimane uguale
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+
+export async function GET() {
   try {
-    // 1. Chiediamo al database IL singolo farmaco
-    // findUnique restituisce un oggetto singolo o null (se non lo trova)
+    const codiceDaCercare = "041045028";
+
+    // Prisma funziona uguale, ma senza suggerimenti intelligenti
     const farmaco = await prisma.farmaci.findUnique({
       where: {
-        codice_aic: "041045028"
+        codice_aic: codiceDaCercare
       }
     });
 
-    // 2. Controllo di sicurezza: Il farmaco esiste?
-    // Se 'farmaco' è null, fermiamo tutto per non far esplodere il codice
     if (!farmaco) {
-        return NextResponse.json({
-            success: false,
-            message: "Nessun farmaco trovato con questo AIC"
-        }, { status: 404 });
+      return NextResponse.json({
+         success: false,
+         message: "Nessun farmaco trovato"
+      }, { status: 404 });
     }
 
-    // 3. Restituiamo i dati
     return NextResponse.json({
       success: true,
-      // count: farmaco.length, <--- RIMOSSO: Un oggetto singolo non ha lunghezza!
-      data: farmaco.denominazione // Ora è sicuro, perché abbiamo controllato che 'farmaco' esiste
+      data: farmaco.denominazione
     });
 
   } catch (error) {
-    console.error("Errore nel recupero farmaci:", error);
-    return NextResponse.json(
-      { success: false, error: "Errore interno del server" },
-      { status: 500 }
-    );
+    console.error("Errore:", error);
+    return NextResponse.json({ success: false, error: "Errore server" }, { status: 500 });
   }
 }
