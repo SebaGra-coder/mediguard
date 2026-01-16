@@ -1,10 +1,11 @@
-'use client'; // Questo dice a Next.js che è un componente Interattivo (Frontend)
+'use client'; // Indica che è un componente Frontend
 
 import { useState } from 'react';
 
 export default function TestConnectionPage() {
   // Stato per salvare la risposta del server
-  const [response, setResponse] = useState<string | null>(null);
+  // In JS non servono i tipi <string | null>, basta il valore iniziale
+  const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Funzione che chiama l'API
@@ -13,28 +14,34 @@ export default function TestConnectionPage() {
     setResponse(null);
 
     try {
-      // 1. Chiamata all'API che abbiamo creato prima
-      const res = await fetch('../api/farmaci', {
+      // 1. Chiamata all'API (Usa sempre /api/... per partire dalla radice)
+      const res = await fetch('/api/farmaci', {
         method: 'GET',
-        cache: 'no-store' // Assicura che non legga dalla cache
+        cache: 'no-store' // Assicura che non legga dalla cache vecchia
       });
 
       // 2. Conversione della risposta in JSON
       const data = await res.json();
 
       // 3. Aggiornamento della grafica
-      setResponse(JSON.stringify(data, null, 2)); // Formatta il JSON per renderlo leggibile
+      // Se il server risponde male (es. 404 o 500), mostriamo comunque cosa ha detto
+      if (!res.ok) {
+        setResponse(`ERRORE ${res.status}: ${data.message || res.statusText}`);
+      } else {
+        setResponse(JSON.stringify(data, null, 2));
+      }
+
     } catch (error) {
-      setResponse("Errore: Impossibile contattare il server.");
+      setResponse("Errore critico: Il server non risponde o sei offline.");
       console.error(error);
     } finally {
       setLoading(false);
     }
   }
 
+  // NOTA: Ho rimosso <html> e <body> perché in Next.js
+  // vengono gestiti automaticamente dal file layout.js
   return (
-    <html>
-        <body>
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
       <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
         <h1 className="text-2xl font-bold mb-4 text-blue-600">Test Connessione</h1>
@@ -55,14 +62,12 @@ export default function TestConnectionPage() {
         {response && (
           <div className="mt-6 text-left">
             <p className="text-xs font-bold text-gray-500 uppercase mb-1">Risposta dal Server:</p>
-            <pre className="bg-slate-900 text-green-400 p-4 rounded text-sm overflow-auto border border-gray-700">
+            <pre className="bg-slate-900 text-green-400 p-4 rounded text-sm overflow-auto border border-gray-700 max-h-60">
               {response}
             </pre>
           </div>
         )}
       </div>
     </div>
-    </body>
-    </html>
   );
 }

@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "src/app/api/farmaci/route.js"  ],
+, "src/app/api/farmaci/route.js", "src/app/test-connection/page.jsx", "src/app/api/test/route.js"  ],
   "exclude": ["node_modules"]
 }
