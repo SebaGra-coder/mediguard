@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 // CONFIGURAZIONE
 const BATCH_SIZE = 2000; // Quanti farmaci salvare alla volta (2000 è un buon compromesso)
-const PERCORSO_FILE = 'prisma/farmaci.csv'; 
+const PERCORSO_FILE = 'prisma/farmaci_master_v8.csv'; 
 
 async function main() {
   console.log(`📂 Inizio lettura stream da: ${PERCORSO_FILE}...`);
