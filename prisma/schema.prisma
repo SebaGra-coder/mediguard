@@ -20,8 +20,9 @@ model Farmaci {
   ragione_sociale     String?
   forma               String?
   principio_attivo    String?
+  dosaggio            String?
+  confezione          String?
   quantita_confezione Float?
-  foglio_illustrativo String?
   unita_misura        String?
   
   // Usiamo il tipo JSON nativo di Postgres, perfetto per dati variabili
