@@ -49,12 +49,12 @@ async function main() {
         ragione_sociale:     row['ragione_sociale'] || row['DITTA'],
         forma:               row['forma'] || row['FORMA_FARMACEUTICA'],
         principio_attivo:    row['principio_attivo'] || row['pa_associati'],
-        dosaggio:            row['dosaggio'] || row['DOSAGGIO'],
-        confezione:          row['confezione'] || row['CONFEZIONE'],
-        unita_misura:        row['unita_misura'],
+        dosaggio:            row['Dosaggio_estratto'] || row['DOSAGGIO'],
+        confezione:          row['Confezione_estratta'] || row['CONFEZIONE'],
+        unita_misura:        row['Unita_Misura'],
 
         codice_ditta:        pulisciIntero(row['codice_ditta']),
-        quantita_confezione: pulisciNumero(row['quantita_confezione'] || row['quantita']),
+        quantita_confezione: pulisciNumero(row['Quantita_Num'] || row['quantita']),
         
         json_dati_grezzi:    row
     };
