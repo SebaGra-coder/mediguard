@@ -115,6 +115,8 @@ model Farmaco_armadietto{
   utente Utente @relation(fields: [id_utente_proprietario], references: [id_utente])
   farmaco Farmaci @relation(fields: [codice_aic], references: [codice_aic])
 
+  terapia Piano_terapeutico[]
+
   @@map("farmaco_armadietto")
 }
 
@@ -142,6 +144,7 @@ model Piano_terapeutico{
   for_life                    Boolean
 
   paziente Utente @relation(fields: [id_paziente], references: [id_utente])
+  farmaco Farmaco_armadietto @relation(fields: [id_farmaco_armadietto], references: [id_farmaco_armadietto])
 
   assunzioni Registro_assunzioni[]
   assunzioni_passate Registro_assunzioni_passate[]
