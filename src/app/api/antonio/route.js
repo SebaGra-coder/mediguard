@@ -105,3 +105,44 @@ export async function POST(request) {
     );
   }
 }
+/**
+ * 
+ * Funzione per gestire le richieste GET  
+ * @param {Request} request - L'UUID utente
+ * @returns {Promise<NextResponse>} - JSON con tutti i campi di Farmaco_armadietto e Farmaci
+ * 
+ */
+// Esporta la funzione GET per gestire le richieste in lettura
+export async function GET(request) {
+  // Crea un oggetto URL dalla richiesta per estrarre i parametri
+  const { searchParams } = new URL(request.url);
+  // Recupera il valore del parametro 'id_utente' dalla query string
+  const idUtente = searchParams.get('id_utente');
+
+  // Controllo di sicurezza: se l'ID non è fornito, restituisce errore 400
+  if (!idUtente) {
+    return NextResponse.json({ error: 'ID utente mancante' }, { status: 400 });
+  }
+
+  try {
+    // Utilizza il modello 'farmaco_armadietto' definito nello schema
+    const armadietto = await prisma.farmaco_armadietto.findMany({
+      where: {
+        // Filtra i record per l'ID utente fornito
+        id_utente_proprietario: idUtente,
+      },
+      include: {
+        // Esegue una JOIN con la tabella 'farmaci' usando la relazione codice_aic
+        // Questo permette di ottenere anche 'denominazione', 'ragione_sociale', ecc.
+        farmaco: true, 
+      },
+    });
+
+    // Restituisce i dati trovati con successo (status 200)
+    return NextResponse.json({ data: armadietto }, { status: 200 });
+  } catch (error) {
+    // In caso di errore del database, logga l'errore e risponde con 500
+    console.error("Errore ricerca armadietto:", error);
+    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 });
+  }
+}
