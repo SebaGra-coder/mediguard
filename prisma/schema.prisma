@@ -109,7 +109,7 @@ model Farmaco_armadietto{
   id_utente_proprietario      String @db.Uuid
   codice_aic                  String
   data_scadenza               DateTime
-  lotto_produzione            String
+  lotto_produzione            String?
   quantita_rimanente          Float
 
   utente Utente @relation(fields: [id_utente_proprietario], references: [id_utente])
@@ -125,7 +125,7 @@ model Farmaco_armadietto_disuso{
   id_utente_proprietario      String @db.Uuid
   codice_aic                  String
   data_scadenza               DateTime
-  lotto_produzione            String
+  lotto_produzione            String?
   quantita_rimanente          Float
 
   utente Utente @relation(fields: [id_utente_proprietario], references: [id_utente])

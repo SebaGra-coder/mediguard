@@ -49,8 +49,8 @@ async function main() {
         ragione_sociale:     row['ragione_sociale'] || row['DITTA'],
         forma:               row['forma'] || row['FORMA_FARMACEUTICA'],
         principio_attivo:    row['principio_attivo'] || row['pa_associati'],
-        dosaggio:            row['Dosaggio_estratto'] || row['DOSAGGIO'],
-        confezione:          row['Confezione_estratta'] || row['CONFEZIONE'],
+        dosaggio:            row['Dosaggio_Estratto'] || row['Dosaggio_Estratto'],
+        confezione:          row['Confezione_Estratta'] || row['CONFEZIONE'],
         unita_misura:        row['Unita_Misura'],
 
         codice_ditta:        pulisciIntero(row['codice_ditta']),
