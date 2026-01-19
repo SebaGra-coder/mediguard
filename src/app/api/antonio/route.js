@@ -146,3 +146,33 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 });
   }
 }
+
+export async function DELETE(request) {
+  try {
+    // Estrae i parametri dall'URL (es: ?id_farmaco=...)
+    const { searchParams } = new URL(request.url);
+    const idFarmacoArmadietto = searchParams.get('id_farmaco');
+
+    // Se l'ID del record nell'armadietto non è presente, restituisce errore 400
+    if (!idFarmacoArmadietto) {
+      return NextResponse.json({ error: 'ID farmaco mancante' }, { status: 400 });
+    }
+
+    // Esegue l'eliminazione effettiva sulla tabella farmaco_armadietto
+    // Nota: lo schema prisma usa il campo 'id_farmaco_armadietto' come PK
+    await prisma.farmaco_armadietto.delete({
+      where: {
+        id_farmaco_armadietto: idFarmacoArmadietto,
+      },
+    });
+
+    // Risponde con successo
+    return NextResponse.json({ message: 'Farmaco rimosso con successo' }, { status: 200 });
+
+  } catch (error) {
+    // Logga l'errore sul server per debugging
+    console.error("Errore eliminazione:", error);
+    // Restituisce errore 500 (es: se il record non esiste più o è legato a un piano terapeutico)
+    return NextResponse.json({ error: 'Impossibile eliminare il farmaco' }, { status: 500 });
+  }
+}
