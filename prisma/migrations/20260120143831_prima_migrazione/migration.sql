@@ -75,12 +75,22 @@ CREATE TABLE "relazione" (
 );
 
 -- CreateTable
+CREATE TABLE "codice_abbinamento" (
+    "codeString" TEXT NOT NULL,
+    "id_creatore" UUID NOT NULL,
+    "ruolo_target" TEXT NOT NULL,
+    "data_scadenza" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "codice_abbinamento_pkey" PRIMARY KEY ("codeString")
+);
+
+-- CreateTable
 CREATE TABLE "farmaco_armadietto" (
     "id_farmaco_armadietto" UUID NOT NULL,
     "id_utente_proprietario" UUID NOT NULL,
     "codice_aic" TEXT NOT NULL,
     "data_scadenza" TIMESTAMP(3) NOT NULL,
-    "lotto_produzione" TEXT NOT NULL,
+    "lotto_produzione" TEXT,
     "quantita_rimanente" DOUBLE PRECISION NOT NULL,
 
     CONSTRAINT "farmaco_armadietto_pkey" PRIMARY KEY ("id_farmaco_armadietto")
@@ -92,7 +102,7 @@ CREATE TABLE "farmaco_armadietto_disuso" (
     "id_utente_proprietario" UUID NOT NULL,
     "codice_aic" TEXT NOT NULL,
     "data_scadenza" TIMESTAMP(3) NOT NULL,
-    "lotto_produzione" TEXT NOT NULL,
+    "lotto_produzione" TEXT,
     "quantita_rimanente" DOUBLE PRECISION NOT NULL,
 
     CONSTRAINT "farmaco_armadietto_disuso_pkey" PRIMARY KEY ("id_storico")
@@ -135,6 +145,9 @@ CREATE TABLE "registro_assunzioni_passate" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "utente_email_key" ON "utente"("email");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "farmaci_codice_aic_key" ON "farmaci"("codice_aic");
 
 -- AddForeignKey
@@ -153,6 +166,9 @@ ALTER TABLE "relazione" ADD CONSTRAINT "relazione_id_caregiver_fkey" FOREIGN KEY
 ALTER TABLE "relazione" ADD CONSTRAINT "relazione_id_assistito_fkey" FOREIGN KEY ("id_assistito") REFERENCES "utente"("id_utente") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "codice_abbinamento" ADD CONSTRAINT "codice_abbinamento_id_creatore_fkey" FOREIGN KEY ("id_creatore") REFERENCES "utente"("id_utente") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "farmaco_armadietto" ADD CONSTRAINT "farmaco_armadietto_id_utente_proprietario_fkey" FOREIGN KEY ("id_utente_proprietario") REFERENCES "utente"("id_utente") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -163,6 +179,9 @@ ALTER TABLE "farmaco_armadietto_disuso" ADD CONSTRAINT "farmaco_armadietto_disus
 
 -- AddForeignKey
 ALTER TABLE "piano_terapeutico" ADD CONSTRAINT "piano_terapeutico_id_paziente_fkey" FOREIGN KEY ("id_paziente") REFERENCES "utente"("id_utente") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "piano_terapeutico" ADD CONSTRAINT "piano_terapeutico_id_farmaco_armadietto_fkey" FOREIGN KEY ("id_farmaco_armadietto") REFERENCES "farmaco_armadietto"("id_farmaco_armadietto") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "registro_assunzioni" ADD CONSTRAINT "registro_assunzioni_id_terapia_fkey" FOREIGN KEY ("id_terapia") REFERENCES "piano_terapeutico"("id_terapia") ON DELETE RESTRICT ON UPDATE CASCADE;

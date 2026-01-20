@@ -6,17 +6,18 @@ const prisma = new PrismaClient();
 
 // CONFIGURAZIONE
 const BATCH_SIZE = 2000; // Quanti farmaci salvare alla volta (2000 è un buon compromesso)
-const PERCORSO_FILE = 'prisma/farmaci_master_v8.csv'; 
+const PERCORSO_FARMACI_FILE = 'prisma/farmaci_master_v8.csv'; 
+const PERCORSO_ALLERGENI_FILE = 'prisma/principi_attivi_unici.csv';
 
 async function main() {
-  console.log(`📂 Inizio lettura stream da: ${PERCORSO_FILE}...`);
+  console.log(`📂 Inizio lettura stream da: ${PERCORSO_FARMACI_FILE}...`);
 
-  if (!fs.existsSync(PERCORSO_FILE)) {
-    console.error(`❌ ERRORE: Il file ${PERCORSO_FILE} non esiste!`);
+  if (!fs.existsSync(PERCORSO_FARMACI_FILE)) {
+    console.error(`❌ ERRORE: Il file ${PERCORSO_FARMACI_FILE} non esiste!`);
     process.exit(1);
   }
 
-  const stream = fs.createReadStream(PERCORSO_FILE).pipe(csv({ separator: ';' }));
+  const streamFarmaci = fs.createReadStream(PERCORSO_FARMACI_FILE).pipe(csv({ separator: ';' }));
   
   let batch = [];       // Contenitore temporaneo per il blocco corrente
   let totalProcessed = 0; // Contatore totale
@@ -34,7 +35,7 @@ async function main() {
 
   // 🔄 USIAMO UN ITERATORE ASINCRONO (for await)
   // Questo permette di leggere il file riga per riga senza caricare tutto in RAM
-  for await (const row of stream) {
+  for await (const row of streamFarmaci) {
     
     // 1. Controllo Validità Riga
     if (!row.codice_aic && !row.AIC && !row['Codice AIC']) continue;
@@ -87,6 +88,45 @@ async function main() {
   }
 
   console.log(`✅ FINITO! Totale farmaci inseriti/processati: ${totalProcessed}`);
+
+  // --- Popolamento tabella Allergeni ---
+  console.log(`📂 Inizio lettura stream da: ${PERCORSO_ALLERGENI_FILE} per gli allergeni...`);
+
+  if (!fs.existsSync(PERCORSO_ALLERGENI_FILE)) {
+    console.warn(`⚠️ ATTENZIONE: Il file ${PERCORSO_ALLERGENI_FILE} non esiste. Saltando l'importazione degli allergeni.`);
+  } else {
+    const streamAllergeni = fs.createReadStream(PERCORSO_ALLERGENI_FILE).pipe(csv({ separator: ';' }));
+    let batchAllergeni = [];
+    let totalAllergeniProcessed = 0;
+
+    for await (const row of streamAllergeni) {
+      if (!row['principio_attivo']) continue;
+
+      batchAllergeni.push({
+        sostanza_allergene: row['principio_attivo'],
+      });
+
+      if (batchAllergeni.length >= BATCH_SIZE) {
+        await prisma.allergeni.createMany({
+          data: batchAllergeni,
+          skipDuplicates: true,
+        });
+        totalAllergeniProcessed += batchAllergeni.length;
+        console.log(`⏳ Salvati ${totalAllergeniProcessed} allergeni...`);
+        batchAllergeni = [];
+      }
+    }
+
+    if (batchAllergeni.length > 0) {
+      await prisma.allergeni.createMany({
+        data: batchAllergeni,
+        skipDuplicates: true,
+      });
+      totalAllergeniProcessed += batchAllergeni.length;
+      console.log(`⏳ Salvati gli ultimi ${batchAllergeni.length} allergeni.`);
+    }
+    console.log(`✅ FINITO! Totale allergeni inseriti/processati: ${totalAllergeniProcessed}`);
+  }
 }
 
 main()
