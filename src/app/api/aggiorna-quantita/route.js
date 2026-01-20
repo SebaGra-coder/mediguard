@@ -5,33 +5,36 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 /**
- * PUT → Aggiorna la quantità
+ * PUT → Aggiorna quantità, data di scadenza e registra note
  */
 export async function PUT(request) {
   try {
     const body = await request.json();
 
-    // Estraiamo i campi usando i nomi coerenti con il frontend e lo schema
+    // Estraiamo i campi dal body della richiesta
     const {
       id_farmaco_armadietto, 
       quantity,
+      expiryDate, // Nuova data di scadenza inviata dal frontend
       note,
       userUid
     } = body;
 
-    if (!id_farmaco_armadietto || quantity === undefined) {
+    // Controllo integrità dati minimi 
+    if (!id_farmaco_armadietto) {
       return NextResponse.json(
-        { success: false, message: "Dati mancanti (id_farmaco_armadietto o quantity)" },
+        { success: false, message: "ID farmaco armadietto mancante" },
         { status: 400 }
       );
     }
 
-    // 1. Cerchiamo il record usando il nome campo corretto dello schema 
+    // 1. Recupero il record attuale per confronto e validazione 
     const record = await prisma.farmaco_armadietto.findUnique({
       where: { id_farmaco_armadietto: id_farmaco_armadietto },
       select: {
         id_farmaco_armadietto: true,
-        quantita_rimanente: true
+        quantita_rimanente: true,
+        data_scadenza: true
       }
     });
 
@@ -42,43 +45,75 @@ export async function PUT(request) {
       );
     }
 
-    // 2. Aggiornamento
+    // 2. Costruzione dell'oggetto di aggiornamento
+    const dataToUpdate = {};
+    
+    // Validazione e aggiunta Quantità 
+    if (quantity !== undefined) {
+      dataToUpdate.quantita_rimanente = parseFloat(quantity);
+    }
+
+    // Validazione e aggiunta Data di Scadenza 
+    if (expiryDate) {
+      const parsedDate = new Date(expiryDate);
+      const oggi = new Date();
+      oggi.setHours(0, 0, 0, 0); // Reset orario per confronto solo sulla data
+
+      // Controllo se la data è valida
+      if (isNaN(parsedDate.getTime())) {
+        return NextResponse.json(
+          { success: false, message: "Formato data non valido" },
+          { status: 400 }
+        );
+      }
+
+      // Sicurezza: controllo che la data non sia passata
+      if (parsedDate < oggi) {
+        return NextResponse.json(
+          { success: false, message: "La data di scadenza non può essere precedente a oggi" },
+          { status: 400 }
+        );
+      }
+
+      dataToUpdate.data_scadenza = parsedDate;
+    }
+
+    // 3. Esecuzione dell'aggiornamento su Database 
     const aggiornato = await prisma.farmaco_armadietto.update({
       where: { id_farmaco_armadietto: id_farmaco_armadietto },
-      data: { quantita_rimanente: quantity }
+      data: dataToUpdate
     });
 
-    console.log("Movimento registrato:", {
+    // Log dell'operazione per tracciabilità (utilizzando le note se fornite)
+    console.log("Modifica registrata:", {
       id_farmaco_armadietto,
-      precedente: record.quantita_rimanente,
-      nuova: quantity,
-      nota: note
+      variazioni: dataToUpdate,
+      nota_utente: note,
+      eseguito_da: userUid
     });
 
     return NextResponse.json({
       success: true,
-      message: "Quantità aggiornata correttamente",
+      message: "Aggiornamento completato con successo",
       data: {
         id_farmaco_armadietto: aggiornato.id_farmaco_armadietto,
-        quantita_precedente: record.quantita_rimanente,
-        quantita_attuale: aggiornato.quantita_rimanente
+        quantita_attuale: aggiornato.quantita_rimanente,
+        data_scadenza_attuale: aggiornato.data_scadenza
       }
     });
 
   } catch (error) {
-    console.error("Errore PUT:", error);
-    return NextResponse.json({ success: false, error: "Errore server" }, { status: 500 });
+    console.error("Errore critico durante PUT:", error);
+    return NextResponse.json({ success: false, error: "Errore interno del server" }, { status: 500 });
   }
 }
 
 /**
- * GET → Recupera quantità attuale
+ * GET → Recupera lo stato attuale del farmaco (Quantità + Scadenza)
  */
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    
-    // Leggiamo il parametro che ora il frontend invierà correttamente
     const id_farmaco_armadietto = searchParams.get("id_farmaco_armadietto");
 
     if (!id_farmaco_armadietto) {
@@ -92,10 +127,11 @@ export async function GET(request) {
       where: { id_farmaco_armadietto: id_farmaco_armadietto },
       select: {
         quantita_rimanente: true,
+        data_scadenza: true,
         farmaco: {
           select: {
             denominazione: true, // [cite: 3]
-            codice_aic: true    // [cite: 2]
+            codice_aic: true     // [cite: 2]
           }
         }
       }
@@ -110,10 +146,7 @@ export async function GET(request) {
 
     return NextResponse.json({
       success: true,
-      data: {
-        quantita_rimanente: record.quantita_rimanente,
-        farmaco: record.farmaco
-      }
+      data: record
     });
 
   } catch (error) {

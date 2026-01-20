@@ -17,7 +17,7 @@ enum Permessi{
 
 model Utente {
   id_utente           String @id @default(uuid()) @db.Uuid
-  email               String
+  email               String @unique
   password_cifrata    String
   nome                String
   cognome             String
@@ -33,6 +33,7 @@ model Utente {
   armadietto Farmaco_armadietto[]
   armadietto_disuso Farmaco_armadietto_disuso[]
   terapie Piano_terapeutico[]
+  codici_generati Codice_abbinamento[]
 
   @@map("utente")
 }
@@ -104,12 +105,23 @@ model Relazione{
   @@map("relazione")
 }
 
+model Codice_abbinamento {
+  codeString   String   @id // Il codice vero e proprio (es. "ABCD12" o "123456")
+  id_creatore  String   @db.Uuid // Chi ha generato il codice
+  ruolo_target String   // Chi usa il codice cosa diventa? (es. "CAREGIVER" o "ASSISTITO")
+  data_scadenza DateTime
+  
+  creatore     Utente   @relation(fields: [id_creatore], references: [id_utente], onDelete: Cascade)
+
+  @@map("codice_abbinamento")
+}
+
 model Farmaco_armadietto{
   id_farmaco_armadietto       String @id @default(uuid()) @db.Uuid
   id_utente_proprietario      String @db.Uuid
   codice_aic                  String
   data_scadenza               DateTime
-  lotto_produzione            String
+  lotto_produzione            String?
   quantita_rimanente          Float
 
   utente Utente @relation(fields: [id_utente_proprietario], references: [id_utente])
@@ -125,7 +137,7 @@ model Farmaco_armadietto_disuso{
   id_utente_proprietario      String @db.Uuid
   codice_aic                  String
   data_scadenza               DateTime
-  lotto_produzione            String
+  lotto_produzione            String?
   quantita_rimanente          Float
 
   utente Utente @relation(fields: [id_utente_proprietario], references: [id_utente])
