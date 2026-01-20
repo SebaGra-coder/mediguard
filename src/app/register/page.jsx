@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function RegisterPage() {
   const [nome, setNome] = useState('');
@@ -8,7 +9,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [dataNascita, setDataNascita] = useState('');
-  
+
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,12 +22,12 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           nome,
           cognome,
-          email, 
-          password, 
-          data_nascita: dataNascita 
+          email,
+          password,
+          data_nascita: dataNascita
         })
       });
 
@@ -54,6 +55,13 @@ export default function RegisterPage() {
 
   return (
     <main>
+
+      <section>
+        <div className="navigation-links">
+          <p>Hai già un account? <Link href="/login">Accedi qui</Link></p>
+        </div>
+      </section>
+
       <section>
         <h1>Registrazione</h1>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -11,7 +12,7 @@ export default function LoginPage() {
   async function handleLogin(e) {
     // Impedisce il reload della pagina
     e.preventDefault();
-    
+
     setLoading(true);
     setResponse(null);
 
@@ -43,6 +44,13 @@ export default function LoginPage() {
 
   return (
     <main>
+
+      <section>
+        <div className="navigation-links">
+          <p>Non sei registrato? <Link href="/register">Crea un account</Link></p>
+        </div>
+      </section>
+
       <section>
         <h1>Login</h1>
 
