@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  //url      = env("DATABASE_URL")
 }
 
 enum Permessi{
@@ -17,7 +17,7 @@ enum Permessi{
 
 model Utente {
   id_utente           String @id @default(uuid()) @db.Uuid
-  email               String
+  email               String @unique
   password_cifrata    String
   nome                String
   cognome             String
