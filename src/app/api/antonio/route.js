@@ -158,21 +158,56 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'ID farmaco mancante' }, { status: 400 });
     }
 
-    // Esegue l'eliminazione effettiva sulla tabella farmaco_armadietto
-    // Nota: lo schema prisma usa il campo 'id_farmaco_armadietto' come PK
-    await prisma.farmaco_armadietto.delete({
-      where: {
-        id_farmaco_armadietto: idFarmacoArmadietto,
-      },
+    // Utilizziamo una transazione per essere sicuri che se una operazione fallisce, l'altra non venga eseguita
+    const risultato = await prisma.$transaction(async (tx) => {
+      
+      // 1. Cerchiamo il farmaco nell'armadietto attivo prima di eliminarlo per recuperarne i dati
+      const farmacoDaSpostare = await tx.farmaco_armadietto.findUnique({
+        where: { id_farmaco_armadietto: idFarmacoArmadietto },
+      });
+
+      // Se il farmaco non esiste nell'armadietto attivo, lanciamo un errore
+      if (!farmacoDaSpostare) {
+        throw new Error("Farmaco non trovato nell'armadietto");
+      }
+
+      // 2. Creiamo il record nella tabella 'farmaco_armadietto_disuso' con i dati appena recuperati
+      const recordDisuso = await tx.farmaco_armadietto_disuso.create({
+        data: {
+          id_utente_proprietario: farmacoDaSpostare.id_utente_proprietario,
+          codice_aic: farmacoDaSpostare.codice_aic,
+          data_scadenza: farmacoDaSpostare.data_scadenza,
+          lotto_produzione: farmacoDaSpostare.lotto_produzione,
+          quantita_rimanente: farmacoDaSpostare.quantita_rimanente,
+        },
+      });
+
+      // 3. Eliminiamo il record originale dalla tabella 'farmaco_armadietto'
+      await tx.farmaco_armadietto.delete({
+        where: { id_farmaco_armadietto: idFarmacoArmadietto },
+      });
+
+      return recordDisuso;
     });
 
-    // Risponde con successo
-    return NextResponse.json({ message: 'Farmaco rimosso con successo' }, { status: 200 });
+    // Risponde con successo includendo i dati del farmaco spostato
+    return NextResponse.json({ 
+      message: 'Farmaco spostato nell’armadietto in disuso con successo',
+      data: risultato 
+    }, { status: 200 });
 
   } catch (error) {
     // Logga l'errore sul server per debugging
-    console.error("Errore eliminazione:", error);
-    // Restituisce errore 500 (es: se il record non esiste più o è legato a un piano terapeutico)
-    return NextResponse.json({ error: 'Impossibile eliminare il farmaco' }, { status: 500 });
+    console.error("Errore durante lo spostamento in disuso:", error);
+
+    // Gestione specifica se il farmaco non è stato trovato
+    if (error.message === "Farmaco non trovato nell'armadietto") {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+
+    // Restituisce errore 500 generico
+    return NextResponse.json({ 
+      error: 'Impossibile completare l\'operazione di dismissione' 
+    }, { status: 500 });
   }
 }
