@@ -84,7 +84,7 @@ export default function Auth({ onLogin }) {
       <div className="w-full max-w-md relative z-10">
         {/* Back to home */}
         <Link 
-          href="/" 
+          href="Ricerca" 
           className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-8 transition-colors font-medium text-sm"
         >
           <Icons.ArrowLeft />
