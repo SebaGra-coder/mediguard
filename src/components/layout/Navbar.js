@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Home from "@/app/page";
 
 export function Navbar({ isAuthenticated, onLogout }) {
   // Colore primario estratto dall'immagine (un verde acqua/teal)
@@ -11,6 +12,9 @@ export function Navbar({ isAuthenticated, onLogout }) {
 
   // -- ICONE SVG --
   const Icons = {
+    Home: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+    ),
     Pill: () => (
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" /><path d="m8.5 8.5 7 7" /></svg>
     ),
@@ -50,23 +54,28 @@ export function Navbar({ isAuthenticated, onLogout }) {
         <div className="hidden md:flex items-center space-x-8">
 
           {/* Link Standard */}
-          <a href="#" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
-            <Icons.Box />
-            Inventario
+          <a href={isAuthenticated ? "HomePage" : ""} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+            <Icons.Home />
+            Home
           </a>
 
-          <a href="#" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+          <a href="Armadietto" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+            <Icons.Box />
+            Armadietto
+          </a>
+
+          <a href="Terapie" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
             <Icons.Calendar />
             Terapie
           </a>
 
-          <a href="#" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+          <a href="Caregiver" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
             <Icons.Users />
             Caregiver
           </a>
 
           {/* Pulsante Speciale "Cerca Farmaci" */}
-          <a href="#" className={`${bgLightClass} ${primaryColorClass} px-5 py-2 rounded-full flex items-center gap-2 text-sm font-semibold hover:bg-teal-100 transition-colors`}>
+          <a href="Ricerca" className={`${bgLightClass} ${primaryColorClass} px-5 py-2 rounded-full flex items-center gap-2 text-sm font-semibold hover:bg-teal-100 transition-colors`}>
             <Icons.Search />
             Cerca Farmaci
           </a>
