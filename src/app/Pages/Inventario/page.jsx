@@ -108,7 +108,8 @@ const getDaysUntilExpiry = (expiryDate) => {
   return diffDays;
 };
 
-export default function Inventario({ isAuthenticated = true, onLogout }) {
+export default function Inventario({ isAuthenticated: initialAuth = false }) {
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
   const [searchQuery, setSearchQuery] = useState("");
   const [medicines] = useState(mockMedicines);
   // Stato per gestire il menu dropdown simulato (opzionale per semplicità)
@@ -121,6 +122,17 @@ export default function Inventario({ isAuthenticated = true, onLogout }) {
   });
 
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        setIsUserAuthenticated(data.isAuthenticated);
+      } catch (err) {
+        console.error("Errore verifica auth", err);
+      }
+    };
+    checkAuth();
+
     const fetchStats = async () => {
       try {
         const response = await fetch("/api/antonio?id_utente=20d16008-0f51-46a1-b522-c086d6c9b4b3");
@@ -140,6 +152,16 @@ export default function Inventario({ isAuthenticated = true, onLogout }) {
     fetchStats();
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setIsUserAuthenticated(false);
+      window.location.href = '/Pages/Autenticazione';
+    } catch (err) {
+      console.error("Errore logout", err);
+    }
+  };
+
   // Filtra i risultati in base alla query di ricerca (Nome o Principio Attivo)
   const filteredRisultati = risultati.filter((medicine) => {
     const term = searchQuery.toLowerCase();
@@ -152,7 +174,7 @@ export default function Inventario({ isAuthenticated = true, onLogout }) {
     <div className="min-h-screen bg-gray-50 relative font-sans text-gray-900">
       
       {/* NAVBAR SIMULATA (Senza import esterni) */}
-        <Navbar isAuthenticated={isAuthenticated} onLogout={onLogout} />
+        <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
 
       <main className="pt-8 pb-16">
         <div className="container mx-auto px-4 max-w-6xl">

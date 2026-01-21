@@ -16,39 +16,28 @@ export async function GET(request) {
 
   try {
     // 3. Esegui la query "globale"
-    const farmaci = await prisma.farmaci.findMany({
-      where: {
+        // 3. Esegui la query "globale"
+    // Separa la stringa di ricerca in parole singole (token)
+    const terms = query.trim().split(/\s+/);
+
+    // Costruisci una condizione AND: ogni token deve matchare ALMENO un campo
+    // Questo permette di cercare "Tachipirina 500" oppure "500 Tachipirina" indifferentemente
+    const whereCondition = {
+      AND: terms.map(term => ({
         OR: [
-          // Cerca nel nome del farmaco
-          { 
-            // Combina denominazione, dosaggio e unità di misura per ricerche più specifiche
-            AND: [
-              { denominazione: { contains: query.split(' ')[0], mode: 'insensitive' } },
-              { OR: [{ dosaggio: { contains: query.split(' ')[1], mode: 'insensitive' } }, { unita_misura: { contains: query.split(' ')[1], mode: 'insensitive' } }] }
-            ]
-          },
-          // Cerca nel principio attivo
-          { 
-            principio_attivo: { 
-              contains: query, 
-              mode: 'insensitive' 
-            } 
-          },
-          // Cerca nel codice AIC (se è salvato come Stringa)
-          { 
-            codice_aic: { 
-              contains: query 
-            } 
-          },
-          // Cerca per azienda produttrice
-          {
-            ragione_sociale: {
-                contains: query,
-                mode: 'insensitive'
-            }
-          }
-        ],
-      }, // ⚠️ IMPORTANTE: Limita i risultati a 20 per non bloccare l'app
+          { denominazione: { contains: term, mode: 'insensitive' } },
+          { principio_attivo: { contains: term, mode: 'insensitive' } },
+          { codice_aic: { contains: term, mode: 'insensitive' } },
+          { ragione_sociale: { contains: term, mode: 'insensitive' } },
+          { dosaggio: { contains: term, mode: 'insensitive' } },
+          { unita_misura: { contains: term, mode: 'insensitive' } }
+        ]
+      }))
+    };
+
+    const farmaci = await prisma.farmaci.findMany({
+      where: whereCondition,
+      take: 20, // ⚠️ IMPORTANTE: Limita i risultati a 20 per non bloccare l'app
       orderBy: {
         denominazione: 'asc', // Ordina alfabeticamente
       },

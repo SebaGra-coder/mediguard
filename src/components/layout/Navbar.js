@@ -1,10 +1,42 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import Home from "@/app/page";
 
-export function Navbar({ isAuthenticated, onLogout }) {
+export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
+  const [userRole, setUserRole] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        setIsUserAuthenticated(data.isAuthenticated);
+        if (data.user) {
+          setUserRole(data.user.ruolo);
+        }
+      } catch (err) {
+        console.error("Errore verifica auth", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setIsUserAuthenticated(false);
+      if (onLogout) onLogout(); // Notifica il genitore se necessario
+      window.location.href = 'Autenticazione'; // Redirect al login
+    } catch (err) {
+      console.error("Errore logout", err);
+    }
+  };
+
   // Colore primario estratto dall'immagine (un verde acqua/teal)
   const primaryColorClass = "text-[#14b8a6]"; // Teal-500 di Tailwind approx
   const bgPrimaryClass = "bg-[#14b8a6]";
@@ -40,7 +72,7 @@ export function Navbar({ isAuthenticated, onLogout }) {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
 
         {/* --- 1. LOGO --- */}
-        <div className="flex items-center gap-2.5 cursor-pointer">
+        <Link href={isUserAuthenticated ? "HomePage" : ""} className="flex items-center gap-2.5 cursor-pointer">
           <div className={`${bgPrimaryClass} w-9 h-9 rounded-full flex items-center justify-center text-white shadow-sm`}>
             <Icons.Pill />
           </div>
@@ -48,44 +80,57 @@ export function Navbar({ isAuthenticated, onLogout }) {
             <span className="font-bold text-slate-800">Medi</span>
             <span className={`font-bold ${primaryColorClass}`}>Guard</span>
           </div>
-        </div>
+        </Link>
 
         {/* --- 2. MENU CENTRALE (Desktop) --- */}
         <div className="hidden md:flex items-center space-x-8">
 
           {/* Link Standard */}
-          <a href={isAuthenticated ? "HomePage" : ""} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
-            <Icons.Home />
-            Home
-          </a>
+          {isUserAuthenticated && (
+            <Link href="/Pages/HomePage" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+              <Icons.Home />
+              Home
+            </Link>
+          )}
 
-          <a href="Armadietto" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+          <Link href="Armadietto" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
             <Icons.Box />
             Armadietto
-          </a>
+          </Link>
 
-          <a href="Terapie" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+          <Link href="Terapie" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
             <Icons.Calendar />
             Terapie
-          </a>
+          </Link>
 
-          <a href="Caregiver" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
-            <Icons.Users />
-            Caregiver
-          </a>
+          {isLoading ? (
+            <div className="h-5 w-24 bg-slate-200 rounded animate-pulse"></div>
+          ) : userRole === "Nessuno" ? (
+            <Link href="CollegaCaregiver" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+              <Icons.Users />
+              Collega Caregiver
+            </Link>
+          ) : (
+            <Link href="Caregiver" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+              <Icons.Users />
+              Caregiver
+            </Link>
+          )}
 
           {/* Pulsante Speciale "Cerca Farmaci" */}
-          <a href="Ricerca" className={`${bgLightClass} ${primaryColorClass} px-5 py-2 rounded-full flex items-center gap-2 text-sm font-semibold hover:bg-teal-100 transition-colors`}>
+          <Link href="Ricerca" className={`${bgLightClass} ${primaryColorClass} px-5 py-2 rounded-full flex items-center gap-2 text-sm font-semibold hover:bg-teal-100 transition-colors`}>
             <Icons.Search />
             Cerca Farmaci
-          </a>
+          </Link>
         </div>
 
         {/* --- 3. PARTE DESTRA (Auth) --- */}
         <div className="flex items-center gap-6">
-          {isAuthenticated ? (
+          {isLoading ? (
+             <div className="h-10 w-20 bg-slate-200 rounded animate-pulse"></div>
+          ) : isUserAuthenticated ? (
             <button
-              onClick={onLogout}
+              onClick={handleLogout}
               className="text-sm font-semibold text-red-500 hover:text-red-600 transition-colors"
             >
               Esci
@@ -94,8 +139,7 @@ export function Navbar({ isAuthenticated, onLogout }) {
             <div className="flex gap-2 w-full">
               {/* Pulsante Accedi */}
               <Link
-                href="Autenticazione"  // <--- IMPORTANTE: Deve essere 'href', non 'to'
-                onClick={() => setIsOpen(false)}
+                href="Autenticazione"
                 className="flex-1 inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-medium text-slate-700 bg-transparent hover:bg-slate-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
               >
                 Accedi
@@ -103,8 +147,7 @@ export function Navbar({ isAuthenticated, onLogout }) {
 
               {/* Pulsante Registrati */}
               <Link
-                href="Autenticazione?mode=register" // <--- IMPORTANTE: Deve essere 'href', non 'to'
-                onClick={() => setIsOpen(false)}
+                href="Autenticazione?mode=register"
                 className="flex-1 inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-bold text-white bg-[#14b8a6] hover:bg-[#0d9488] rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#14b8a6] focus:ring-offset-2"
               >
                 Registrati

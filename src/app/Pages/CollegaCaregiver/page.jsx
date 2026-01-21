@@ -54,11 +54,35 @@ const Toast = ({ message, type, onClose }) => {
 };
 
 // --- MAIN PAGE ---
-export default function CollegaCaregiver({ isAuthenticated = true, onLogout }) {
+export default function CollegaCaregiver({ isAuthenticated: initialAuth = false }) {
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
   const [selectedRole, setSelectedRole] = useState(null);
   const [generatedCode, setGeneratedCode] = useState(null);
   const [inputCode, setInputCode] = useState("");
   const [toast, setToast] = useState({ message: null, type: null });
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        setIsUserAuthenticated(data.isAuthenticated);
+      } catch (err) {
+        console.error("Errore verifica auth", err);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setIsUserAuthenticated(false);
+      window.location.href = '/Pages/Autenticazione';
+    } catch (err) {
+      console.error("Errore logout", err);
+    }
+  };
 
   // Helpers
   const showToast = (msg, type = 'success') => {
@@ -90,7 +114,7 @@ export default function CollegaCaregiver({ isAuthenticated = true, onLogout }) {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 relative">
-      <Navbar isAuthenticated={isAuthenticated} onLogout={onLogout} />
+      <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
       
       {/* Toast Container */}
       <Toast message={toast.message} type={toast.type} />

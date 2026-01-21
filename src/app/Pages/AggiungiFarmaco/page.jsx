@@ -23,7 +23,9 @@ const Icons = {
   )
 };
 
-export default function AggiungiFarmaco({ isAuthenticated = true, onLogout }) {
+export default function AggiungiFarmaco({ isAuthenticated: initialAuth = false }) {
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
+  
   // Stato del form
   const [formData, setFormData] = useState({
     nome: "", 
@@ -37,6 +39,29 @@ export default function AggiungiFarmaco({ isAuthenticated = true, onLogout }) {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        setIsUserAuthenticated(data.isAuthenticated);
+      } catch (err) {
+        console.error("Errore verifica auth", err);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setIsUserAuthenticated(false);
+      window.location.href = '/Pages/Autenticazione';
+    } catch (err) {
+      console.error("Errore logout", err);
+    }
+  };
 
   // Gestione Invio
   const handleSubmit = async (e) => {
@@ -68,7 +93,7 @@ export default function AggiungiFarmaco({ isAuthenticated = true, onLogout }) {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       
       {/* NAVBAR */}
-      <Navbar isAuthenticated={isAuthenticated} onLogout={onLogout} />
+      <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
       
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         

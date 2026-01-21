@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
+import { GuestOverlay } from "@/components/GuestOverlay";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -92,7 +93,9 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
 };
 
 // --- LOGICA PRINCIPALE ---
-export default function Terapie({ isAuthenticated = true, onLogout }) {
+export default function Terapie({ isAuthenticated: initialAuth = false }) {
+    const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
+    const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [selectedDate] = useState(new Date());
     const [todaySchedule, setTodaySchedule] = useState(initialTodaySchedule);
     const [therapyPlans, setTherapyPlans] = useState(initialTherapyPlans);
@@ -104,6 +107,31 @@ export default function Terapie({ isAuthenticated = true, onLogout }) {
     });
     const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
     const [quickAddData, setQuickAddData] = useState({ medicine: "", time: "", note: "" });
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+              const res = await fetch('/api/auth/me');
+              const data = await res.json();
+              setIsUserAuthenticated(data.isAuthenticated);
+            } catch (err) {
+              console.error("Errore verifica auth", err);
+            } finally {
+              setIsAuthChecking(false);
+            }
+          };
+          checkAuth();
+    }, []);
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            setIsUserAuthenticated(false);
+            window.location.href = '/Pages/Autenticazione';
+        } catch (err) {
+            console.error("Errore logout", err);
+        }
+    };
 
     const takenCount = todaySchedule.filter(s => s.status === "taken").length;
     const adherencePercentage = Math.round((takenCount / todaySchedule.length) * 100) || 0;
@@ -173,9 +201,30 @@ export default function Terapie({ isAuthenticated = true, onLogout }) {
         setIsQuickAddOpen(false);
     };
 
+    if (isAuthChecking) {
+        return (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+          </div>
+        );
+      }
+
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-            <Navbar isAuthenticated={isAuthenticated} onLogout={onLogout} />
+            <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
+
+            {!isUserAuthenticated && (
+                <GuestOverlay
+                    title="Dashboard Caregiver"
+                    description="Monitora la salute dei tuoi cari da remoto"
+                    features={[
+                        "Collegare pazienti tramite codice sicuro",
+                        "Ricevere alert per mancate assunzioni",
+                        "Visualizzare l'aderenza terapeutica",
+                        "Gestire le terapie da remoto"
+                    ]}
+                />
+            )}
 
             <main className="pt-10 pb-16">
                 <div className="container mx-auto px-4 max-w-7xl">

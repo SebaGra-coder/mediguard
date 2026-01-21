@@ -38,13 +38,57 @@ export default function Auth({ onLogin }) {
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      alert(isLogin ? "Accesso effettuato!" : "Registrazione completata! Controlla la tua email.");
+    try {
+      if (isLogin) {
+        // --- LOGIN ---
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password
+          }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          if (onLogin) onLogin();
+          // Redirect alla HomePage o dove preferisci
+          window.location.href = "/Pages/HomePage";
+        } else {
+          alert(data.message || "Errore durante il login");
+        }
+
+      } else {
+        // --- REGISTRAZIONE ---
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            nome: formData.name,       // Nota: il backend aspetta 'nome', nel form è 'name'
+            cognome: formData.surname, // Nota: il backend aspetta 'cognome', nel form è 'surname'
+            data_nascita: formData.dob // Nota: il backend aspetta 'data_nascita', nel form è 'dob'
+          }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert("Registrazione completata! Ora puoi accedere.");
+          setIsLogin(true); // Passa alla modalità login
+        } else {
+          alert(data.message || "Errore durante la registrazione");
+        }
+      }
+    } catch (error) {
+      console.error("Errore di rete:", error);
+      alert("Si è verificato un errore di comunicazione con il server.");
+    } finally {
       setIsLoading(false);
-      if (onLogin) onLogin();
-      router.push("/");
-    }, 1500);
+    }
   };
 
   const handleChange = (e) => {
@@ -84,7 +128,7 @@ export default function Auth({ onLogin }) {
       <div className="w-full max-w-md relative z-10">
         {/* Back to home */}
         <Link 
-          href="Ricerca" 
+          href="Ricerca"
           className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-8 transition-colors font-medium text-sm"
         >
           <Icons.ArrowLeft />

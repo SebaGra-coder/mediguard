@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
-
+import { GuestOverlay } from "@/components/GuestOverlay";
 // --- ICONE SVG INTERNE ---
 const Icons = {
   Package: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22v-9"/></svg>,
@@ -81,7 +81,9 @@ const StatusBadge = ({ status }) => {
 };
 
 // --- COMPONENTE PRINCIPALE ---
-export default function Inventario({ isAuthenticated = true, onLogout }) {
+export default function Inventario({ isAuthenticated: initialAuth = false }) {
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [medicines, setMedicines] = useState([]);
   const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -95,9 +97,22 @@ export default function Inventario({ isAuthenticated = true, onLogout }) {
   });
 
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        setIsUserAuthenticated(data.isAuthenticated);
+      } catch (err) {
+        console.error("Errore verifica auth", err);
+      } finally {
+        setIsAuthChecking(false);
+      }
+    };
+    checkAuth();
+
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/antonio?id_utente=49a0cfd3-6fc3-4a40-9602-707cdc964e55");
+        const response = await fetch("/api/antonio?id_utente=" + data.id_utente);
         const json = await response.json();
         const rawData = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
         
@@ -120,6 +135,16 @@ export default function Inventario({ isAuthenticated = true, onLogout }) {
     };
     fetchData();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setIsUserAuthenticated(false);
+      window.location.href = '/Pages/Autenticazione'; // Reindirizza al login
+    } catch (err) {
+      console.error("Errore logout", err);
+    }
+  };
 
   const handleAddMedicine = () => {
     // Simulazione salvataggio locale (In produzione faresti una POST API)
@@ -156,9 +181,30 @@ export default function Inventario({ isAuthenticated = true, onLogout }) {
     return nome.includes(term) || principio.includes(term);
   });
 
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 relative font-sans text-slate-900">
-      <Navbar isAuthenticated={isAuthenticated} onLogout={onLogout} />
+      <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
+
+      {!isUserAuthenticated && (
+        <GuestOverlay 
+          title="Dashboard Caregiver"
+          description="Monitora la salute dei tuoi cari da remoto"
+          features={[
+            "Collegare pazienti tramite codice sicuro",
+            "Ricevere alert per mancate assunzioni",
+            "Visualizzare l'aderenza terapeutica",
+            "Gestire le terapie da remoto"
+          ]}
+        />
+      )}
 
       <main className="pt-10 pb-16">
         <div className="container mx-auto px-4 max-w-7xl">

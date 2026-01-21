@@ -90,7 +90,9 @@ const getPatientStatusColor = (status) => {
     }
 };
 
-export default function Dashboard({ isAuthenticated = true, onLogout }) {
+export default function Dashboard({ isAuthenticated: initialAuth = false }) {
+    const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
+    const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [inventoryStats, setInventoryStats] = useState({ total: 0, low: 0, expiring: 0 });
     const [lowStockMedicines, setLowStockMedicines] = useState([]);
     const [expiringMedicines, setExpiringMedicines] = useState([]);
@@ -102,6 +104,19 @@ export default function Dashboard({ isAuthenticated = true, onLogout }) {
     const [activeModal, setActiveModal] = useState(null);
 
     useEffect(() => {
+        const checkAuth = async () => {
+            try {
+              const res = await fetch('/api/auth/me');
+              const data = await res.json();
+              setIsUserAuthenticated(data.isAuthenticated);
+            } catch (err) {
+              console.error("Errore verifica auth", err);
+            } finally {
+              setIsAuthChecking(false);
+            }
+          };
+          checkAuth();
+
         const fetchData = async () => {
             setIsLoading(true);
             try {
@@ -180,6 +195,16 @@ export default function Dashboard({ isAuthenticated = true, onLogout }) {
         fetchData();
     }, []);
 
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            setIsUserAuthenticated(false);
+            window.location.href = '/Pages/Autenticazione'; // Reindirizza al login
+        } catch (err) {
+            console.error("Errore logout", err);
+        }
+    };
+
     // Helper functions from Armadietto page (re-defined here or imported if in a shared util)
     const getDaysUntilExpiry = (expiryDate) => {
         if (!expiryDate) return 999;
@@ -200,9 +225,17 @@ export default function Dashboard({ isAuthenticated = true, onLogout }) {
 
     const takenCount = todaySchedule.filter(s => s.status === "taken").length;
 
+    if (isAuthChecking) {
+        return (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+          </div>
+        );
+      }
+
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-            <Navbar isAuthenticated={isAuthenticated} onLogout={onLogout} />
+            <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
 
             <main className="pt-10 pb-16">
                 <div className="container mx-auto px-4 max-w-7xl">
