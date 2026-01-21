@@ -24,8 +24,8 @@ export async function POST(request) {
         cognome,
         data_nascita: new Date(data_nascita),
         account_attivo: true,
-        permessi_armadietto: 'NIENTE',  // default MVP
-        permessi_piano: 'NIENTE'        // default MVP
+        permessi_armadietto: 'ADMIN',
+        permessi_piano: 'ADMIN'
       }
     });
 
