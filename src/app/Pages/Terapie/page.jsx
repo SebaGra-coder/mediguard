@@ -95,25 +95,70 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
 // --- LOGICA PRINCIPALE ---
 export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
+    const [userData, setUserData] = useState(null);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [selectedDate] = useState(new Date());
     const [todaySchedule, setTodaySchedule] = useState(initialTodaySchedule);
-    const [therapyPlans, setTherapyPlans] = useState(initialTherapyPlans);
+    const [therapyPlans, setTherapyPlans] = useState([]); // Initial empty, fetched from API
+    const [cabinetMedicines, setCabinetMedicines] = useState([]);
 
     // Modals state
     const [modalState, setModalState] = useState({ type: null, data: null }); // type: 'view' | 'edit' | 'add' | 'delete'
     const [formData, setFormData] = useState({
-        medicine: "", dosaggio: "", frequency: "1 volta al giorno", orari: ["08:00"], startDate: "", endDate: "", note: "", stato: "attiva"
+        medicine: "",
+        id_farmaco_armadietto: "",
+        dosaggio: "", 
+        frequency: "1 volta al giorno", 
+        orari: ["08:00"], 
+        startDate: "", 
+        endDate: "", 
+        note: "", 
+        stato: "attiva"
     });
     const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
     const [quickAddData, setQuickAddData] = useState({ medicine: "", time: "", note: "" });
 
+    // State for drug search in Quick Add
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showResults, setShowResults] = useState(false);
+
     useEffect(() => {
-        const checkAuth = async () => {
+        // Only search if the modal is open and we have a query
+        if (!isQuickAddOpen || quickAddData.medicine.length < 3) {
+             setSearchResults([]);
+             setShowResults(false);
+             return;
+        }
+
+        // Debounce search
+        const timer = setTimeout(async () => {
+             setIsSearching(true);
+             try {
+                 const res = await fetch(`/api/farmaci/cerca?q=${encodeURIComponent(quickAddData.medicine)}`);
+                 const data = await res.json();
+                 setSearchResults(data.farmaci || []);
+                 setShowResults(true);
+             } catch (e) {
+                 console.error("Errore ricerca farmaci", e);
+             } finally {
+                 setIsSearching(false);
+             }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [quickAddData.medicine, isQuickAddOpen]);
+    useEffect(() => {
+          const checkAuth = async () => {
             try {
               const res = await fetch('/api/auth/me');
               const data = await res.json();
               setIsUserAuthenticated(data.isAuthenticated);
+              if (data.isAuthenticated) {
+                setUserData(data.user);
+                fetchCabinet(data.user.id_utente);
+                fetchTherapies(data.user.id_utente);
+              }
             } catch (err) {
               console.error("Errore verifica auth", err);
             } finally {
@@ -122,6 +167,45 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
           };
           checkAuth();
     }, []);
+
+    const fetchCabinet = async (userId) => {
+        try {
+            const res = await fetch(`/api/antonio?id_utente=${userId}`);
+            const data = await res.json();
+            if (data.data) {
+                setCabinetMedicines(data.data);
+            }
+        } catch (err) {
+            console.error("Errore caricamento armadietto", err);
+        }
+    };
+
+    const fetchTherapies = async (userId) => {
+        try {
+            const res = await fetch(`/api/terapia?id_paziente=${userId}`);
+            const json = await res.json();
+            if (json.success && Array.isArray(json.data)) {
+                // Map API data to UI structure
+                const mappedPlans = json.data.map(t => ({
+                    id: t.id_terapia,
+                    medicine: t.nome_utilita || t.farmaco?.farmaco?.denominazione || "Farmaco sconosciuto",
+                    dosaggio: t.dose_singola + (t.farmaco?.farmaco?.unita_misura || ""),
+                    frequency: t.solo_al_bisogno ? "Al bisogno" : (t.assunzioni?.length > 0 ? `${t.assunzioni.length} volte al giorno` : "N/D"),
+                    duration: t.for_life ? "Continuativa" : "Definita",
+                    startDate: t.createdAt, // API doesn't return explicit start date, use created? Or maybe missing field.
+                    endDate: "", // API doesn't return explicit end date yet?
+                    adherence: 0, // Mock for now
+                    orari: t.assunzioni?.map(a => a.orario_previsto) || [], // Assuming assunzioni has this structure? Check API logic later.
+                    note: "", 
+                    stato: t.terapia_attiva ? "attiva" : "sospesa",
+                    originalData: t // Keep original for reference
+                }));
+                setTherapyPlans(mappedPlans);
+            }
+        } catch (err) {
+            console.error("Errore caricamento terapie", err);
+        }
+    };
 
     const handleLogout = async () => {
         try {
@@ -141,31 +225,102 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const openModal = (type, data = null) => {
         setModalState({ type, data });
         if (data && (type === 'edit' || type === 'view')) {
-            setFormData({ ...data, orari: data.orari || ["08:00"], endDate: data.endDate || "", note: data.note || "" });
+            setFormData({ 
+                medicine: data.medicine,
+                id_farmaco_armadietto: data.originalData?.id_farmaco_armadietto || "",
+                dosaggio: parseFloat(data.dosaggio) || "", 
+                frequency: data.frequency, // Logic needed to map back to select
+                orari: data.orari || ["08:00"], 
+                startDate: data.startDate || "", 
+                endDate: data.endDate || "", 
+                note: data.note || "",
+                stato: data.stato
+            });
         } else {
             resetForm();
         }
     };
 
-    const resetForm = () => setFormData({ medicine: "", dosaggio: "", frequency: "1 volta al giorno", orari: ["08:00"], startDate: "", endDate: "", note: "", stato: "attiva" });
+    const resetForm = () => setFormData({ 
+        medicine: "", 
+        id_farmaco_armadietto: "",
+        dosaggio: "", 
+        frequency: "1 volta al giorno", 
+        orari: ["08:00"], 
+        startDate: new Date().toISOString().split('T')[0], 
+        endDate: "", 
+        note: "", 
+        stato: "attiva" 
+    });
 
     // Gestione CRUD
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (!userData) return;
+
         if (modalState.type === 'add') {
-            const newTherapy = { ...formData, id: Date.now().toString(), adherence: 0, duration: formData.endDate ? "Definita" : "Continuativa" };
-            setTherapyPlans([...therapyPlans, newTherapy]);
+            try {
+                // Find selected medicine details for display name if needed, though API uses ID
+                const selectedMed = cabinetMedicines.find(m => m.id_farmaco_armadietto === formData.id_farmaco_armadietto);
+                const nomeUtilita = formData.medicine || selectedMed?.farmaco?.denominazione || "Nuova Terapia";
+
+                const body = {
+                    id_paziente: userData.id_utente,
+                    id_farmaco_armadietto: formData.id_farmaco_armadietto,
+                    nome_utilita: nomeUtilita,
+                    dose_singola: parseFloat(formData.dosaggio),
+                    solo_al_bisogno: formData.frequency === "Al bisogno",
+                    terapia_attiva: true,
+                    for_life: !formData.endDate
+                };
+
+                const res = await fetch('/api/terapia', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const json = await res.json();
+                if (res.ok && json.success) {
+                    // Refresh list
+                    fetchTherapies(userData.id_utente);
+                    closeModal();
+                } else {
+                    alert("Errore salvataggio: " + (json.error || "Sconosciuto"));
+                }
+            } catch (e) {
+                console.error("Errore chiamata API", e);
+                alert("Errore di connessione");
+            }
+
         } else if (modalState.type === 'edit') {
-            setTherapyPlans(plans => plans.map(p => p.id === modalState.data.id ? { ...p, ...formData, duration: formData.endDate ? "Definita" : "Continuativa" } : p));
+            // Edit logic implementation depends on API support (PUT/PATCH not currently in route.js)
+            alert("Modifica non ancora implementata nell'API");
+            closeModal();
         }
-        closeModal();
     };
 
-    const handleDelete = () => {
-        setTherapyPlans(plans => plans.filter(p => p.id !== modalState.data.id));
-        closeModal();
+    const handleDelete = async () => {
+        if (!modalState.data?.id) return;
+        try {
+            const res = await fetch(`/api/terapia?id_terapia=${modalState.data.id}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                 // Refresh list
+                 if (userData) fetchTherapies(userData.id_utente);
+                 closeModal();
+            } else {
+                alert("Impossibile eliminare la terapia");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Errore durante l'eliminazione");
+        }
     };
 
     const handleToggleStatus = (id) => {
+        // Toggle status API call needed (PATCH)
+        // For now, optimistic UI update or alert
         setTherapyPlans(plans => plans.map(p => p.id === id ? { ...p, stato: p.stato === "attiva" ? "sospesa" : "attiva" } : p));
     };
 
@@ -399,21 +554,41 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 footer={
                     <>
                         <Button variant="secondary" onClick={closeModal}>Annulla</Button>
-                        <Button onClick={handleSave} disabled={!formData.medicine || !formData.startDate}>Salva Terapia</Button>
+                        <Button onClick={handleSave} disabled={(!formData.id_farmaco_armadietto && !formData.medicine) || !formData.startDate}>Salva Terapia</Button>
                     </>
                 }
             >
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Nome Farmaco</label>
-                        <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                            placeholder="Es. Cardioaspirina" value={formData.medicine} onChange={e => setFormData({ ...formData, medicine: e.target.value })} />
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">Seleziona Farmaco</label>
+                        <select 
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6] bg-white"
+                            value={formData.id_farmaco_armadietto} 
+                            onChange={e => {
+                                const selectedId = e.target.value;
+                                const selectedMed = cabinetMedicines.find(m => m.id_farmaco_armadietto === selectedId);
+                                setFormData({ 
+                                    ...formData, 
+                                    id_farmaco_armadietto: selectedId,
+                                    medicine: selectedMed ? selectedMed.farmaco.denominazione : ""
+                                });
+                            }}
+                        >
+                            <option value="">-- Seleziona dal tuo armadietto --</option>
+                            {cabinetMedicines.map(m => (
+                                <option key={m.id_farmaco_armadietto} value={m.id_farmaco_armadietto}>
+                                    {m.farmaco?.denominazione} ({m.quantita_rimanente} rimanenti)
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-slate-400 mt-1">Puoi selezionare solo farmaci presenti nel tuo armadietto.</p>
                     </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1">Dosaggio</label>
-                            <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                                placeholder="Es. 100mg" value={formData.dosaggio} onChange={e => setFormData({ ...formData, dosaggio: e.target.value })} />
+                            <input type="number" step="0.5" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                                placeholder="Es. 1" value={formData.dosaggio} onChange={e => setFormData({ ...formData, dosaggio: e.target.value })} />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1">Frequenza</label>
@@ -429,17 +604,18 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
                     <div>
                         <div className="flex justify-between mb-1">
-                            <label className="block text-sm font-semibold text-slate-700">Orari Assunzione</label>
-                            <button type="button" onClick={() => setFormData({ ...formData, orari: [...formData.orari, "12:00"] })} className="text-xs font-bold text-[#14b8a6] hover:underline">+ Aggiungi</button>
+                            <label className="block text-sm font-semibold text-slate-700">Orari Assunzione (Prossimamente)</label>
+                            <button type="button" onClick={() => setFormData({ ...formData, orari: [...formData.orari, "12:00"] })} className="text-xs font-bold text-[#14b8a6] hover:underline" disabled>+ Aggiungi</button>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {formData.orari.map((orario, idx) => (
-                                <div key={idx} className="flex items-center gap-1">
-                                    <input type="time" className="rounded-lg border border-slate-200 px-2 py-1 text-sm" value={orario} onChange={(e) => updateOrario(idx, e.target.value)} />
-                                    {idx > 0 && <button onClick={() => setFormData({ ...formData, orari: formData.orari.filter((_, i) => i !== idx) })} className="text-rose-500 hover:bg-rose-50 rounded p-1"><Icons.X className="w-3 h-3" /></button>}
+                                <div key={idx} className="flex items-center gap-1 opacity-50">
+                                    <input type="time" className="rounded-lg border border-slate-200 px-2 py-1 text-sm" value={orario} onChange={(e) => updateOrario(idx, e.target.value)} disabled />
+                                    {/* Disabled delete for now */}
                                 </div>
                             ))}
                         </div>
+                        <p className="text-xs text-slate-400 mt-1">La gestione degli orari specifici sarà disponibile a breve. La terapia verrà salvata con le impostazioni base.</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

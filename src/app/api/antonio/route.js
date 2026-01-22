@@ -105,6 +105,52 @@ export async function POST(request) {
     );
   }
 }
+
+/**
+ * GESTIONE PUT: Aggiorna un farmaco nell'armadietto (Quantità, Scadenza, Lotto)
+ * @param {Request} request 
+ */
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const { 
+      id_farmaco_armadietto, 
+      quantita_rimanente, 
+      data_scadenza, 
+      lotto_produzione 
+    } = body;
+
+    if (!id_farmaco_armadietto) {
+      return NextResponse.json(
+        { success: false, error: "ID farmaco mancante." }, 
+        { status: 400 }
+      );
+    }
+
+    const farmacoAggiornato = await prisma.farmaco_armadietto.update({
+      where: { id_farmaco_armadietto },
+      data: {
+        quantita_rimanente: parseFloat(quantita_rimanente),
+        data_scadenza: new Date(data_scadenza),
+        lotto_produzione: lotto_produzione || null
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Farmaco aggiornato con successo",
+      data: farmacoAggiornato
+    }, { status: 200 });
+
+  } catch (error) {
+    console.error("Errore aggiornamento farmaco:", error);
+    if (error.code === 'P2025') {
+        return NextResponse.json({ success: false, error: "Farmaco non trovato" }, { status: 404 });
+    }
+    return NextResponse.json({ success: false, error: "Errore interno durante l'aggiornamento" }, { status: 500 });
+  }
+}
+
 /**
  * 
  * Funzione per gestire le richieste GET  

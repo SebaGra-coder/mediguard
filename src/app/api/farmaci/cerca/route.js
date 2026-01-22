@@ -30,6 +30,7 @@ export async function GET(request) {
           { codice_aic: { contains: term, mode: 'insensitive' } },
           { ragione_sociale: { contains: term, mode: 'insensitive' } },
           { dosaggio: { contains: term, mode: 'insensitive' } },
+          { descrizione: { contains: term, mode: 'insensitive' } },
           { unita_misura: { contains: term, mode: 'insensitive' } }
         ]
       }))

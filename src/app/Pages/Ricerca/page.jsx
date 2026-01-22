@@ -229,14 +229,9 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
                       <span className="mr-1.5 scale-75"><Icons.FileText /></span> Foglietto
                     </button>
 
-                    {/* Link Fonte */}
-                    <a href="#" className={`flex items-center px-2 py-1 text-xs font-medium text-slate-400 hover:${primaryColorClass} transition-colors`}>
-                      <span className="mr-1 scale-75"><Icons.ExternalLink /></span> Fonte AIFA
-                    </a>
-
                     {/* Pulsante Aggiungi (Tutto a destra) */}
                     <button className={`flex items-center px-4 py-1.5 text-xs font-bold text-white ${bgPrimaryClass} ${hoverBgPrimaryClass} rounded-lg transition-colors shadow-sm ml-auto w-full md:w-auto justify-center`}>
-                      <span className="mr-1.5 scale-90"><Icons.Plus /></span> Aggiungi
+                      <span className="mr-1.5 scale-90"><Icons.Plus /></span> Aggiungi al mio armadietto
                     </button>
                   </div>
 
