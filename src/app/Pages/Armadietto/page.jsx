@@ -342,11 +342,12 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
       }
 
       if (modalMode === "therapy") {
+        console.log(formData); 
           return (
             <div className="space-y-4">
                 <div className="bg-teal-50 p-4 rounded-lg mb-4">
                     <p className="text-sm text-teal-800 font-semibold">Stai creando una terapia per:</p>
-                    <p className="text-lg font-bold text-teal-900">{formData.nome}</p>
+                    <p className="text-lg font-bold text-teal-900">{formData.nome} + {formData.dosaggio}</p>
                 </div>
 
                 <div>
@@ -555,7 +556,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
                       <div className="flex justify-between items-start mb-2">
                           <div className="flex gap-3 items-center">
                             <div>
-                                <h3 className="font-bold text-lg text-slate-800 leading-tight">{medicine.farmaco?.denominazione || "Farmaco non disponibile"}</h3>
+                                <h3 className="font-bold text-lg text-slate-800 leading-tight">{medicine.farmaco?.denominazione + " " + medicine.farmaco?.dosaggio || "Farmaco non disponibile"}</h3>
                                 <p className="text-xs text-slate-500 mt-0.5 font-medium">{medicine.farmaco?.forma || "Forma non specificata"}</p>
                             </div>
                           </div>
