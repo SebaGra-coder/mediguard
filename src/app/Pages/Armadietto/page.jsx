@@ -274,10 +274,9 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
             const payload = {
                 id_farmaco_armadietto: selectedMedicineId,
                 quantita_rimanente: formData.quantita,
-                data_scadenza: formData.scadenza,
-                lotto_produzione: formData.lotto
+                data_scadenza: formData.scadenza
             };
-            res = await fetch('/api/antonio', {
+            res = await fetch('/api/aggiorna-quantita', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
