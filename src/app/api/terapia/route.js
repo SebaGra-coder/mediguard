@@ -21,7 +21,8 @@ export async function POST(request) {
       dose_singola, 
       solo_al_bisogno, 
       terapia_attiva, 
-      for_life 
+      data_inizio, 
+      data_fine
     } = body;
 
     // VALIDAZIONE: Verifica che l'ID del paziente sia presente [cite: 12]
@@ -70,9 +71,9 @@ export async function POST(request) {
         
         // Flag booleano: indica se la terapia è attualmente in corso [cite: 13]
         terapia_attiva: Boolean(terapia_attiva),
-        
-        // Flag booleano: indica se è una terapia a tempo indeterminato [cite: 13]
-        for_life: Boolean(for_life),
+
+        data_inizio: new Date(data_inizio),
+        data_fine: new Date(data_fine)
       },
     });
 
@@ -156,7 +157,8 @@ export async function GET(request) {
     const nome_utilita = searchParams.get('nome_utilita');
     const solo_al_bisogno = searchParams.get('solo_al_bisogno');
     const terapia_attiva = searchParams.get('terapia_attiva');
-    const for_life = searchParams.get('for_life');
+    const data_inizio = searchParams.get('data_inizio');
+    const data_fine = searchParams.get('data_fine');
 
     // Inizializza l'oggetto dei filtri per Prisma
     const filtri = {};//RIVEDERE IL PERCHé UN OGGETTO é INIZZIALIZZATO CON UNA PARANTESI GRAFFA
@@ -195,10 +197,20 @@ export async function GET(request) {
       filtri.terapia_attiva = terapia_attiva === 'true';
     }
 
-    // Filtro per terapie croniche (for life) [cite: 13]
-    if (for_life !== null) {
-      filtri.for_life = for_life === 'true';
+    // Filtro per data di inizio [cite: 13]
+    if (data_inizio) {
+      filtri.data_inizio = {
+        gte: new Date(data_inizio),
+      };
     }
+
+    // Filtro per data di fine [cite: 13]
+    if (data_fine) {
+      filtri.data_fine = {
+        lte: new Date(data_fine),
+      };
+    }
+
 
     // Esegue la ricerca sul database con i filtri accumulati
     const pianiTerapeutici = await prisma.piano_terapeutico.findMany({

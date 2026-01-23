@@ -22,21 +22,6 @@ const Icons = {
     Pause: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>,
 };
 
-// --- MOCK DATA ---
-const initialTodaySchedule = [
-    { id: 1, time: "08:00", medicine: "Cardioaspirin 100mg", dosage: "1 compressa", status: "taken", takenAt: "08:05" },
-    { id: 2, time: "12:00", medicine: "Augmentin 875mg", dosage: "1 compressa", status: "taken", takenAt: "12:15" },
-    { id: 3, time: "14:00", medicine: "Enterogermina", dosage: "1 flaconcino", status: "pending", takenAt: null },
-    { id: 4, time: "20:00", medicine: "Augmentin 875mg", dosage: "1 compressa", status: "upcoming", takenAt: null },
-    { id: 5, time: "22:00", medicine: "Cardioaspirin 100mg", dosage: "1 compressa", status: "upcoming", takenAt: null },
-];
-
-const initialTherapyPlans = [
-    { id: "1", medicine: "Cardioaspirin 100mg", dosaggio: "100mg", frequency: "2 volte al giorno", duration: "Continuativa", startDate: "2024-01-15", endDate: "", adherence: 95, orari: ["08:00", "22:00"], note: "Terapia anticoagulante", stato: "attiva" },
-    { id: "2", medicine: "Augmentin 875mg", dosaggio: "875mg", frequency: "2 volte al giorno", duration: "7 giorni", startDate: "2024-01-20", endDate: "2024-01-27", adherence: 100, daysLeft: 5, orari: ["12:00", "20:00"], note: "Antibiotico", stato: "attiva" },
-    { id: "3", medicine: "Enterogermina", dosaggio: "1 flaconcino", frequency: "1 volta al giorno", duration: "14 giorni", startDate: "2024-01-18", endDate: "2024-02-01", adherence: 85, daysLeft: 10, orari: ["14:00"], note: "Probiotico", stato: "attiva" },
-];
-
 // --- COMPONENTI UI RIUTILIZZABILI (Style MediGuard) ---
 const Card = ({ children, className = "" }) => (
     <div className={`bg-white rounded-xl border border-slate-200 shadow-sm ${className}`}>{children}</div>
@@ -97,8 +82,20 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
     const [userData, setUserData] = useState(null);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
-    const [selectedDate] = useState(new Date());
-    const [todaySchedule, setTodaySchedule] = useState(initialTodaySchedule);
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [todaySchedule, setTodaySchedule] = useState([]);
+
+    const handlePrevDay = () => {
+        const newDate = new Date(selectedDate);
+        newDate.setDate(selectedDate.getDate() - 1);
+        setSelectedDate(newDate);
+    };
+
+    const handleNextDay = () => {
+        const newDate = new Date(selectedDate);
+        newDate.setDate(selectedDate.getDate() + 1);
+        setSelectedDate(newDate);
+    };
     const [therapyPlans, setTherapyPlans] = useState([]); // Initial empty, fetched from API
     const [cabinetMedicines, setCabinetMedicines] = useState([]);
 
@@ -107,16 +104,16 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const [formData, setFormData] = useState({
         medicine: "",
         id_farmaco_armadietto: "",
-        dosaggio: "", 
-        frequency: "1 volta al giorno", 
-        orari: ["08:00"], 
-        startDate: "", 
-        endDate: "", 
-        note: "", 
+        dosaggio: "",
+        frequency: "1 volta al giorno",
+        orari: ["08:00"],
+        startDate: "",
+        endDate: "",
+        note: "",
         stato: "attiva"
     });
     const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-    const [quickAddData, setQuickAddData] = useState({ medicine: "", time: "", note: "" });
+    const [quickAddData, setQuickAddData] = useState({ medicine: "", id_farmaco_armadietto: "", time: "", note: "" });
 
     // State for drug search in Quick Add
     const [searchResults, setSearchResults] = useState([]);
@@ -126,47 +123,49 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     useEffect(() => {
         // Only search if the modal is open and we have a query
         if (!isQuickAddOpen || quickAddData.medicine.length < 3) {
-             setSearchResults([]);
-             setShowResults(false);
-             return;
+            setSearchResults([]);
+            setShowResults(false);
+            return;
         }
 
         // Debounce search
         const timer = setTimeout(async () => {
-             setIsSearching(true);
-             try {
-                 const res = await fetch(`/api/farmaci/cerca?q=${encodeURIComponent(quickAddData.medicine)}`);
-                 const data = await res.json();
-                 setSearchResults(data.farmaci || []);
-                 setShowResults(true);
-             } catch (e) {
-                 console.error("Errore ricerca farmaci", e);
-             } finally {
-                 setIsSearching(false);
-             }
+            setIsSearching(true);
+            try {
+                const res = await fetch(`/api/farmaci/cerca?q=${encodeURIComponent(quickAddData.medicine)}`);
+                const data = await res.json();
+                setSearchResults(data.farmaci || []);
+                setShowResults(true);
+            } catch (e) {
+                console.error("Errore ricerca farmaci", e);
+            } finally {
+                setIsSearching(false);
+            }
         }, 500);
 
         return () => clearTimeout(timer);
     }, [quickAddData.medicine, isQuickAddOpen]);
+
     useEffect(() => {
-          const checkAuth = async () => {
+        const checkAuth = async () => {
             try {
-              const res = await fetch('/api/auth/me');
-              const data = await res.json();
-              setIsUserAuthenticated(data.isAuthenticated);
-              if (data.isAuthenticated) {
-                setUserData(data.user);
-                fetchCabinet(data.user.id_utente);
-                fetchTherapies(data.user.id_utente);
-              }
+                const res = await fetch('/api/auth/me');
+                const data = await res.json();
+                setIsUserAuthenticated(data.isAuthenticated);
+                if (data.isAuthenticated) {
+                    setUserData(data.user);
+                    fetchCabinet(data.user.id_utente);
+                    fetchTherapies(data.user.id_utente);
+                    fetchDailySchedule(data.user.id_utente, selectedDate);
+                }
             } catch (err) {
-              console.error("Errore verifica auth", err);
+                console.error("Errore verifica auth", err);
             } finally {
-              setIsAuthChecking(false);
+                setIsAuthChecking(false);
             }
-          };
-          checkAuth();
-    }, []);
+        };
+        checkAuth();
+    }, [selectedDate]); // Re-run when date changes if auth persists (simplified dependency)
 
     const fetchCabinet = async (userId) => {
         try {
@@ -180,25 +179,98 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
         }
     };
 
+    const fetchDailySchedule = async (userId, date) => {
+        try {
+            // Create start and end of the selected day
+            const startOfDay = new Date(date);
+            startOfDay.setHours(0, 0, 0, 0);
+            
+            const endOfDay = new Date(date);
+            endOfDay.setHours(23, 59, 59, 999);
+
+            const res = await fetch(`/api/terapia?id_paziente=${userId}`);
+            const json = await res.json();
+            
+            if (json.success && Array.isArray(json.data)) {
+                const dayStr = date.toISOString().split('T')[0];
+                const dailyIntakes = [];
+                
+                json.data.forEach(terapia => {
+                    if (terapia.assunzioni) {
+                        terapia.assunzioni.forEach(assunzione => {
+                            const assunzioneDate = assunzione.data_programmata.split('T')[0];
+                            if (assunzioneDate === dayStr) {
+                                dailyIntakes.push({
+                                    id: assunzione.id_evento,
+                                    time: new Date(assunzione.data_programmata).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+                                    medicine: terapia.nome_utilita || terapia.farmaco?.farmaco?.denominazione || "Farmaco",
+                                    dosage: terapia.dose_singola + " " + (terapia.farmaco?.farmaco?.unita_misura || ""),
+                                    status: assunzione.esito ? "taken" : (new Date(assunzione.data_programmata) > new Date() ? "upcoming" : "pending"),
+                                    takenAt: assunzione.orario_effettivo ? new Date(assunzione.orario_effettivo).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : null
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                // Sort by time
+                dailyIntakes.sort((a, b) => a.time.localeCompare(b.time));
+                setTodaySchedule(dailyIntakes);
+            }
+            
+        } catch (err) {
+            console.error("Errore caricamento programma giornaliero", err);
+        }
+    };
+
     const fetchTherapies = async (userId) => {
         try {
             const res = await fetch(`/api/terapia?id_paziente=${userId}`);
             const json = await res.json();
             if (json.success && Array.isArray(json.data)) {
-                // Map API data to UI structure
                 const mappedPlans = json.data.map(t => ({
                     id: t.id_terapia,
                     medicine: t.nome_utilita || t.farmaco?.farmaco?.denominazione || "Farmaco sconosciuto",
                     dosaggio: t.dose_singola + (t.farmaco?.farmaco?.unita_misura || ""),
-                    frequency: t.solo_al_bisogno ? "Al bisogno" : (t.assunzioni?.length > 0 ? `${t.assunzioni.length} volte al giorno` : "N/D"),
-                    duration: t.for_life ? "Continuativa" : "Definita",
-                    startDate: t.createdAt, // API doesn't return explicit start date, use created? Or maybe missing field.
-                    endDate: "", // API doesn't return explicit end date yet?
-                    adherence: 0, // Mock for now
-                    orari: t.assunzioni?.map(a => a.orario_previsto) || [], // Assuming assunzioni has this structure? Check API logic later.
-                    note: "", 
+                    frequency: t.solo_al_bisogno
+                        ? "Al bisogno"
+                        : (() => {
+                            const dateValide = (t.assunzioni || [])
+                                .map(a => new Date(a.data_programmata))
+                                .filter(d => !isNaN(d.getTime()))
+                                .sort((a, b) => a - b);
+
+                            if (dateValide.length === 0) return "N/D";
+                            const primoGiornoIso = dateValide[0].toISOString().split('T')[0];
+                            const assunzioniGiornaliere = new Set(
+                                dateValide
+                                    .filter(d => d.toISOString().startsWith(primoGiornoIso))
+                                    .map(d => d.toISOString().split('T')[1].slice(0, 5))
+                            );
+
+                            return assunzioniGiornaliere.size > 0
+                                ? `${assunzioniGiornaliere.size} volte al giorno`
+                                : "N/D";
+                        })(),
+                    duration: t.data_fine ? "Fino a: " + t.data_fine.split('T')[0] : "Continuativa",
+                    startDate: t.data_inizio ? t.data_inizio.split('T')[0] : "",
+                    endDate: t.data_fine ? t.data_fine.split('T')[0] : "",
+                    adherence: (() => {
+                        const now = new Date();
+                        const endOfToday = new Date(now);
+                        endOfToday.setHours(23, 59, 59, 999);
+                        
+                        const relevantIntakes = (t.assunzioni || []).filter(a => new Date(a.data_programmata) <= endOfToday);
+                        if (relevantIntakes.length === 0) return 0;
+                        const taken = relevantIntakes.filter(a => a.esito === true).length;
+                        return Math.round((taken / relevantIntakes.length) * 100);
+                    })(),
+                    orari: Array.from(new Set((t.assunzioni || []).map(a => {
+                        const d = new Date(a.data_programmata);
+                        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                    }))).sort(),
                     stato: t.terapia_attiva ? "attiva" : "sospesa",
-                    originalData: t // Keep original for reference
+                    originalData: t
                 }));
                 setTherapyPlans(mappedPlans);
             }
@@ -218,21 +290,21 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     };
 
     const takenCount = todaySchedule.filter(s => s.status === "taken").length;
-    const adherencePercentage = Math.round((takenCount / todaySchedule.length) * 100) || 0;
+    const adherencePercentage = todaySchedule.length > 0 ? Math.round((takenCount / todaySchedule.length) * 100) : 100;
 
     // Helpers per chiudere/aprire modali
     const closeModal = () => { setModalState({ type: null, data: null }); resetForm(); };
     const openModal = (type, data = null) => {
         setModalState({ type, data });
         if (data && (type === 'edit' || type === 'view')) {
-            setFormData({ 
+            setFormData({
                 medicine: data.medicine,
                 id_farmaco_armadietto: data.originalData?.id_farmaco_armadietto || "",
-                dosaggio: parseFloat(data.dosaggio) || "", 
+                dosaggio: parseFloat(data.dosaggio) || "",
                 frequency: data.frequency, // Logic needed to map back to select
-                orari: data.orari || ["08:00"], 
-                startDate: data.startDate || "", 
-                endDate: data.endDate || "", 
+                orari: data.orari || ["08:00"],
+                startDate: data.startDate || "",
+                endDate: data.endDate || "",
                 note: data.note || "",
                 stato: data.stato
             });
@@ -241,16 +313,16 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
         }
     };
 
-    const resetForm = () => setFormData({ 
-        medicine: "", 
+    const resetForm = () => setFormData({
+        medicine: "",
         id_farmaco_armadietto: "",
-        dosaggio: "", 
-        frequency: "1 volta al giorno", 
-        orari: ["08:00"], 
-        startDate: new Date().toISOString().split('T')[0], 
-        endDate: "", 
-        note: "", 
-        stato: "attiva" 
+        dosaggio: "",
+        frequency: "1 volta al giorno",
+        orari: ["08:00"],
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: "",
+        note: "",
+        stato: "attiva"
     });
 
     // Gestione CRUD
@@ -261,7 +333,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             try {
                 // Find selected medicine details for display name if needed, though API uses ID
                 const selectedMed = cabinetMedicines.find(m => m.id_farmaco_armadietto === formData.id_farmaco_armadietto);
-                const nomeUtilita = formData.medicine || selectedMed?.farmaco?.denominazione || "Nuova Terapia";
+                const nomeUtilita = formData.medicine || "Nuova Terapia";
 
                 const body = {
                     id_paziente: userData.id_utente,
@@ -269,8 +341,9 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                     nome_utilita: nomeUtilita,
                     dose_singola: parseFloat(formData.dosaggio),
                     solo_al_bisogno: formData.frequency === "Al bisogno",
+                    data_inizio: formData.startDate,
+                    data_fine: formData.endDate,
                     terapia_attiva: true,
-                    for_life: !formData.endDate
                 };
 
                 const res = await fetch('/api/terapia', {
@@ -279,18 +352,40 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                     body: JSON.stringify(body)
                 });
 
+
                 const json = await res.json();
+                
+                // If not "Al bisogno", create schedule
+                if (formData.frequency !== "Al bisogno") {
+                   const payload = {
+                        id_terapia: json.data.id_terapia,
+                        data_inizio: formData.startDate,
+                        data_fine: formData.endDate || formData.startDate, // Fallback if empty, but usually should be set or logic handled
+                        orari: formData.orari
+                    };
+
+                    const ass = await fetch('/api/assunzione', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    await ass.json();
+                }
+
                 if (res.ok && json.success) {
                     // Refresh list
                     fetchTherapies(userData.id_utente);
+                    fetchDailySchedule(userData.id_utente, selectedDate);
                     closeModal();
                 } else {
                     alert("Errore salvataggio: " + (json.error || "Sconosciuto"));
                 }
+
             } catch (e) {
                 console.error("Errore chiamata API", e);
                 alert("Errore di connessione");
-            }
+            };
 
         } else if (modalState.type === 'edit') {
             // Edit logic implementation depends on API support (PUT/PATCH not currently in route.js)
@@ -302,13 +397,21 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const handleDelete = async () => {
         if (!modalState.data?.id) return;
         try {
+            // Elimina prima le assunzioni associate (incluse quelle passate/archiviate)
+            await fetch(`/api/assunzione?id_terapia=${modalState.data.id}`, {
+                method: 'DELETE'
+            });
+
             const res = await fetch(`/api/terapia?id_terapia=${modalState.data.id}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
-                 // Refresh list
-                 if (userData) fetchTherapies(userData.id_utente);
-                 closeModal();
+                // Refresh list
+                if (userData) {
+                    fetchTherapies(userData.id_utente);
+                    fetchDailySchedule(userData.id_utente, selectedDate);
+                }
+                closeModal();
             } else {
                 alert("Impossibile eliminare la terapia");
             }
@@ -324,10 +427,30 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
         setTherapyPlans(plans => plans.map(p => p.id === id ? { ...p, stato: p.stato === "attiva" ? "sospesa" : "attiva" } : p));
     };
 
-    const handleConfirmIntake = (id) => {
-        const now = new Date();
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        setTodaySchedule(sched => sched.map(s => s.id === id ? { ...s, status: "taken", takenAt: timeStr } : s));
+    const handleConfirmIntake = async (id) => {
+        try {
+            const now = new Date();
+            const res = await fetch('/api/assunzione', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_evento: id,
+                    esito: true,
+                    orario_effettivo: now.toISOString()
+                })
+            });
+            
+            if (res.ok) {
+                const timeStr = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                setTodaySchedule(sched => sched.map(s => s.id === id ? { ...s, status: "taken", takenAt: timeStr } : s));
+                // Aggiorna anche le statistiche di aderenza delle terapie
+                fetchTherapies(userData.id_utente);
+            } else {
+                alert("Errore durante la conferma dell'assunzione");
+            }
+        } catch (error) {
+            console.error("Errore conferma assunzione", error);
+        }
     };
 
     // Form helpers
@@ -336,33 +459,94 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
         setFormData({ ...formData, orari: newOrari });
     };
 
-    const handleQuickAddSubmit = () => {
-        if (!quickAddData.medicine) return;
+    const handleQuickAddSubmit = async () => {
+        if (!quickAddData.id_farmaco_armadietto || !userData) return;
 
-        // Crea un nuovo oggetto "schedule" fittizio ma segnato come "taken"
-        const newLog = {
-            id: Date.now(),
-            time: quickAddData.time, // Orario inserito
-            medicine: quickAddData.medicine,
-            dosage: "Al bisogno", // O chiedilo nel form se vuoi
-            status: "taken", // Già preso
-            takenAt: quickAddData.time // L'ora effettiva
-        };
+        try {
+            // 1. Cerca una terapia "al bisogno" esistente per questo farmaco
+            let therapyId = null;
+            const existingTherapy = therapyPlans.find(t => 
+                t.originalData.id_farmaco_armadietto === quickAddData.id_farmaco_armadietto && 
+                t.originalData.solo_al_bisogno === true
+            );
 
-        // Aggiungilo alla lista di oggi e riordina per orario
-        const newSchedule = [...todaySchedule, newLog].sort((a, b) => a.time.localeCompare(b.time));
-        setTodaySchedule(newSchedule);
+            if (existingTherapy) {
+                therapyId = existingTherapy.id;
+            } else {
+                // 2. Se non esiste, creane una nuova implicita
+                const today = new Date().toISOString().split('T')[0];
+                const selectedMed = cabinetMedicines.find(m => m.id_farmaco_armadietto === quickAddData.id_farmaco_armadietto);
+                
+                const newTherapyBody = {
+                    id_paziente: userData.id_utente,
+                    id_farmaco_armadietto: quickAddData.id_farmaco_armadietto,
+                    nome_utilita: selectedMed ? selectedMed.farmaco.denominazione : "Farmaco al bisogno",
+                    dose_singola: 1, // Default dosage for quick add
+                    solo_al_bisogno: true,
+                    data_inizio: today,
+                    data_fine: today, // Or leave empty/far future
+                    terapia_attiva: true
+                };
 
-        setIsQuickAddOpen(false);
+                const tRes = await fetch('/api/terapia', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newTherapyBody)
+                });
+                
+                const tJson = await tRes.json();
+                if (tRes.ok && tJson.success) {
+                    therapyId = tJson.data.id_terapia;
+                } else {
+                    alert("Errore creazione terapia al bisogno: " + (tJson.error || "Sconosciuto"));
+                    return;
+                }
+            }
+
+            // 3. Registra l'assunzione
+            if (therapyId) {
+                // Costruisci data programmata combinando data odierna e ora selezionata
+                const todayStr = new Date().toISOString().split('T')[0];
+                const dateTimeStr = `${todayStr}T${quickAddData.time}:00`; 
+                const intakeDate = new Date(dateTimeStr);
+
+                const intakeBody = {
+                    id_terapia: therapyId,
+                    data_programmata: intakeDate.toISOString(),
+                    orario_effettivo: intakeDate.toISOString(),
+                    esito: true
+                };
+
+                const iRes = await fetch('/api/assunzione', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(intakeBody)
+                });
+
+                if (iRes.ok) {
+                    // Successo! Ricarica dati e chiudi modale
+                    fetchTherapies(userData.id_utente);
+                    fetchDailySchedule(userData.id_utente, selectedDate);
+                    setIsQuickAddOpen(false);
+                    setQuickAddData({ medicine: "", id_farmaco_armadietto: "", time: "", note: "" });
+                } else {
+                    alert("Errore registrazione assunzione");
+                }
+            }
+
+        } catch (error) {
+            console.error("Errore quick add", error);
+            alert("Si è verificato un errore");
+        }
     };
 
     if (isAuthChecking) {
         return (
-          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
-          </div>
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+            </div>
         );
-      }
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
@@ -402,12 +586,12 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
                             {/* Navigazione Data */}
                             <Card className="p-4 flex items-center justify-between">
-                                <Button variant="ghost" size="icon"><Icons.ChevronLeft className="w-5 h-5" /></Button>
+                                <Button variant="ghost" size="icon" onClick={handlePrevDay}><Icons.ChevronLeft className="w-5 h-5" /></Button>
                                 <div className="text-center">
                                     <p className="text-sm text-slate-500 font-medium tracking-wide">{selectedDate.toLocaleDateString("it-IT", { weekday: "long" })}</p>
                                     <p className="text-xl font-bold text-slate-800">{selectedDate.toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</p>
                                 </div>
-                                <Button variant="ghost" size="icon"><Icons.ChevronRight className="w-5 h-5" /></Button>
+                                <Button variant="ghost" size="icon" onClick={handleNextDay}><Icons.ChevronRight className="w-5 h-5" /></Button>
                             </Card>
 
                             {/* Progress Bar Aderenza */}
@@ -534,7 +718,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                         // Imposta l'orario attuale come default
                                         const now = new Date();
                                         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-                                        setQuickAddData({ medicine: "", time: timeStr, note: "" });
+                                        setQuickAddData({ medicine: "", id_farmaco_armadietto: "", time: timeStr, note: "" });
                                         setIsQuickAddOpen(true);
                                     }}
                                 >
@@ -561,16 +745,14 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1">Seleziona Farmaco</label>
-                        <select 
+                        <select
                             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6] bg-white"
-                            value={formData.id_farmaco_armadietto} 
+                            value={formData.id_farmaco_armadietto}
                             onChange={e => {
                                 const selectedId = e.target.value;
-                                const selectedMed = cabinetMedicines.find(m => m.id_farmaco_armadietto === selectedId);
-                                setFormData({ 
-                                    ...formData, 
-                                    id_farmaco_armadietto: selectedId,
-                                    medicine: selectedMed ? selectedMed.farmaco.denominazione : ""
+                                setFormData({
+                                    ...formData,
+                                    id_farmaco_armadietto: selectedId
                                 });
                             }}
                         >
@@ -582,6 +764,17 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                             ))}
                         </select>
                         <p className="text-xs text-slate-400 mt-1">Puoi selezionare solo farmaci presenti nel tuo armadietto.</p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">Nome Terapia</label>
+                        <input
+                            type="text"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                            placeholder="Es. Pillola pressione mattina"
+                            value={formData.medicine}
+                            onChange={e => setFormData({ ...formData, medicine: e.target.value })}
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -604,18 +797,22 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
                     <div>
                         <div className="flex justify-between mb-1">
-                            <label className="block text-sm font-semibold text-slate-700">Orari Assunzione (Prossimamente)</label>
-                            <button type="button" onClick={() => setFormData({ ...formData, orari: [...formData.orari, "12:00"] })} className="text-xs font-bold text-[#14b8a6] hover:underline" disabled>+ Aggiungi</button>
+                            <label className="block text-sm font-semibold text-slate-700">Orari Assunzione</label>
+                            <button type="button" onClick={() => setFormData({ ...formData, orari: [...formData.orari, "12:00"] })} className="text-xs font-bold text-[#14b8a6] hover:underline">+ Aggiungi</button>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {formData.orari.map((orario, idx) => (
-                                <div key={idx} className="flex items-center gap-1 opacity-50">
-                                    <input type="time" className="rounded-lg border border-slate-200 px-2 py-1 text-sm" value={orario} onChange={(e) => updateOrario(idx, e.target.value)} disabled />
-                                    {/* Disabled delete for now */}
+                                <div key={idx} className="flex items-center gap-1">
+                                    <input type="time" className="rounded-lg border border-slate-200 px-2 py-1 text-sm" value={orario} onChange={(e) => updateOrario(idx, e.target.value)} />
+                                    <button type="button" onClick={() => {
+                                        const newOrari = formData.orari.filter((_, i) => i !== idx);
+                                        setFormData({ ...formData, orari: newOrari });
+                                    }} className="text-rose-500 hover:text-rose-700">
+                                        <Icons.X className="w-4 h-4" />
+                                    </button>
                                 </div>
                             ))}
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">La gestione degli orari specifici sarà disponibile a breve. La terapia verrà salvata con le impostazioni base.</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -680,7 +877,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 footer={
                     <>
                         <Button variant="secondary" onClick={() => setIsQuickAddOpen(false)}>Annulla</Button>
-                        <Button onClick={handleQuickAddSubmit} disabled={!quickAddData.medicine}>Conferma Assunzione</Button>
+                        <Button onClick={handleQuickAddSubmit} disabled={!quickAddData.id_farmaco_armadietto}>Conferma Assunzione</Button>
                     </>
                 }
             >
@@ -697,15 +894,27 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1">Quale farmaco hai preso?</label>
-                        {/* Qui potresti usare una Select se hai la lista farmaci, per ora usiamo Input */}
-                        <input
-                            type="text"
-                            className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                            placeholder="Cerca farmaco (es. Oki, Tachipirina...)"
-                            value={quickAddData.medicine}
-                            onChange={e => setQuickAddData({ ...quickAddData, medicine: e.target.value })}
-                            autoFocus
-                        />
+                        <select
+                            className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6] bg-white"
+                            value={quickAddData.id_farmaco_armadietto}
+                            onChange={e => {
+                                const selectedId = e.target.value;
+                                const med = cabinetMedicines.find(m => m.id_farmaco_armadietto === selectedId);
+                                setQuickAddData({ 
+                                    ...quickAddData, 
+                                    id_farmaco_armadietto: selectedId,
+                                    medicine: med ? med.farmaco.denominazione : ""
+                                });
+                            }}
+                        >
+                            <option value="">-- Seleziona dal tuo armadietto --</option>
+                            {cabinetMedicines.map(m => (
+                                <option key={m.id_farmaco_armadietto} value={m.id_farmaco_armadietto}>
+                                    {m.farmaco?.denominazione} ({m.quantita_rimanente} rimanenti)
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-slate-400 mt-1">Vengono mostrati solo i farmaci presenti nel tuo armadietto.</p>
                     </div>
 
                     <div>

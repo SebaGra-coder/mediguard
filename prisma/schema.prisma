@@ -154,14 +154,14 @@ model Piano_terapeutico{
   nome_utilita                String
   dose_singola                Float
   solo_al_bisogno             Boolean
+  data_inizio                 DateTime?
+  data_fine                   DateTime?
   terapia_attiva              Boolean
-  for_life                    Boolean
 
   paziente Utente @relation(fields: [id_paziente], references: [id_utente])
   farmaco Farmaco_armadietto @relation(fields: [id_farmaco_armadietto], references: [id_farmaco_armadietto])
 
   assunzioni Registro_assunzioni[]
-  assunzioni_passate Registro_assunzioni_passate[]
 
   @@map("piano_terapeutico")
 }
@@ -170,8 +170,8 @@ model Registro_assunzioni{
   id_evento                   String @id @default(uuid()) @db.Uuid
   id_terapia                  String @db.Uuid
   data_programmata            DateTime
-  orario_effettivo            DateTime
-  esito                       Boolean
+  orario_effettivo            DateTime?
+  esito                       Boolean?
 
   terapia Piano_terapeutico @relation(fields: [id_terapia], references: [id_terapia])
 
@@ -184,8 +184,6 @@ model Registro_assunzioni_passate{
   data_programmata            DateTime
   orario_effettivo            DateTime
   esito                       Boolean
-
-  terapia Piano_terapeutico @relation(fields: [id_terapia], references: [id_terapia])
 
   @@map("registro_assunzioni_passate")
 }

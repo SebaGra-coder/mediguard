@@ -6,27 +6,46 @@ export const dynamic = "force-dynamic";
 
 /**
  * PUT → Aggiorna quantità, data di scadenza e registra note
+ * IMPLEMENTAZIONE ROBUSTA PER DEBUGGING APPROFONDITO
  */
 export async function PUT(request) {
   try {
-    const body = await request.json();
+    let body;
+    
+    // 1. Controllo Parsing JSON
+    try {
+      body = await request.json();
+    } catch (e) {
+      console.error("Errore Parsing JSON:", e);
+      return NextResponse.json(
+        { success: false, error: "JSON non valido o malformato", details: e.message },
+        { status: 400 }
+      );
+    }
 
-    // Estraiamo i campi dal body della richiesta
     const {
       id_farmaco_armadietto, 
       quantita_rimanente,
       data_scadenza,
     } = body;
 
-    // Controllo integrità dati minimi 
+    // 2. Controllo ID mancante
     if (!id_farmaco_armadietto) {
       return NextResponse.json(
-        { success: false, message: "ID farmaco armadietto mancante" },
+        { success: false, error: "ID farmaco armadietto mancante nel body" },
         { status: 400 }
       );
     }
 
-    // 1. Recupero il record attuale per confronto e validazione 
+    // 3. Controllo Payload Vuoto (Nessun dato da aggiornare)
+    if (quantita_rimanente === undefined && data_scadenza === undefined) {
+      return NextResponse.json(
+        { success: false, error: "Nessun campo da aggiornare fornito (quantita_rimanente o data_scadenza mancanti)" },
+        { status: 400 }
+      );
+    }
+
+    // 4. Recupero record e check esistenza (404)
     const record = await prisma.farmaco_armadietto.findUnique({
       where: { id_farmaco_armadietto: id_farmaco_armadietto },
       select: {
@@ -38,37 +57,58 @@ export async function PUT(request) {
 
     if (!record) {
       return NextResponse.json(
-        { success: false, message: "Farmaco non presente nell’armadietto" },
+        { success: false, error: `Farmaco con ID ${id_farmaco_armadietto} non trovato nell'armadietto` },
         { status: 404 }
       );
     }
 
-    // 2. Costruzione dell'oggetto di aggiornamento
     const dataToUpdate = {};
     
-    // Validazione e aggiunta Quantità 
+    // 5. Validazione Approfondita Quantità
     if (quantita_rimanente !== undefined) {
-      dataToUpdate.quantita_rimanente = parseFloat(quantita_rimanente);
-    }
-
-    // Validazione e aggiunta Data di Scadenza 
-    if (data_scadenza) {
-      const parsedDate = new Date(data_scadenza);
-      const oggi = new Date();
-      oggi.setHours(0, 0, 0, 0); // Reset orario per confronto solo sulla data
-
-      // Controllo se la data è valida
-      if (isNaN(parsedDate.getTime())) {
+      const qty = parseFloat(quantita_rimanente);
+      
+      if (isNaN(qty)) {
         return NextResponse.json(
-          { success: false, message: "Formato data non valido" },
+          { success: false, error: "Il valore di 'quantita_rimanente' non è un numero valido" },
+          { status: 400 }
+        );
+      }
+      
+      if (qty < 0) {
+        return NextResponse.json(
+          { success: false, error: "La quantità non può essere negativa" },
           { status: 400 }
         );
       }
 
-      // Sicurezza: controllo che la data non sia passata
-      if (parsedDate < oggi) {
+      dataToUpdate.quantita_rimanente = qty;
+    }
+
+    // 6. Validazione Approfondita Data
+    if (data_scadenza) {
+      const parsedDate = new Date(data_scadenza);
+      const oggi = new Date();
+      oggi.setHours(0, 0, 0, 0);
+
+      // Check validità formato data
+      if (isNaN(parsedDate.getTime())) {
         return NextResponse.json(
-          { success: false, message: "La data di scadenza non può essere precedente a oggi" },
+          { success: false, error: `Formato data non valido: ${data_scadenza}` },
+          { status: 400 }
+        );
+      }
+
+      // Check logico: date passate
+      const isSameDate = record.data_scadenza && record.data_scadenza.getTime() === parsedDate.getTime();
+      
+      if (!isSameDate && parsedDate < oggi) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: "La data di scadenza non può essere precedente a oggi", 
+            debug_info: { fornita: parsedDate.toISOString(), oggi: oggi.toISOString() }
+          },
           { status: 400 }
         );
       }
@@ -76,16 +116,15 @@ export async function PUT(request) {
       dataToUpdate.data_scadenza = parsedDate;
     }
 
-    // 3. Esecuzione dell'aggiornamento su Database 
+    // 7. Esecuzione Aggiornamento
     const aggiornato = await prisma.farmaco_armadietto.update({
       where: { id_farmaco_armadietto: id_farmaco_armadietto },
       data: dataToUpdate
     });
 
-    // Log dell'operazione per tracciabilità (utilizzando le note se fornite)
     console.log("Modifica registrata:", {
-      id_farmaco_armadietto,
-      variazioni: dataToUpdate
+      id: id_farmaco_armadietto,
+      modifiche: dataToUpdate
     });
 
     return NextResponse.json({
@@ -100,7 +139,33 @@ export async function PUT(request) {
 
   } catch (error) {
     console.error("Errore critico durante PUT:", error);
-    return NextResponse.json({ success: false, error: "Errore interno del server" }, { status: 500 });
+
+    // 8. Gestione Errori Prisma Specifici per Debug
+    let errorMessage = "Errore interno del server";
+    let errorDetails = error.message;
+
+    if (error.code) {
+        switch (error.code) {
+            case 'P2025':
+                errorMessage = "Record da aggiornare non trovato (concorrenza o ID errato)";
+                break;
+            case 'P2002':
+                errorMessage = "Violazione vincolo di unicità";
+                break;
+            case 'P2003':
+                errorMessage = "Violazione vincolo chiave esterna (ID non valido)";
+                break;
+            default:
+                errorMessage = `Errore Database: ${error.code}`;
+        }
+    }
+
+    return NextResponse.json({ 
+      success: false, 
+      error: errorMessage, 
+      raw_error: errorDetails,
+      code: error.code 
+    }, { status: 500 });
   }
 }
 

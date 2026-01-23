@@ -100,7 +100,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
   const [selectedMedicineId, setSelectedMedicineId] = useState(null);
   
   const [formData, setFormData] = useState({
-    nome: "", principio: "", forma: "compresse", dosaggio: "", quantita: "", scadenza: "", aic: "", lotto: ""
+    nome: "", principio: "", forma: "compresse", dosaggio: "", quantita: "", scadenza: "", aic: "", lotto: "", quantita_totale: 0
   });
 
   const [therapyData, setTherapyData] = useState({
@@ -210,7 +210,8 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
           quantita: med.quantita_rimanente,
           scadenza: med.data_scadenza ? new Date(med.data_scadenza).toISOString().split('T')[0] : "",
           aic: med.codice_aic,
-          lotto: med.lotto_produzione || ""
+          lotto: med.lotto_produzione || "",
+          quantita_totale: med.farmaco?.quantita_confezione || 0
       });
       setIsModalOpen(true);
       setOpenDropdownId(null);
@@ -226,7 +227,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
   const handleOpenTherapy = (med) => {
     setModalMode("therapy");
     setSelectedMedicineId(med.id_farmaco_armadietto);
-    setFormData({ ...formData, nome: med.farmaco.denominazione }); // Just for display
+    setFormData({ ...formData, nome: med.farmaco.denominazione}); // Just for display
     setTherapyData({
         nome_utilita: "", 
         dose_singola: "", 
@@ -239,15 +240,18 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
   };
 
   const handleSelectDrug = (drug) => {
-      setFormData({
-          ...formData,
-          nome: drug.denominazione,
+      console.log("Farmaco selezionato:", drug);
+      setFormData(prev => ({
+          ...prev,
+          ...drug,
+          nome: drug.denominazione || "",
           principio: drug.principio_attivo || "",
-          forma: drug.forma?.toLowerCase() || "compresse",
+          forma: drug.forma ? drug.forma.toLowerCase() : "compresse",
           dosaggio: drug.dosaggio || "",
-          aic: drug.codice_aic,
-          quantita: drug.quantita_confezione || ""
-      });
+          aic: drug.codice_aic || "",
+          quantita: drug.quantita_confezione ? String(drug.quantita_confezione) : "",
+          quantita_totale: drug.quantita_confezione || 0
+      }));
       setModalSearchTerm("");
       setModalSearchResults([]);
   };
@@ -276,6 +280,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
                 quantita_rimanente: formData.quantita,
                 data_scadenza: formData.scadenza
             };
+            console.log(payload);
             res = await fetch('/api/aggiorna-quantita', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -398,8 +403,9 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
                     <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-slate-100 max-h-48 overflow-y-auto">
                         {modalSearchResults.map(farmaco => (
                             <button 
+                                type="button"
                                 key={farmaco.codice_aic} 
-                                onClick={() => handleSelectDrug(farmaco)}
+                                onClick={(e) => { e.preventDefault(); handleSelectDrug(farmaco); }}
                                 className="w-full text-left px-3 py-2 text-sm hover:bg-teal-50 hover:text-teal-800 transition-colors border-b border-slate-50 last:border-0"
                             >
                                 <div className="font-bold">{farmaco.denominazione}</div>
@@ -438,13 +444,32 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Quantità Rimanente *</label>
-                <input type="number" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                       value={formData.quantita} onChange={e => setFormData({...formData, quantita: e.target.value})} />
+                <input 
+                    type="number" 
+                    max={formData.quantita_totale > 0 ? formData.quantita_totale : undefined}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
+                    value={formData.quantita} 
+                    onChange={e => {
+                        const val = parseFloat(e.target.value);
+                        if (formData.quantita_totale > 0 && val > formData.quantita_totale) {
+                            // Opzionale: visualizza feedback o blocca
+                            // Qui blocchiamo l'input se supera il max
+                            return; 
+                        }
+                        setFormData({...formData, quantita: e.target.value})
+                    }} 
+                />
+                {formData.quantita_totale > 0 && <p className="text-xs text-slate-400 mt-1">Massimo: {formData.quantita_totale}</p>}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Scadenza *</label>
-                <input type="date" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                       value={formData.scadenza} onChange={e => setFormData({...formData, scadenza: e.target.value})} />
+                <input 
+                    type="date" 
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
+                    value={formData.scadenza} 
+                    onChange={e => setFormData({...formData, scadenza: e.target.value})} 
+                />
               </div>
            </div>
         </div>

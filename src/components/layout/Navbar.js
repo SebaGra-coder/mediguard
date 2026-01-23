@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
   const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const pathname = usePathname();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -42,6 +44,18 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
   const bgPrimaryClass = "bg-[#14b8a6]";
   const bgLightClass = "bg-[#f0fdfa]"; // Teal-50 molto chiaro
 
+  // Funzione per determinare lo stile del link
+  const getLinkClass = (targetPath) => {
+    // Normalizza il path target e il pathname corrente per il confronto
+    // Se targetPath è "Armadietto", cerca "/Armadietto" nel pathname
+    const isActive = pathname?.includes(targetPath);
+    
+    if (isActive) {
+      return `${bgLightClass} ${primaryColorClass} px-5 py-2 rounded-full flex items-center gap-2 text-sm font-semibold hover:bg-teal-100 transition-colors`;
+    }
+    return "flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm";
+  };
+
   // -- ICONE SVG --
   const Icons = {
     Home: () => (
@@ -69,7 +83,7 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
 
   return (
     <nav className="border-b border-slate-200 bg-white sticky top-0 z-50 font-sans">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="container mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
 
         {/* --- 1. LOGO --- */}
         <Link href={isUserAuthenticated ? "HomePage" : ""} className="flex items-center gap-2.5 cursor-pointer">
@@ -87,18 +101,18 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
 
           {/* Link Standard */}
           {isUserAuthenticated && (
-            <Link href="/Pages/HomePage" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+            <Link href="/Pages/HomePage" className={getLinkClass("HomePage")}>
               <Icons.Home />
               Home
             </Link>
           )}
 
-          <Link href="Armadietto" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+          <Link href="Armadietto" className={getLinkClass("Armadietto")}>
             <Icons.Box />
             Armadietto
           </Link>
 
-          <Link href="Terapie" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+          <Link href="Terapie" className={getLinkClass("Terapie")}>
             <Icons.Calendar />
             Terapie
           </Link>
@@ -106,19 +120,19 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
           {isLoading ? (
             <div className="h-5 w-24 bg-slate-200 rounded animate-pulse"></div>
           ) : userRole === "Nessuno" ? (
-            <Link href="CollegaCaregiver" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+            <Link href="CollegaCaregiver" className={getLinkClass("CollegaCaregiver")}>
               <Icons.Users />
               Collega Caregiver
             </Link>
           ) : (
-            <Link href="Caregiver" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm">
+            <Link href="Caregiver" className={getLinkClass("Caregiver")}>
               <Icons.Users />
               Caregiver
             </Link>
           )}
 
-          {/* Pulsante Speciale "Cerca Farmaci" */}
-          <Link href="Ricerca" className={`${bgLightClass} ${primaryColorClass} px-5 py-2 rounded-full flex items-center gap-2 text-sm font-semibold hover:bg-teal-100 transition-colors`}>
+          {/* Pulsante Speciale "Cerca Farmaci" - Ora usa la stessa logica degli altri ma con "Ricerca" */}
+          <Link href="Ricerca" className={getLinkClass("Ricerca")}>
             <Icons.Search />
             Cerca Farmaci
           </Link>
