@@ -163,7 +163,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
 
                             todaysIntakes.push({
                                 id: assunzione.id_evento,
-                                time: scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                time: scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' , timeZone: 'UTC'}),
                                 medicine: therapy.farmaco?.farmaco?.denominazione || therapy.nome_utilita || "Farmaco",
                                 status: status,
                                 originalDate: scheduledDate // For sorting

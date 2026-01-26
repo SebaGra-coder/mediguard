@@ -135,6 +135,7 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
                 data_inizio: formData.startDate,
                 data_fine: formData.endDate,
                 terapia_attiva: true,
+                orari: formData.alBisogno ? [] : formData.orari
             };
             
             const res = await fetch('/api/terapia', {
@@ -182,7 +183,7 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
             footer={
                 <>
                     <Button variant="secondary" onClick={onClose}>Annulla</Button>
-                    <Button onClick={handleSave} disabled={(!formData.id_farmaco_armadietto && !formData.medicine) || !formData.startDate || !formData.dosaggio}>
+                    <Button onClick={handleSave} disabled={(!formData.id_farmaco_armadietto && !formData.medicine) || !formData.startDate || !formData.dosaggio || (!formData.alBisogno && formData.orari.length === 0)}>
                         {initialData ? "Salva Modifiche" : "Salva Terapia"}
                     </Button>
                 </>

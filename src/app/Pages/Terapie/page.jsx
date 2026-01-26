@@ -129,21 +129,29 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             const json = await res.json();
             
             if (json.success && Array.isArray(json.data)) {
-                const dayStr = date.toISOString().split('T')[0];
+                // Define local day boundaries
+                const startOfDay = new Date(date);
+                startOfDay.setHours(0, 0, 0, 0);
+                
+                const endOfDay = new Date(date);
+                endOfDay.setHours(23, 59, 59, 999);
+
                 const dailyIntakes = [];
                 
                 json.data.forEach(terapia => {
                     if (terapia.assunzioni) {
                         terapia.assunzioni.forEach(assunzione => {
-                            const assunzioneDate = assunzione.data_programmata.split('T')[0];
-                            if (assunzioneDate === dayStr) {
+                            const assunzioneDate = new Date(assunzione.data_programmata);
+                            
+                            // Check overlap with local day
+                            if (assunzioneDate >= startOfDay && assunzioneDate <= endOfDay) {
                                 dailyIntakes.push({
                                     id: assunzione.id_evento,
-                                    time: assunzione.data_programmata.split('T')[1].slice(0, 5),
+                                    time: assunzioneDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }),
                                     medicine: terapia.nome_utilita || terapia.farmaco?.farmaco?.denominazione || "Farmaco",
                                     dosage: terapia.dose_singola + " " + (terapia.farmaco?.farmaco?.unita_misura || ""),
-                                    status: assunzione.esito ? "taken" : (new Date(assunzione.data_programmata) > new Date() ? "upcoming" : "pending"),
-                                    takenAt: assunzione.orario_effettivo ? new Date(assunzione.orario_effettivo).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : null
+                                    status: assunzione.esito ? "taken" : (assunzioneDate.getTime() > new Date().getTime() ? "upcoming" : "pending"),
+                                    takenAt: assunzione.orario_effettivo ? new Date(assunzione.orario_effettivo).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) : null
                                 });
                             }
                         });
@@ -201,9 +209,11 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                         const taken = relevantIntakes.filter(a => a.esito === true).length;
                         return Math.round((taken / relevantIntakes.length) * 100);
                     })(),
-                    orari: Array.from(new Set((t.assunzioni || []).map(a => {
-                        return a.data_programmata.split('T')[1].slice(0, 5);
-                    }))).sort(),
+                    orari: (Array.isArray(t.orari) && t.orari.length > 0) 
+                        ? t.orari 
+                        : Array.from(new Set((t.assunzioni || []).map(a => {
+                            return a.data_programmata.split('T')[1].slice(0, 5);
+                        }))).sort(),
                     stato: t.terapia_attiva ? "attiva" : "sospesa",
                     originalData: t
                 }));

@@ -2,22 +2,29 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+// Assicurati di aver creato questo file come discusso prima!
+import { subscribeUserToPush } from "@/lib/notifications"; 
 
 export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
   const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  
   const pathname = usePathname();
+  const router = useRouter();
 
+  // --- LOGICA AUTENTICAZIONE ---
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const res = await fetch('/api/auth/me');
-        const data = await res.json();
-        setIsUserAuthenticated(data.isAuthenticated);
-        if (data.user) {
-          setUserRole(data.user.ruolo);
+        if (res.ok) {
+          const data = await res.json();
+          setIsUserAuthenticated(data.isAuthenticated);
+          if (data.user) {
+            setUserRole(data.user.ruolo);
+          }
         }
       } catch (err) {
         console.error("Errore verifica auth", err);
@@ -32,31 +39,36 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setIsUserAuthenticated(false);
-      if (onLogout) onLogout(); // Notifica il genitore se necessario
-      window.location.href = 'Autenticazione'; // Redirect al login
+      if (onLogout) onLogout(); 
+      router.push('/Pages/Autenticazione'); // Redirect fluido
     } catch (err) {
       console.error("Errore logout", err);
     }
   };
 
-  // Colore primario estratto dall'immagine (un verde acqua/teal)
-  const primaryColorClass = "text-[#14b8a6]"; // Teal-500 di Tailwind approx
-  const bgPrimaryClass = "bg-[#14b8a6]";
-  const bgLightClass = "bg-[#f0fdfa]"; // Teal-50 molto chiaro
+  // --- LOGICA NOTIFICHE ---
+  const handleEnableNotifications = async () => {
+    if (!isUserAuthenticated) return alert("Devi essere loggato!");
 
-  // Funzione per determinare lo stile del link
+    // Chiama la funzione importata da @/lib/notifications
+    const result = await subscribeUserToPush();
+    if (result) alert("Notifiche attivate con successo!");
+  };
+
+  // --- STILI ---
+  const primaryColorClass = "text-[#14b8a6]";
+  const bgPrimaryClass = "bg-[#14b8a6]";
+  const bgLightClass = "bg-[#f0fdfa]";
+
   const getLinkClass = (targetPath) => {
-    // Normalizza il path target e il pathname corrente per il confronto
-    // Se targetPath è "Armadietto", cerca "/Armadietto" nel pathname
     const isActive = pathname?.includes(targetPath);
-    
     if (isActive) {
       return `${bgLightClass} ${primaryColorClass} px-5 py-2 rounded-full flex items-center gap-2 text-sm font-semibold hover:bg-teal-100 transition-colors`;
     }
     return "flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition-colors text-sm";
   };
 
-  // -- ICONE SVG --
+  // --- ICONE SVG ---
   const Icons = {
     Home: () => (
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
@@ -78,6 +90,10 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
     ),
     Login: () => (
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></svg>
+    ),
+    // AGGIUNTA ICONA MANCANTE
+    Bell: () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
     )
   };
 
@@ -86,7 +102,7 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
       <div className="container mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
 
         {/* --- 1. LOGO --- */}
-        <Link href={isUserAuthenticated ? "HomePage" : ""} className="flex items-center gap-2.5 cursor-pointer">
+        <Link href={isUserAuthenticated ? "/" : "/"} className="flex items-center gap-2.5 cursor-pointer">
           <div className={`${bgPrimaryClass} w-9 h-9 rounded-full flex items-center justify-center text-white shadow-sm`}>
             <Icons.Pill />
           </div>
@@ -99,20 +115,20 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
         {/* --- 2. MENU CENTRALE (Desktop) --- */}
         <div className="hidden md:flex items-center space-x-8">
 
-          {/* Link Standard */}
+          {/* Home ora punta alla radice "/" dato che abbiamo sistemato il layout */}
           {isUserAuthenticated && (
-            <Link href="/Pages/HomePage" className={getLinkClass("HomePage")}>
+            <Link href="/" className={getLinkClass("HomePage")}> 
               <Icons.Home />
               Home
             </Link>
           )}
 
-          <Link href="Armadietto" className={getLinkClass("Armadietto")}>
+          <Link href="/Pages/Armadietto" className={getLinkClass("Armadietto")}>
             <Icons.Box />
             Armadietto
           </Link>
 
-          <Link href="Terapie" className={getLinkClass("Terapie")}>
+          <Link href="/Pages/Terapie" className={getLinkClass("Terapie")}>
             <Icons.Calendar />
             Terapie
           </Link>
@@ -120,26 +136,37 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
           {isLoading ? (
             <div className="h-5 w-24 bg-slate-200 rounded animate-pulse"></div>
           ) : userRole === "Nessuno" ? (
-            <Link href="CollegaCaregiver" className={getLinkClass("CollegaCaregiver")}>
+            <Link href="/Pages/CollegaCaregiver" className={getLinkClass("CollegaCaregiver")}>
               <Icons.Users />
               Collega Caregiver
             </Link>
           ) : (
-            <Link href="Caregiver" className={getLinkClass("Caregiver")}>
+            <Link href="/Pages/Caregiver" className={getLinkClass("Caregiver")}>
               <Icons.Users />
               Caregiver
             </Link>
           )}
 
-          {/* Pulsante Speciale "Cerca Farmaci" - Ora usa la stessa logica degli altri ma con "Ricerca" */}
-          <Link href="Ricerca" className={getLinkClass("Ricerca")}>
+          <Link href="/Pages/Ricerca" className={getLinkClass("Ricerca")}>
             <Icons.Search />
             Cerca Farmaci
           </Link>
         </div>
 
-        {/* --- 3. PARTE DESTRA (Auth) --- */}
+        {/* --- 3. PARTE DESTRA (Auth & Notifiche) --- */}
         <div className="flex items-center gap-6">
+          
+          {/* Bottone Notifiche (Visibile solo se loggato) */}
+          {isUserAuthenticated && (
+            <button
+              onClick={handleEnableNotifications}
+              className="text-slate-500 hover:text-[#14b8a6] transition-colors p-2 rounded-full hover:bg-slate-50 focus:outline-none"
+              title="Attiva Notifiche Push"
+            >
+              <Icons.Bell />
+            </button>
+          )}
+
           {isLoading ? (
              <div className="h-10 w-20 bg-slate-200 rounded animate-pulse"></div>
           ) : isUserAuthenticated ? (
@@ -151,18 +178,16 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
             </button>
           ) : (
             <div className="flex gap-2 w-full">
-              {/* Pulsante Accedi */}
               <Link
-                href="Autenticazione"
-                className="flex-1 inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-medium text-slate-700 bg-transparent hover:bg-slate-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+                href="/Pages/Autenticazione"
+                className="flex-1 inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-medium text-slate-700 bg-transparent hover:bg-slate-100 rounded-md transition-colors"
               >
                 Accedi
               </Link>
 
-              {/* Pulsante Registrati */}
               <Link
-                href="Autenticazione?mode=register"
-                className="flex-1 inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-bold text-white bg-[#14b8a6] hover:bg-[#0d9488] rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#14b8a6] focus:ring-offset-2"
+                href="/Pages/Autenticazione?mode=register"
+                className="flex-1 inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-bold text-white bg-[#14b8a6] hover:bg-[#0d9488] rounded-md shadow-sm transition-colors"
               >
                 Registrati
               </Link>

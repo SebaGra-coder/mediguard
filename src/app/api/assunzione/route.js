@@ -51,7 +51,7 @@ export async function POST(request) {
 
         // Ciclo sugli orari del giorno
         for (const orario of orari) {
-          // Creazione corretta della data combinata (Data + Ora UTC)
+          // Creazione corretta della data combinata (Data + Ora)
           // Nota: Assicurati che l'orario sia nel formato "HH:mm"
           const dataProgrammataFinale = new Date(`${dataStr}T${orario}:00Z`);
 

@@ -156,6 +156,7 @@ model Piano_terapeutico{
   solo_al_bisogno             Boolean
   data_inizio                 DateTime?
   data_fine                   DateTime?
+  orari                       Json?    @default("[]")
   terapia_attiva              Boolean
 
   paziente Utente @relation(fields: [id_paziente], references: [id_utente])

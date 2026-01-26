@@ -22,7 +22,8 @@ export async function POST(request) {
       solo_al_bisogno, 
       terapia_attiva, 
       data_inizio, 
-      data_fine
+      data_fine,
+      orari
     } = body;
 
     // VALIDAZIONE: Verifica che l'ID del paziente sia presente [cite: 12]
@@ -73,9 +74,58 @@ export async function POST(request) {
         terapia_attiva: Boolean(terapia_attiva),
 
         data_inizio: data_inizio ? new Date(data_inizio) : null,
-        data_fine: data_fine ? new Date(data_fine) : null
+        data_fine: data_fine ? new Date(data_fine) : null,
+
+        orari: orari || []
       },
     });
+
+    // GENERAZIONE INIZIALE ASSUNZIONI (Se ci sono orari e non è al bisogno)
+    if (Array.isArray(orari) && !nuovoPiano.solo_al_bisogno && nuovoPiano.terapia_attiva) {
+      const now = new Date();
+      
+      let generationStart = new Date();
+      if (nuovoPiano.data_inizio && new Date(nuovoPiano.data_inizio) > generationStart) {
+        generationStart = new Date(nuovoPiano.data_inizio);
+      }
+
+      let generationEnd;
+      if (nuovoPiano.data_fine) {
+        generationEnd = new Date(nuovoPiano.data_fine);
+      } else {
+         // Default 30 days
+         generationEnd = new Date(generationStart);
+         generationEnd.setDate(generationEnd.getDate() + 30);
+      }
+
+      let currDate = new Date(generationStart);
+      const intakesToCreate = [];
+
+      while (currDate <= generationEnd) {
+        const dataStr = currDate.toISOString().split('T')[0];
+        
+        for (const orario of orari) {
+           // Assicurati che l'orario sia nel formato HH:MM
+           const scheduledTime = new Date(`${dataStr}T${orario}:00Z`);
+           
+           if (scheduledTime.getTime() > now.getTime()) {
+             intakesToCreate.push({
+               id_terapia: nuovoPiano.id_terapia,
+               data_programmata: scheduledTime,
+               esito: null,
+               orario_effettivo: null
+             });
+           }
+        }
+        currDate.setDate(currDate.getDate() + 1);
+      }
+
+      if (intakesToCreate.length > 0) {
+        await prisma.registro_assunzioni.createMany({
+          data: intakesToCreate
+        });
+      }
+    }
 
     // Ritorna il record creato con successo (Status 201 Created)
     return NextResponse.json({
@@ -289,6 +339,9 @@ export async function PUT(request) {
     // Gestione date: accetta stringhe ISO o null
     if (data_inizio !== undefined) dataToUpdate.data_inizio = data_inizio ? new Date(data_inizio) : null;
     if (data_fine !== undefined) dataToUpdate.data_fine = data_fine ? new Date(data_fine) : null;
+    
+    // Aggiorna gli orari se forniti
+    if (orari !== undefined) dataToUpdate.orari = orari;
 
     // 1. Update the Therapy Plan
     const updatedTerapia = await prisma.piano_terapeutico.update({
@@ -350,7 +403,7 @@ export async function PUT(request) {
         for (const orario of orari) {
            // Construct Date object for this specific slot in UTC to match assunzione logic
            // Ensure strict ISO format with Z
-           const scheduledTime = new Date(`${dataStr}T${orario}:00Z`); 
+           const scheduledTime = new Date(`${dataStr}T${orario}:00Z`);
            
            // Only add if it's strictly in the future compared to now
            if (scheduledTime.getTime() > now.getTime()) {
