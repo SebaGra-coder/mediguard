@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { GuestOverlay } from "@/components/GuestOverlay";
+import AddTherapyModal from "@/components/modals/AddTherapyModal";
+import TherapyDetailsModal from "@/components/modals/TherapyDetailsModal";
+import DeleteTherapyModal from "@/components/modals/DeleteTherapyModal";
+import QuickAssumptionModal from "@/components/modals/QuickAssumptionModal";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -61,22 +65,6 @@ const Badge = ({ children, variant = "default", className = "" }) => {
     return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border border-transparent ${styles[variant]} ${className}`}>{children}</span>;
 };
 
-const Modal = ({ isOpen, onClose, title, children, footer }) => {
-    if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                    <h3 className="font-bold text-lg text-slate-800">{title}</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><Icons.X className="w-5 h-5" /></button>
-                </div>
-                <div className="p-6 overflow-y-auto">{children}</div>
-                {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">{footer}</div>}
-            </div>
-        </div>
-    );
-};
-
 // --- LOGICA PRINCIPALE ---
 export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
@@ -84,6 +72,11 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [todaySchedule, setTodaySchedule] = useState([]);
+    const [therapyPlans, setTherapyPlans] = useState([]);
+    const [cabinetMedicines, setCabinetMedicines] = useState([]);
+
+    // Modals state
+    const [modalState, setModalState] = useState({ type: null, data: null }); // type: 'view' | 'edit' | 'add' | 'delete' | 'quick-add'
 
     const handlePrevDay = () => {
         const newDate = new Date(selectedDate);
@@ -96,55 +89,6 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
         newDate.setDate(selectedDate.getDate() + 1);
         setSelectedDate(newDate);
     };
-    const [therapyPlans, setTherapyPlans] = useState([]); // Initial empty, fetched from API
-    const [cabinetMedicines, setCabinetMedicines] = useState([]);
-
-    // Modals state
-    const [modalState, setModalState] = useState({ type: null, data: null }); // type: 'view' | 'edit' | 'add' | 'delete'
-    const [formData, setFormData] = useState({
-        medicine: "",
-        id_farmaco_armadietto: "",
-        dosaggio: "",
-        frequency: "1 volta al giorno",
-        orari: ["08:00"],
-        startDate: "",
-        endDate: "",
-        note: "",
-        stato: "attiva"
-    });
-    const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-    const [quickAddData, setQuickAddData] = useState({ medicine: "", id_farmaco_armadietto: "", time: "", note: "" });
-
-    // State for drug search in Quick Add
-    const [searchResults, setSearchResults] = useState([]);
-    const [isSearching, setIsSearching] = useState(false);
-    const [showResults, setShowResults] = useState(false);
-
-    useEffect(() => {
-        // Only search if the modal is open and we have a query
-        if (!isQuickAddOpen || quickAddData.medicine.length < 3) {
-            setSearchResults([]);
-            setShowResults(false);
-            return;
-        }
-
-        // Debounce search
-        const timer = setTimeout(async () => {
-            setIsSearching(true);
-            try {
-                const res = await fetch(`/api/farmaci/cerca?q=${encodeURIComponent(quickAddData.medicine)}`);
-                const data = await res.json();
-                setSearchResults(data.farmaci || []);
-                setShowResults(true);
-            } catch (e) {
-                console.error("Errore ricerca farmaci", e);
-            } finally {
-                setIsSearching(false);
-            }
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [quickAddData.medicine, isQuickAddOpen]);
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -165,7 +109,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             }
         };
         checkAuth();
-    }, [selectedDate]); // Re-run when date changes if auth persists (simplified dependency)
+    }, [selectedDate]);
 
     const fetchCabinet = async (userId) => {
         try {
@@ -181,13 +125,6 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
     const fetchDailySchedule = async (userId, date) => {
         try {
-            // Create start and end of the selected day
-            const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
-            
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
-
             const res = await fetch(`/api/terapia?id_paziente=${userId}`);
             const json = await res.json();
             
@@ -202,7 +139,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                             if (assunzioneDate === dayStr) {
                                 dailyIntakes.push({
                                     id: assunzione.id_evento,
-                                    time: new Date(assunzione.data_programmata).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+                                    time: assunzione.data_programmata.split('T')[1].slice(0, 5),
                                     medicine: terapia.nome_utilita || terapia.farmaco?.farmaco?.denominazione || "Farmaco",
                                     dosage: terapia.dose_singola + " " + (terapia.farmaco?.farmaco?.unita_misura || ""),
                                     status: assunzione.esito ? "taken" : (new Date(assunzione.data_programmata) > new Date() ? "upcoming" : "pending"),
@@ -213,7 +150,6 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                     }
                 });
                 
-                // Sort by time
                 dailyIntakes.sort((a, b) => a.time.localeCompare(b.time));
                 setTodaySchedule(dailyIntakes);
             }
@@ -266,8 +202,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                         return Math.round((taken / relevantIntakes.length) * 100);
                     })(),
                     orari: Array.from(new Set((t.assunzioni || []).map(a => {
-                        const d = new Date(a.data_programmata);
-                        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                        return a.data_programmata.split('T')[1].slice(0, 5);
                     }))).sort(),
                     stato: t.terapia_attiva ? "attiva" : "sospesa",
                     originalData: t
@@ -292,139 +227,38 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const takenCount = todaySchedule.filter(s => s.status === "taken").length;
     const adherencePercentage = todaySchedule.length > 0 ? Math.round((takenCount / todaySchedule.length) * 100) : 100;
 
-    // Helpers per chiudere/aprire modali
-    const closeModal = () => { setModalState({ type: null, data: null }); resetForm(); };
-    const openModal = (type, data = null) => {
-        setModalState({ type, data });
-        if (data && (type === 'edit' || type === 'view')) {
-            setFormData({
-                medicine: data.medicine,
-                id_farmaco_armadietto: data.originalData?.id_farmaco_armadietto || "",
-                dosaggio: parseFloat(data.dosaggio) || "",
-                frequency: data.frequency, // Logic needed to map back to select
-                orari: data.orari || ["08:00"],
-                startDate: data.startDate || "",
-                endDate: data.endDate || "",
-                note: data.note || "",
-                stato: data.stato
-            });
-        } else {
-            resetForm();
+    const handleSuccess = () => {
+        if (userData) {
+            fetchTherapies(userData.id_utente);
+            fetchDailySchedule(userData.id_utente, selectedDate);
         }
+        setModalState({ type: null, data: null });
     };
 
-    const resetForm = () => setFormData({
-        medicine: "",
-        id_farmaco_armadietto: "",
-        dosaggio: "",
-        frequency: "1 volta al giorno",
-        orari: ["08:00"],
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: "",
-        note: "",
-        stato: "attiva"
-    });
+    const handleToggleStatus = async (id) => {
+        const therapy = therapyPlans.find(p => p.id === id);
+        if (!therapy) return;
 
-    // Gestione CRUD
-    const handleSave = async () => {
-        if (!userData) return;
+        const newStatus = therapy.stato === "attiva" ? false : true;
 
-        if (modalState.type === 'add') {
-            try {
-                // Find selected medicine details for display name if needed, though API uses ID
-                const selectedMed = cabinetMedicines.find(m => m.id_farmaco_armadietto === formData.id_farmaco_armadietto);
-                const nomeUtilita = formData.medicine || "Nuova Terapia";
-
-                const body = {
-                    id_paziente: userData.id_utente,
-                    id_farmaco_armadietto: formData.id_farmaco_armadietto,
-                    nome_utilita: nomeUtilita,
-                    dose_singola: parseFloat(formData.dosaggio),
-                    solo_al_bisogno: formData.frequency === "Al bisogno",
-                    data_inizio: formData.startDate,
-                    data_fine: formData.endDate,
-                    terapia_attiva: true,
-                };
-
-                const res = await fetch('/api/terapia', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-
-
-                const json = await res.json();
-                
-                // If not "Al bisogno", create schedule
-                if (formData.frequency !== "Al bisogno") {
-                   const payload = {
-                        id_terapia: json.data.id_terapia,
-                        data_inizio: formData.startDate,
-                        data_fine: formData.endDate || formData.startDate, // Fallback if empty, but usually should be set or logic handled
-                        orari: formData.orari
-                    };
-
-                    const ass = await fetch('/api/assunzione', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    await ass.json();
-                }
-
-                if (res.ok && json.success) {
-                    // Refresh list
-                    fetchTherapies(userData.id_utente);
-                    fetchDailySchedule(userData.id_utente, selectedDate);
-                    closeModal();
-                } else {
-                    alert("Errore salvataggio: " + (json.error || "Sconosciuto"));
-                }
-
-            } catch (e) {
-                console.error("Errore chiamata API", e);
-                alert("Errore di connessione");
-            };
-
-        } else if (modalState.type === 'edit') {
-            // Edit logic implementation depends on API support (PUT/PATCH not currently in route.js)
-            alert("Modifica non ancora implementata nell'API");
-            closeModal();
-        }
-    };
-
-    const handleDelete = async () => {
-        if (!modalState.data?.id) return;
         try {
-            // Elimina prima le assunzioni associate (incluse quelle passate/archiviate)
-            await fetch(`/api/assunzione?id_terapia=${modalState.data.id}`, {
-                method: 'DELETE'
+            const res = await fetch('/api/terapia', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_terapia: id,
+                    terapia_attiva: newStatus
+                })
             });
 
-            const res = await fetch(`/api/terapia?id_terapia=${modalState.data.id}`, {
-                method: 'DELETE'
-            });
             if (res.ok) {
-                // Refresh list
-                if (userData) {
-                    fetchTherapies(userData.id_utente);
-                    fetchDailySchedule(userData.id_utente, selectedDate);
-                }
-                closeModal();
+                fetchTherapies(userData.id_utente);
             } else {
-                alert("Impossibile eliminare la terapia");
+                alert("Errore aggiornamento stato");
             }
         } catch (e) {
-            console.error(e);
-            alert("Errore durante l'eliminazione");
+            console.error("Errore toggle status:", e);
         }
-    };
-
-    const handleToggleStatus = (id) => {
-        // Toggle status API call needed (PATCH)
-        // For now, optimistic UI update or alert
-        setTherapyPlans(plans => plans.map(p => p.id === id ? { ...p, stato: p.stato === "attiva" ? "sospesa" : "attiva" } : p));
     };
 
     const handleConfirmIntake = async (id) => {
@@ -443,100 +277,12 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             if (res.ok) {
                 const timeStr = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
                 setTodaySchedule(sched => sched.map(s => s.id === id ? { ...s, status: "taken", takenAt: timeStr } : s));
-                // Aggiorna anche le statistiche di aderenza delle terapie
                 fetchTherapies(userData.id_utente);
             } else {
                 alert("Errore durante la conferma dell'assunzione");
             }
         } catch (error) {
             console.error("Errore conferma assunzione", error);
-        }
-    };
-
-    // Form helpers
-    const updateOrario = (idx, val) => {
-        const newOrari = [...formData.orari]; newOrari[idx] = val;
-        setFormData({ ...formData, orari: newOrari });
-    };
-
-    const handleQuickAddSubmit = async () => {
-        if (!quickAddData.id_farmaco_armadietto || !userData) return;
-
-        try {
-            // 1. Cerca una terapia "al bisogno" esistente per questo farmaco
-            let therapyId = null;
-            const existingTherapy = therapyPlans.find(t => 
-                t.originalData.id_farmaco_armadietto === quickAddData.id_farmaco_armadietto && 
-                t.originalData.solo_al_bisogno === true
-            );
-
-            if (existingTherapy) {
-                therapyId = existingTherapy.id;
-            } else {
-                // 2. Se non esiste, creane una nuova implicita
-                const today = new Date().toISOString().split('T')[0];
-                const selectedMed = cabinetMedicines.find(m => m.id_farmaco_armadietto === quickAddData.id_farmaco_armadietto);
-                
-                const newTherapyBody = {
-                    id_paziente: userData.id_utente,
-                    id_farmaco_armadietto: quickAddData.id_farmaco_armadietto,
-                    nome_utilita: selectedMed ? selectedMed.farmaco.denominazione : "Farmaco al bisogno",
-                    dose_singola: 1, // Default dosage for quick add
-                    solo_al_bisogno: true,
-                    data_inizio: today,
-                    data_fine: today, // Or leave empty/far future
-                    terapia_attiva: true
-                };
-
-                const tRes = await fetch('/api/terapia', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newTherapyBody)
-                });
-                
-                const tJson = await tRes.json();
-                if (tRes.ok && tJson.success) {
-                    therapyId = tJson.data.id_terapia;
-                } else {
-                    alert("Errore creazione terapia al bisogno: " + (tJson.error || "Sconosciuto"));
-                    return;
-                }
-            }
-
-            // 3. Registra l'assunzione
-            if (therapyId) {
-                // Costruisci data programmata combinando data odierna e ora selezionata
-                const todayStr = new Date().toISOString().split('T')[0];
-                const dateTimeStr = `${todayStr}T${quickAddData.time}:00`; 
-                const intakeDate = new Date(dateTimeStr);
-
-                const intakeBody = {
-                    id_terapia: therapyId,
-                    data_programmata: intakeDate.toISOString(),
-                    orario_effettivo: intakeDate.toISOString(),
-                    esito: true
-                };
-
-                const iRes = await fetch('/api/assunzione', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(intakeBody)
-                });
-
-                if (iRes.ok) {
-                    // Successo! Ricarica dati e chiudi modale
-                    fetchTherapies(userData.id_utente);
-                    fetchDailySchedule(userData.id_utente, selectedDate);
-                    setIsQuickAddOpen(false);
-                    setQuickAddData({ medicine: "", id_farmaco_armadietto: "", time: "", note: "" });
-                } else {
-                    alert("Errore registrazione assunzione");
-                }
-            }
-
-        } catch (error) {
-            console.error("Errore quick add", error);
-            alert("Si è verificato un errore");
         }
     };
 
@@ -574,7 +320,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                             <h1 className="text-3xl font-bold mb-2 text-slate-800 tracking-tight">Le Mie Terapie</h1>
                             <p className="text-slate-500">Gestisci i tuoi piani terapeutici e monitora le assunzioni.</p>
                         </div>
-                        <Button onClick={() => openModal('add')} className="h-11 px-6 shadow-md hover:shadow-lg">
+                        <Button onClick={() => setModalState({ type: 'add', data: null })} className="h-11 px-6 shadow-md hover:shadow-lg">
                             <Icons.Plus className="w-5 h-5 mr-2" /> Nuova Terapia
                         </Button>
                     </div>
@@ -694,12 +440,12 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
                                     {/* Pulsanti Azione (Visibili on Hover su Desktop) */}
                                     <div className="flex justify-end gap-1 mt-5 border-t border-slate-50">
-                                        <Button variant="ghost" size="icon" onClick={() => openModal('view', plan)} title="Dettagli"><Icons.Eye className="w-4 h-4" /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'view', data: plan })} title="Dettagli"><Icons.Eye className="w-4 h-4" /></Button>
                                         <Button variant="ghost" size="icon" onClick={() => handleToggleStatus(plan.id)} title={plan.stato === 'attiva' ? "Sospendi" : "Attiva"}>
                                             {plan.stato === 'attiva' ? <Icons.Pause className="w-4 h-4 text-amber-500" /> : <Icons.Play className="w-4 h-4 text-emerald-500" />}
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => openModal('edit', plan)} title="Modifica"><Icons.Edit className="w-4 h-4" /></Button>
-                                        <Button variant="ghost" size="icon" onClick={() => openModal('delete', plan)} className="text-rose-400 hover:text-rose-600 hover:bg-rose-50"><Icons.Trash2 className="w-4 h-4" /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'edit', data: plan })} title="Modifica"><Icons.Edit className="w-4 h-4" /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'delete', data: plan })} className="text-rose-400 hover:text-rose-600 hover:bg-rose-50"><Icons.Trash2 className="w-4 h-4" /></Button>
                                     </div>
                                 </Card>
                             ))}
@@ -708,19 +454,12 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                     <Icons.Plus className="w-6 h-6" />
                                 </div>
                                 <h3 className="font-bold text-slate-800 mb-1">Registra assunzione</h3>
-                                <p className="text-sm text-slate-500 mb-4">Per farmaci "al bisogno"</p>
+                                <p className="text-sm text-slate-500 mb-4">Per farmaci &quot;al bisogno&quot;</p>
 
-                                {/* Nota: Puoi collegare questo bottone a una funzione specifica o riaprire il modale 'add' */}
                                 <Button
                                     variant="outline"
                                     className="border-[#14b8a6] text-[#14b8a6] hover:bg-teal-50 hover:text-[#0d9488]"
-                                    onClick={() => {
-                                        // Imposta l'orario attuale come default
-                                        const now = new Date();
-                                        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-                                        setQuickAddData({ medicine: "", id_farmaco_armadietto: "", time: timeStr, note: "" });
-                                        setIsQuickAddOpen(true);
-                                    }}
+                                    onClick={() => setModalState({ type: 'quick-add', data: null })}
                                 >
                                     Registra ora
                                 </Button>
@@ -730,218 +469,37 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 </div>
             </main>
 
-            {/* --- MODALE AGGIUNGI / MODIFICA --- */}
-            <Modal
+            {/* --- MODALS --- */}
+            <AddTherapyModal
                 isOpen={modalState.type === 'add' || modalState.type === 'edit'}
-                onClose={closeModal}
-                title={modalState.type === 'edit' ? "Modifica Terapia" : "Nuova Terapia"}
-                footer={
-                    <>
-                        <Button variant="secondary" onClick={closeModal}>Annulla</Button>
-                        <Button onClick={handleSave} disabled={(!formData.id_farmaco_armadietto && !formData.medicine) || !formData.startDate}>Salva Terapia</Button>
-                    </>
-                }
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Seleziona Farmaco</label>
-                        <select
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6] bg-white"
-                            value={formData.id_farmaco_armadietto}
-                            onChange={e => {
-                                const selectedId = e.target.value;
-                                setFormData({
-                                    ...formData,
-                                    id_farmaco_armadietto: selectedId
-                                });
-                            }}
-                        >
-                            <option value="">-- Seleziona dal tuo armadietto --</option>
-                            {cabinetMedicines.map(m => (
-                                <option key={m.id_farmaco_armadietto} value={m.id_farmaco_armadietto}>
-                                    {m.farmaco?.denominazione} ({m.quantita_rimanente} rimanenti)
-                                </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-slate-400 mt-1">Puoi selezionare solo farmaci presenti nel tuo armadietto.</p>
-                    </div>
+                onClose={() => setModalState({ type: null, data: null })}
+                onSuccess={handleSuccess}
+                userId={userData?.id_utente}
+                cabinetMedicines={cabinetMedicines}
+                initialData={modalState.type === 'edit' ? modalState.data : null}
+            />
 
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Nome Terapia</label>
-                        <input
-                            type="text"
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                            placeholder="Es. Pillola pressione mattina"
-                            value={formData.medicine}
-                            onChange={e => setFormData({ ...formData, medicine: e.target.value })}
-                        />
-                    </div>
+            <TherapyDetailsModal
+                isOpen={modalState.type === 'view'}
+                onClose={() => setModalState({ type: null, data: null })}
+                therapy={modalState.data}
+            />
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Dosaggio</label>
-                            <input type="number" step="0.5" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                                placeholder="Es. 1" value={formData.dosaggio} onChange={e => setFormData({ ...formData, dosaggio: e.target.value })} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Frequenza</label>
-                            <select className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                                value={formData.frequency} onChange={e => setFormData({ ...formData, frequency: e.target.value })}>
-                                <option>1 volta al giorno</option>
-                                <option>2 volte al giorno</option>
-                                <option>3 volte al giorno</option>
-                                <option>Al bisogno</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div className="flex justify-between mb-1">
-                            <label className="block text-sm font-semibold text-slate-700">Orari Assunzione</label>
-                            <button type="button" onClick={() => setFormData({ ...formData, orari: [...formData.orari, "12:00"] })} className="text-xs font-bold text-[#14b8a6] hover:underline">+ Aggiungi</button>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {formData.orari.map((orario, idx) => (
-                                <div key={idx} className="flex items-center gap-1">
-                                    <input type="time" className="rounded-lg border border-slate-200 px-2 py-1 text-sm" value={orario} onChange={(e) => updateOrario(idx, e.target.value)} />
-                                    <button type="button" onClick={() => {
-                                        const newOrari = formData.orari.filter((_, i) => i !== idx);
-                                        setFormData({ ...formData, orari: newOrari });
-                                    }} className="text-rose-500 hover:text-rose-700">
-                                        <Icons.X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Data Inizio</label>
-                            <input type="date" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                                value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Data Fine (Opzionale)</label>
-                            <input type="date" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                                value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Note Aggiuntive</label>
-                        <textarea rows={3} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                            placeholder="Es. Prendere a stomaco pieno..." value={formData.note} onChange={e => setFormData({ ...formData, note: e.target.value })} />
-                    </div>
-                </div>
-            </Modal>
-
-            {/* --- MODALE ELIMINA --- */}
-            <Modal
+            <DeleteTherapyModal
                 isOpen={modalState.type === 'delete'}
-                onClose={closeModal}
-                title="Elimina Terapia"
-                footer={
-                    <>
-                        <Button variant="secondary" onClick={closeModal}>Annulla</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Elimina Definitivamente</Button>
-                    </>
-                }
-            >
-                <p className="text-slate-600">Sei sicuro di voler eliminare la terapia <strong>{modalState.data?.medicine}</strong>? Questa azione non può essere annullata e perderai lo storico dell'aderenza.</p>
-            </Modal>
+                onClose={() => setModalState({ type: null, data: null })}
+                therapy={modalState.data}
+                onSuccess={handleSuccess}
+            />
 
-            {/* --- MODALE VISTA DETTAGLI --- */}
-            <Modal isOpen={modalState.type === 'view'} onClose={closeModal} title={`Dettagli: ${modalState.data?.medicine}`}>
-                {modalState.data && (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div><p className="text-slate-500">Dosaggio</p><p className="font-bold">{modalState.data.dosaggio}</p></div>
-                            <div><p className="text-slate-500">Stato</p><Badge variant={modalState.data.stato === 'attiva' ? 'success' : 'default'}>{modalState.data.stato}</Badge></div>
-                            <div><p className="text-slate-500">Frequenza</p><p className="font-bold">{modalState.data.frequency}</p></div>
-                            <div><p className="text-slate-500">Orari</p><p className="font-bold">{modalState.data.orari?.join(", ")}</p></div>
-                            <div><p className="text-slate-500">Inizio</p><p className="font-bold">{new Date(modalState.data.startDate).toLocaleDateString()}</p></div>
-                            <div><p className="text-slate-500">Fine</p><p className="font-bold">{modalState.data.endDate ? new Date(modalState.data.endDate).toLocaleDateString() : "Continuativa"}</p></div>
-                        </div>
-                        {modalState.data.note && (
-                            <div className="bg-slate-50 p-3 rounded-lg text-sm"><p className="text-slate-500 text-xs uppercase font-bold mb-1">Note</p>{modalState.data.note}</div>
-                        )}
-                    </div>
-                )}
-            </Modal>
-
-            <Modal
-                isOpen={isQuickAddOpen}
-                onClose={() => setIsQuickAddOpen(false)}
-                title="Registra Assunzione"
-                footer={
-                    <>
-                        <Button variant="secondary" onClick={() => setIsQuickAddOpen(false)}>Annulla</Button>
-                        <Button onClick={handleQuickAddSubmit} disabled={!quickAddData.id_farmaco_armadietto}>Conferma Assunzione</Button>
-                    </>
-                }
-            >
-                <div className="space-y-5">
-                    <div className="bg-teal-50 p-4 rounded-xl border border-teal-100 flex gap-3">
-                        <div className="bg-white p-2 rounded-full shadow-sm text-[#14b8a6]">
-                            <Icons.Pill className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-teal-800 font-bold">Farmaco al bisogno</p>
-                            <p className="text-xs text-teal-600">Registra un'assunzione fuori dal piano terapeutico ordinario.</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Quale farmaco hai preso?</label>
-                        <select
-                            className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6] bg-white"
-                            value={quickAddData.id_farmaco_armadietto}
-                            onChange={e => {
-                                const selectedId = e.target.value;
-                                const med = cabinetMedicines.find(m => m.id_farmaco_armadietto === selectedId);
-                                setQuickAddData({ 
-                                    ...quickAddData, 
-                                    id_farmaco_armadietto: selectedId,
-                                    medicine: med ? med.farmaco.denominazione : ""
-                                });
-                            }}
-                        >
-                            <option value="">-- Seleziona dal tuo armadietto --</option>
-                            {cabinetMedicines.map(m => (
-                                <option key={m.id_farmaco_armadietto} value={m.id_farmaco_armadietto}>
-                                    {m.farmaco?.denominazione} ({m.quantita_rimanente} rimanenti)
-                                </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-slate-400 mt-1">Vengono mostrati solo i farmaci presenti nel tuo armadietto.</p>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">A che ora?</label>
-                        <div className="relative">
-                            <input
-                                type="time"
-                                className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                                value={quickAddData.time}
-                                onChange={e => setQuickAddData({ ...quickAddData, time: e.target.value })}
-                            />
-                            <Icons.Clock className="absolute right-3 top-3 w-5 h-5 text-slate-400 pointer-events-none" />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Note (Opzionale)</label>
-                        <textarea
-                            rows={2}
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                            placeholder="Motivo (es. mal di testa, febbre...)"
-                            value={quickAddData.note}
-                            onChange={e => setQuickAddData({ ...quickAddData, note: e.target.value })}
-                        />
-                    </div>
-                </div>
-            </Modal>
+            <QuickAssumptionModal
+                isOpen={modalState.type === 'quick-add'}
+                onClose={() => setModalState({ type: null, data: null })}
+                userId={userData?.id_utente}
+                cabinetMedicines={cabinetMedicines}
+                onSuccess={handleSuccess}
+                therapyPlans={therapyPlans}
+            />
 
             <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">
                 <p>© 2024 MediGuard. La tua salute, organizzata.</p>

@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 // CONFIGURAZIONE
 const BATCH_SIZE = 2000; // Quanti farmaci salvare alla volta (2000 è un buon compromesso)
-const PERCORSO_FARMACI_FILE = 'prisma/farmaci_master_v8.csv'; 
+const PERCORSO_FARMACI_FILE = 'prisma/farmaci_final_v12.csv'; 
 const PERCORSO_ALLERGENI_FILE = 'prisma/principi_attivi_unici.csv';
 
 async function main() {

@@ -1,8 +1,10 @@
 'use client';
 
-import Link from "next/link"; // Assicurati che il percorso sia corretto
-import { useState, useEffect } from "react";
-import { Navbar } from "@/components/layout/Navbar"; // Assicurati che il percorso sia corretto
+import Link from "next/link";
+import { useState, useEffect, useCallback } from "react";
+import { Navbar } from "@/components/layout/Navbar";
+import AddMedicationModal from "@/components/modals/AddMedicationModal";
+import AddTherapyModal from "@/components/modals/AddTherapyModal";
 
 // --- ICONE SVG INLINE ---
 const Icons = {
@@ -47,31 +49,6 @@ const Icons = {
     )
 };
 
-const Modal = ({ isOpen, onClose, title, children, footer }) => {
-    if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="font-bold text-lg text-slate-800">{title}</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"><Icons.X className="w-5 h-5" /></button>
-                </div>
-                <div className="p-6 overflow-y-auto">{children}</div>
-                {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">{footer}</div>}
-            </div>
-        </div>
-    );
-};
-
-const Button = ({ children, onClick, variant = "primary", className = "" }) => {
-    const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none h-10 px-5";
-    const variants = {
-        primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-md",
-        secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
-    };
-    return <button onClick={onClick} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
-};
-
 // --- UTILS PER STILI ---
 const getStatusStyles = (status) => {
     switch (status) {
@@ -93,9 +70,11 @@ const getPatientStatusColor = (status) => {
 export default function Dashboard({ isAuthenticated: initialAuth = false }) {
     const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
+    const [currentUser, setCurrentUser] = useState(null);
     const [inventoryStats, setInventoryStats] = useState({ total: 0, low: 0, expiring: 0 });
     const [lowStockMedicines, setLowStockMedicines] = useState([]);
     const [expiringMedicines, setExpiringMedicines] = useState([]);
+    const [allMedicines, setAllMedicines] = useState([]);
     const [todaySchedule, setTodaySchedule] = useState([]);
     const [adherenceToday, setAdherenceToday] = useState(0);
     const [patients, setPatients] = useState([]);
@@ -103,97 +82,124 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
     const [isLoading, setIsLoading] = useState(true);
     const [activeModal, setActiveModal] = useState(null);
 
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-              const res = await fetch('/api/auth/me');
-              const data = await res.json();
-              setIsUserAuthenticated(data.isAuthenticated);
-            } catch (err) {
-              console.error("Errore verifica auth", err);
-            } finally {
-              setIsAuthChecking(false);
-            }
-          };
-          checkAuth();
+    const initDashboard = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            // 1. Check Authentication
+            const authRes = await fetch('/api/auth/me');
+            const authData = await authRes.json();
 
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                // Fetch inventory data
-                const inventoryResponse = await fetch("/api/antonio?id_utente=49a0cfd3-6fc3-4a40-9602-707cdc964e55");
-                const inventoryJson = await inventoryResponse.json();
-                const rawInventoryData = Array.isArray(inventoryJson.data) ? inventoryJson.data : (Array.isArray(inventoryJson) ? inventoryJson : []);
+            setIsUserAuthenticated(authData.isAuthenticated);
+            setIsAuthChecking(false);
 
-                const processedInventoryData = rawInventoryData.map(item => ({
-                    ...item,
-                    computedStatus: getMedicineStatus(item) // Re-use from Armadietto page
-                }));
-
-                const total = processedInventoryData.length;
-                const low = processedInventoryData.filter(m => m.computedStatus === 'low').length;
-                const expiring = processedInventoryData.filter(m => ['expiring', 'expired'].includes(m.computedStatus)).length;
-
-                setInventoryStats({ total, low, expiring });
-
-                setLowStockMedicines(
-                    processedInventoryData
-                        .filter(m => m.computedStatus === 'low')
-                        .map(m => ({
-                            id: m.id_farmaco_armadietto,
-                            name: m.farmaco?.denominazione || "Farmaco Sconosciuto",
-                            quantity: m.quantita_rimanente,
-                            total: m.farmaco?.quantita_confezione || 100,
-                        }))
-                );
-
-                setExpiringMedicines(
-                    processedInventoryData
-                        .filter(m => m.computedStatus === 'expiring' || m.computedStatus === 'expired')
-                        .map(m => ({
-                            id: m.id_farmaco_armadietto,
-                            name: m.farmaco.denominazione || "Farmaco Sconosciuto",
-                            expiryDate: m.data_scadenza,
-                            daysLeft: getDaysUntilExpiry(m.data_scadenza), // Re-use from Armadietto page
-                        }))
-                );
-
-                // Fetch therapy data (mocked for now as API is not available)
-                // In a real scenario, you'd fetch from an endpoint like /api/terapie/today
-                const mockTodaySchedule = [
-                    { id: 1, time: "08:00", medicine: "Cardioaspirin 100mg", status: "taken" },
-                    { id: 2, time: "12:00", medicine: "Augmentin 875mg", status: "taken" },
-                    { id: 3, time: "14:00", medicine: "Enterogermina", status: "pending" },
-                    { id: 4, time: "20:00", medicine: "Augmentin 875mg", status: "upcoming" },
-                ];
-                setTodaySchedule(mockTodaySchedule);
-
-                const taken = mockTodaySchedule.filter(s => s.status === "taken").length;
-                const totalScheduled = mockTodaySchedule.length;
-                setAdherenceToday(totalScheduled > 0 ? Math.round((taken / totalScheduled) * 100) : 0);
-
-                // Fetch patient data (mocked for now as API is not available)
-                // In a real scenario, you'd fetch from an endpoint like /api/caregivers/patients
-                const mockPatients = [
-                    { id: 1, name: "Maria Rossi", initials: "MR", adherence: 100, status: "ok", alerts: 0 },
-                    { id: 2, name: "Giuseppe Rossi", initials: "GR", adherence: 66, status: "warning", alerts: 1 },
-                    { id: 3, name: "Anna Bianchi", initials: "AB", adherence: 50, status: "alert", alerts: 2 },
-                ];
-                setPatients(mockPatients);
-
-                const totalPatientAlerts = mockPatients.reduce((sum, p) => sum + p.alerts, 0);
-                setTotalAlerts(expiring + low + totalPatientAlerts); // Combine all alerts
-
-            } catch (error) {
-                console.error("Errore nel caricamento dei dati della dashboard:", error);
-                // Optionally set error state to display a message to the user
-            } finally {
+            if (!authData.isAuthenticated || !authData.user) {
                 setIsLoading(false);
+                return;
             }
-        };
+            setCurrentUser(authData.user);
+            const userId = authData.user.id_utente;
 
-        fetchData();
-    }, []);
+            // 2. Fetch inventory data using dynamic userId
+            const inventoryResponse = await fetch(`/api/antonio?id_utente=${userId}`);
+            const inventoryJson = await inventoryResponse.json();
+            const rawInventoryData = Array.isArray(inventoryJson.data) ? inventoryJson.data : (Array.isArray(inventoryJson) ? inventoryJson : []);
+
+            setAllMedicines(rawInventoryData);
+
+            const processedInventoryData = rawInventoryData.map(item => ({
+                ...item,
+                computedStatus: getMedicineStatus(item) // Re-use from Armadietto page
+            }));
+
+            const total = processedInventoryData.length;
+            const low = processedInventoryData.filter(m => m.computedStatus === 'low').length;
+            const expiring = processedInventoryData.filter(m => ['expiring', 'expired'].includes(m.computedStatus)).length;
+
+            setInventoryStats({ total, low, expiring });
+
+            setLowStockMedicines(
+                processedInventoryData
+                    .filter(m => m.computedStatus === 'low')
+                    .map(m => ({
+                        id: m.id_farmaco_armadietto,
+                        name: m.farmaco?.denominazione || "Farmaco Sconosciuto",
+                        quantity: m.quantita_rimanente,
+                        total: m.farmaco?.quantita_confezione || 100,
+                    }))
+            );
+
+            setExpiringMedicines(
+                processedInventoryData
+                    .filter(m => m.computedStatus === 'expiring' || m.computedStatus === 'expired')
+                    .map(m => ({
+                        id: m.id_farmaco_armadietto,
+                        name: m.farmaco.denominazione || "Farmaco Sconosciuto",
+                        expiryDate: m.data_scadenza,
+                        daysLeft: getDaysUntilExpiry(m.data_scadenza), // Re-use from Armadietto page
+                    }))
+            );
+
+            // 3. Fetch Therapies and Calculate Schedule
+            const therapiesResponse = await fetch(`/api/terapia?id_paziente=${userId}&terapia_attiva=true`);
+            const therapiesJson = await therapiesResponse.json();
+            const therapies = therapiesJson.data || [];
+
+            const today = new Date();
+            const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+            let todaysIntakes = [];
+
+            therapies.forEach(therapy => {
+                if (therapy.assunzioni && Array.isArray(therapy.assunzioni)) {
+                    therapy.assunzioni.forEach(assunzione => {
+                        const scheduledDate = new Date(assunzione.data_programmata);
+
+                        // Check if the scheduled date is today
+                        if (scheduledDate >= startOfDay && scheduledDate < endOfDay) {
+                            let status = "pending";
+                            if (assunzione.esito === true) status = "taken";
+                            // Future enhancement: handle skipped/missed based on time
+
+                            todaysIntakes.push({
+                                id: assunzione.id_evento,
+                                time: scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                medicine: therapy.farmaco?.farmaco?.denominazione || therapy.nome_utilita || "Farmaco",
+                                status: status,
+                                originalDate: scheduledDate // For sorting
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Sort by time
+            todaysIntakes.sort((a, b) => a.originalDate - b.originalDate);
+
+            setTodaySchedule(todaysIntakes);
+            
+            // Only update currentUser with full authData logic if we had more info there, but we already set it above
+            // setCurrentUser(authData.user); 
+
+            const taken = todaysIntakes.filter(s => s.status === "taken").length;
+            const totalScheduled = todaysIntakes.length;
+            setAdherenceToday(totalScheduled > 0 ? Math.round((taken / totalScheduled) * 100) : 0);
+
+            const totalPatientAlerts = patients.reduce((sum, p) => sum + p.alerts, 0);
+            setTotalAlerts(expiring + low + totalPatientAlerts); // Combine all alerts
+
+        } catch (error) {
+            console.error("Errore nel caricamento dei dati della dashboard:", error);
+            // Optionally set error state to display a message to the user
+        } finally {
+            setIsLoading(false);
+            setIsAuthChecking(false);
+        }
+    }, [patients]);
+
+    useEffect(() => {
+        initDashboard();
+    }, [initDashboard]);
 
     const handleLogout = async () => {
         try {
@@ -227,11 +233,11 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
 
     if (isAuthChecking) {
         return (
-          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
-          </div>
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+            </div>
         );
-      }
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
@@ -341,52 +347,54 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
 
                             {/* Aggiunto un controllo isLoading anche per questa sezione */}
                             {/* --- CAREGIVER SECTION --- */}
-                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="text-[#14b8a6]"><Icons.Users /></div>
-                                        <h2 className="font-bold text-lg text-slate-800">I Tuoi Assistiti</h2>
+                            {currentUser?.ruolo === 'Caregiver' && (
+                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-[#14b8a6]"><Icons.Users /></div>
+                                            <h2 className="font-bold text-lg text-slate-800">I Tuoi Assistiti</h2>
+                                        </div>
+                                        <Link href="/caregiver" className="text-sm font-medium text-slate-500 hover:text-[#14b8a6] flex items-center gap-1 transition-colors">
+                                            Vedi tutto <Icons.ChevronRight />
+                                        </Link>
                                     </div>
-                                    <Link href="/caregiver" className="text-sm font-medium text-slate-500 hover:text-[#14b8a6] flex items-center gap-1 transition-colors">
-                                        Vedi tutto <Icons.ChevronRight />
-                                    </Link>
-                                </div>
 
-                                {isLoading ? (
-                                    <div className="p-6 text-center text-slate-500">Caricamento assistiti...</div>
-                                ) : patients.length > 0 ? (
-                                    <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {patients.map((patient) => (
-                                            <div key={patient.id} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-[#14b8a6]/30 hover:shadow-md transition-all cursor-pointer group bg-white">
-                                                <div className="relative">
-                                                    <div className="w-12 h-12 rounded-full bg-teal-50 text-[#14b8a6] font-bold flex items-center justify-center border-2 border-white shadow-sm">
-                                                        {patient.initials}
-                                                    </div>
-                                                    <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${getPatientStatusColor(patient.status)}`} />
-                                                </div>
-
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-semibold text-slate-800 truncate group-hover:text-[#14b8a6] transition-colors">{patient.name}</p>
-                                                    <div className="flex items-center gap-2 mt-1.5">
-                                                        <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                                                            <div className={`h-full rounded-full ${patient.adherence > 80 ? 'bg-emerald-500' : patient.adherence > 50 ? 'bg-amber-400' : 'bg-rose-500'}`} style={{ width: `${patient.adherence}%` }} />
+                                    {isLoading ? (
+                                        <div className="p-6 text-center text-slate-500">Caricamento assistiti...</div>
+                                    ) : patients.length > 0 ? (
+                                        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {patients.map((patient) => (
+                                                <div key={patient.id} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-[#14b8a6]/30 hover:shadow-md transition-all cursor-pointer group bg-white">
+                                                    <div className="relative">
+                                                        <div className="w-12 h-12 rounded-full bg-teal-50 text-[#14b8a6] font-bold flex items-center justify-center border-2 border-white shadow-sm">
+                                                            {patient.initials}
                                                         </div>
-                                                        <span className="text-xs text-slate-400 font-medium">{patient.adherence}%</span>
+                                                        <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${getPatientStatusColor(patient.status)}`} />
                                                     </div>
-                                                </div>
 
-                                                {patient.alerts > 0 && (
-                                                    <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold shrink-0">
-                                                        {patient.alerts}
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-semibold text-slate-800 truncate group-hover:text-[#14b8a6] transition-colors">{patient.name}</p>
+                                                        <div className="flex items-center gap-2 mt-1.5">
+                                                            <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                                                                <div className={`h-full rounded-full ${patient.adherence > 80 ? 'bg-emerald-500' : patient.adherence > 50 ? 'bg-amber-400' : 'bg-rose-500'}`} style={{ width: `${patient.adherence}%` }} />
+                                                            </div>
+                                                            <span className="text-xs text-slate-400 font-medium">{patient.adherence}%</span>
+                                                        </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="p-6 text-center text-slate-500">Nessun assistito configurato.</div>
-                                )}
-                            </div>
+
+                                                    {patient.alerts > 0 && (
+                                                        <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold shrink-0">
+                                                            {patient.alerts}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="p-6 text-center text-slate-500">Nessun assistito configurato.</div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* --- COLONNA DESTRA (Alerts & Azioni) --- */}
@@ -478,69 +486,20 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
                 </div>
             </main>
 
-            {/* --- MODALE 1: AGGIUNGI FARMACO --- */}
-            <Modal
+            <AddMedicationModal
                 isOpen={activeModal === 'add-med'}
                 onClose={() => setActiveModal(null)}
-                title="Aggiungi al Magazzino"
-                footer={
-                    <>
-                        <Button variant="secondary" onClick={() => setActiveModal(null)}>Annulla</Button>
-                        <Button onClick={() => { alert("Salvato!"); setActiveModal(null); }}>Salva Farmaco</Button>
-                    </>
-                }
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Nome Farmaco</label>
-                        <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-[#14b8a6] outline-none" placeholder="Es. Tachipirina" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Quantità</label>
-                            <input type="number" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-[#14b8a6] outline-none" placeholder="20" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Scadenza</label>
-                            <input type="date" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-[#14b8a6] outline-none" />
-                        </div>
-                    </div>
-                </div>
-            </Modal>
+                onSuccess={() => { initDashboard(); setActiveModal(null); }}
+                userId={currentUser?.id_utente}
+            />
 
-            {/* --- MODALE 2: NUOVA TERAPIA --- */}
-            <Modal
+            <AddTherapyModal
                 isOpen={activeModal === 'new-therapy'}
                 onClose={() => setActiveModal(null)}
-                title="Pianifica Terapia"
-                footer={
-                    <>
-                        <Button variant="secondary" onClick={() => setActiveModal(null)}>Annulla</Button>
-                        <Button onClick={() => { alert("Terapia Creata!"); setActiveModal(null); }}>Crea Terapia</Button>
-                    </>
-                }
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Quale farmaco?</label>
-                        <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-[#14b8a6] outline-none" placeholder="Cerca nel magazzino..." />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Frequenza</label>
-                            <select className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-[#14b8a6] outline-none bg-white">
-                                <option>1 volta al dì</option>
-                                <option>2 volte al dì</option>
-                                <option>Al bisogno</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Orario</label>
-                            <input type="time" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-[#14b8a6] outline-none" />
-                        </div>
-                    </div>
-                </div>
-            </Modal>
+                onSuccess={() => { initDashboard(); setActiveModal(null); }}
+                userId={currentUser?.id_utente}
+                cabinetMedicines={allMedicines}
+            />
 
             {/* Footer Semplificato */}
             <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-400 bg-white">
@@ -565,6 +524,7 @@ function StatCard({ icon, iconColor, iconBg, value, label }) {
         </div>
     );
 }
+
 
 function QuickAction({ href, onClick, icon, title, subtitle, color, bg }) {
     // Definiamo lo stile comune per entrambi i casi

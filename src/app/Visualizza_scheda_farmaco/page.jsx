@@ -1,10 +1,10 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 
-export default function DettaglioFarmacoPage() {
+function DettaglioFarmacoContent() {
   const searchParams = useSearchParams()
   // Recuperiamo il valore passato nel link: ?farmaco=123456
   const aic = searchParams.get('farmaco')
@@ -101,5 +101,13 @@ export default function DettaglioFarmacoPage() {
           </Link>
       </div>
     </div>
+  )
+}
+
+export default function DettaglioFarmacoPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div></div>}>
+      <DettaglioFarmacoContent />
+    </Suspense>
   )
 }

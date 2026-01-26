@@ -4,7 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { GuestOverlay } from "@/components/GuestOverlay";
-import { useRouter } from "next/navigation";
+import AddMedicationModal from "@/components/modals/AddMedicationModal";
+import EditMedicationModal from "@/components/modals/EditMedicationModal";
+import DeleteMedicationModal from "@/components/modals/DeleteMedicationModal";
+import AddTherapyModal from "@/components/modals/AddTherapyModal";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -12,18 +15,13 @@ const Icons = {
   AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>,
   Clock: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
   Search: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
-  Scan: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>,
   Plus: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
   Calendar: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
   MoreVertical: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>,
   Edit: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>,
   Trash2: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
-  Pill: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>,
-  X: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>,
-  Check: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
 };
 
-// --- COMPONENTI UI RIUTILIZZABILI (Style MediGuard) ---
 const Button = ({ children, onClick, variant = "primary", className = "", type = "button", disabled }) => {
   const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed h-11 px-5";
   const variants = {
@@ -33,25 +31,6 @@ const Button = ({ children, onClick, variant = "primary", className = "", type =
     ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
   };
   return <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
-};
-
-const Modal = ({ isOpen, onClose, title, children, footer }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-            <div className="bg-teal-50 p-1.5 rounded-lg text-[#14b8a6]"><Icons.Pill className="w-5 h-5"/></div>
-            {title}
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-full transition-colors"><Icons.X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-6 overflow-y-auto">{children}</div>
-        {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">{footer}</div>}
-      </div>
-    </div>
-  );
 };
 
 // --- FUNZIONI HELPER ---
@@ -68,7 +47,7 @@ const getMedicineStatus = (med) => {
   const qtyPercent = (med.quantita_rimanente / (med.farmaco?.quantita_confezione || 100)) * 100;
   if (days <= 0) return "expired";
   if (days <= 30) return "expiring";
-  if (med.quantita_rimanente <= 5 || qtyPercent < 20) return "low";
+  if (qtyPercent < 50) return "low";
   return "ok";
 };
 
@@ -94,23 +73,8 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
   const [stats, setStats] = useState({ total: 0, low: 0, expiring: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Stato Modale Aggiungi/Modifica Farmaco
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("add"); // 'add' | 'edit' | 'therapy' | 'delete'
-  const [selectedMedicineId, setSelectedMedicineId] = useState(null);
-  
-  const [formData, setFormData] = useState({
-    nome: "", principio: "", forma: "compresse", dosaggio: "", quantita: "", scadenza: "", aic: "", lotto: "", quantita_totale: 0
-  });
-
-  const [therapyData, setTherapyData] = useState({
-    nome_utilita: "", dose_singola: "", solo_al_bisogno: false, terapia_attiva: true, for_life: false
-  });
-  
-  // Stato ricerca farmaci nel modale
-  const [modalSearchTerm, setModalSearchTerm] = useState("");
-  const [modalSearchResults, setModalSearchResults] = useState([]);
-  const [isSearchingDrug, setIsSearchingDrug] = useState(false);
+  // Stato Modali
+  const [modalState, setModalState] = useState({ type: null, data: null }); // type: 'add' | 'edit' | 'delete' | 'therapy'
 
   const fetchData = useCallback(async (userId) => {
     try {
@@ -159,28 +123,6 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
     checkAuth();
   }, [fetchData]);
 
-  // Debounce ricerca farmaci modale
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-        if (modalSearchTerm.length > 2 && modalMode === "add") {
-            setIsSearchingDrug(true);
-            try {
-                const res = await fetch(`/api/farmaci/cerca?q=${encodeURIComponent(modalSearchTerm)}`);
-                const data = await res.json();
-                setModalSearchResults(data.farmaci || []);
-            } catch (error) {
-                console.error("Errore ricerca farmaco", error);
-            } finally {
-                setIsSearchingDrug(false);
-            }
-        } else {
-            setModalSearchResults([]);
-        }
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [modalSearchTerm, modalMode]);
-
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -192,128 +134,9 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
     }
   };
 
-  const handleOpenAdd = () => {
-      setModalMode("add");
-      setFormData({ nome: "", principio: "", forma: "compresse", dosaggio: "", quantita: "", scadenza: "", aic: "", lotto: "" });
-      setModalSearchTerm("");
-      setIsModalOpen(true);
-  };
-
-  const handleOpenEdit = (med) => {
-      setModalMode("edit");
-      setSelectedMedicineId(med.id_farmaco_armadietto);
-      setFormData({
-          nome: med.farmaco.denominazione,
-          principio: med.farmaco.principio_attivo,
-          forma: med.farmaco.forma,
-          dosaggio: med.farmaco.dosaggio,
-          quantita: med.quantita_rimanente,
-          scadenza: med.data_scadenza ? new Date(med.data_scadenza).toISOString().split('T')[0] : "",
-          aic: med.codice_aic,
-          lotto: med.lotto_produzione || "",
-          quantita_totale: med.farmaco?.quantita_confezione || 0
-      });
-      setIsModalOpen(true);
-      setOpenDropdownId(null);
-  };
-
-  const handleOpenDelete = (med) => {
-      setModalMode("delete");
-      setSelectedMedicineId(med.id_farmaco_armadietto);
-      setIsModalOpen(true);
-      setOpenDropdownId(null);
-  };
-
-  const handleOpenTherapy = (med) => {
-    setModalMode("therapy");
-    setSelectedMedicineId(med.id_farmaco_armadietto);
-    setFormData({ ...formData, nome: med.farmaco.denominazione}); // Just for display
-    setTherapyData({
-        nome_utilita: "", 
-        dose_singola: "", 
-        solo_al_bisogno: false, 
-        terapia_attiva: true, 
-        for_life: false
-    });
-    setIsModalOpen(true);
-    setOpenDropdownId(null);
-  };
-
-  const handleSelectDrug = (drug) => {
-      console.log("Farmaco selezionato:", drug);
-      setFormData(prev => ({
-          ...prev,
-          ...drug,
-          nome: drug.denominazione || "",
-          principio: drug.principio_attivo || "",
-          forma: drug.forma ? drug.forma.toLowerCase() : "compresse",
-          dosaggio: drug.dosaggio || "",
-          aic: drug.codice_aic || "",
-          quantita: drug.quantita_confezione ? String(drug.quantita_confezione) : "",
-          quantita_totale: drug.quantita_confezione || 0
-      }));
-      setModalSearchTerm("");
-      setModalSearchResults([]);
-  };
-
-  const handleSubmit = async () => {
-    if (!currentUser?.id_utente) return;
-
-    try {
-        let res;
-        if (modalMode === "add") {
-             const payload = {
-                id_utente_proprietario: currentUser.id_utente,
-                codice_aic: formData.aic,
-                data_scadenza: formData.scadenza,
-                quantita_rimanente: formData.quantita,
-                lotto_produzione: formData.lotto
-            };
-            res = await fetch('/api/antonio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-        } else if (modalMode === "edit") {
-            const payload = {
-                id_farmaco_armadietto: selectedMedicineId,
-                quantita_rimanente: formData.quantita,
-                data_scadenza: formData.scadenza
-            };
-            console.log(payload);
-            res = await fetch('/api/aggiorna-quantita', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-        } else if (modalMode === "delete") {
-            res = await fetch(`/api/antonio?id_farmaco=${selectedMedicineId}`, {
-                method: 'DELETE'
-            });
-        } else if (modalMode === "therapy") {
-            const payload = {
-                id_paziente: currentUser.id_utente,
-                id_farmaco_armadietto: selectedMedicineId,
-                ...therapyData
-            };
-            res = await fetch('/api/terapia', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-        }
-
-        if (res.ok) {
-            await fetchData(currentUser.id_utente);
-            setIsModalOpen(false);
-        } else {
-            const errorData = await res.json();
-            alert(errorData.error || "Si è verificato un errore");
-        }
-    } catch (err) {
-        console.error("Errore operazione:", err);
-        alert("Errore di connessione");
-    }
+  const handleSuccess = () => {
+      fetchData(currentUser.id_utente);
+      setModalState({ type: null, data: null });
   };
 
   const filteredMedicines = medicines.filter((medicine) => {
@@ -330,178 +153,6 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
       </div>
     );
   }
-
-  // --- RENDER DEL CONTENUTO MODALE ---
-  const renderModalContent = () => {
-      if (modalMode === "delete") {
-          return (
-              <div className="text-center py-4">
-                  <div className="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Icons.Trash2 className="w-8 h-8 text-red-500" />
-                  </div>
-                  <h4 className="text-lg font-bold text-slate-800 mb-2">Sei sicuro?</h4>
-                  <p className="text-slate-500 text-sm">Questa azione eliminerà il farmaco dal tuo armadietto. Non potrà essere annullata.</p>
-              </div>
-          );
-      }
-
-      if (modalMode === "therapy") {
-        console.log(formData); 
-          return (
-            <div className="space-y-4">
-                <div className="bg-teal-50 p-4 rounded-lg mb-4">
-                    <p className="text-sm text-teal-800 font-semibold">Stai creando una terapia per:</p>
-                    <p className="text-lg font-bold text-teal-900">{formData.nome} + {formData.dosaggio}</p>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Nome Utilità (es. "Mal di testa")</label>
-                    <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                           value={therapyData.nome_utilita} onChange={e => setTherapyData({...therapyData, nome_utilita: e.target.value})} />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Dose Singola</label>
-                    <input type="number" step="0.5" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                           placeholder="Es. 1.0" value={therapyData.dose_singola} onChange={e => setTherapyData({...therapyData, dose_singola: e.target.value})} />
-                </div>
-
-                <div className="flex flex-col gap-3 mt-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
-                               checked={therapyData.solo_al_bisogno} onChange={e => setTherapyData({...therapyData, solo_al_bisogno: e.target.checked})} />
-                        <span className="text-sm text-slate-700">Solo al bisogno</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
-                               checked={therapyData.for_life} onChange={e => setTherapyData({...therapyData, for_life: e.target.checked})} />
-                        <span className="text-sm text-slate-700">Terapia cronica (Per sempre)</span>
-                    </label>
-                </div>
-            </div>
-          );
-      }
-
-      return (
-        <div className="space-y-4">
-           {modalMode === "add" && (
-            <div className="relative">
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Cerca Farmaco da aggiungere</label>
-                <div className="relative">
-                    <input 
-                        type="text" 
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                        placeholder="Digita nome o AIC..." 
-                        value={modalSearchTerm} 
-                        onChange={e => setModalSearchTerm(e.target.value)} 
-                    />
-                    <Icons.Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                    {isSearchingDrug && <div className="absolute right-3 top-2.5 w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>}
-                </div>
-                
-                {modalSearchResults.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-slate-100 max-h-48 overflow-y-auto">
-                        {modalSearchResults.map(farmaco => (
-                            <button 
-                                type="button"
-                                key={farmaco.codice_aic} 
-                                onClick={(e) => { e.preventDefault(); handleSelectDrug(farmaco); }}
-                                className="w-full text-left px-3 py-2 text-sm hover:bg-teal-50 hover:text-teal-800 transition-colors border-b border-slate-50 last:border-0"
-                            >
-                                <div className="font-bold">{farmaco.denominazione}</div>
-                                <div className="text-xs text-slate-500 flex justify-between">
-                                    <span>{farmaco.principio_attivo}</span>
-                                    <span>AIC: {farmaco.codice_aic}</span>
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-           )}
-
-           {modalMode === "add" && <div className="h-px bg-slate-100 my-2"></div>}
-
-           <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Nome Commerciale</label>
-              <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm bg-slate-50 text-slate-500" 
-                     value={formData.nome} readOnly={true} disabled />
-           </div>
-           
-           <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Principio Attivo</label>
-                <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm bg-slate-50 text-slate-500" 
-                      value={formData.principio} readOnly disabled />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Dosaggio</label>
-                <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm bg-slate-50 text-slate-500" 
-                      value={formData.dosaggio} readOnly disabled />
-              </div>
-           </div>
-
-           <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Quantità Rimanente *</label>
-                <input 
-                    type="number" 
-                    max={formData.quantita_totale > 0 ? formData.quantita_totale : undefined}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                    value={formData.quantita} 
-                    onChange={e => {
-                        const val = parseFloat(e.target.value);
-                        if (formData.quantita_totale > 0 && val > formData.quantita_totale) {
-                            // Opzionale: visualizza feedback o blocca
-                            // Qui blocchiamo l'input se supera il max
-                            return; 
-                        }
-                        setFormData({...formData, quantita: e.target.value})
-                    }} 
-                />
-                {formData.quantita_totale > 0 && <p className="text-xs text-slate-400 mt-1">Massimo: {formData.quantita_totale}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Scadenza *</label>
-                <input 
-                    type="date" 
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                    value={formData.scadenza} 
-                    onChange={e => setFormData({...formData, scadenza: e.target.value})} 
-                />
-              </div>
-           </div>
-        </div>
-      );
-  };
-
-  const getModalTitle = () => {
-      switch(modalMode) {
-          case 'add': return "Nuovo Farmaco";
-          case 'edit': return "Modifica Farmaco";
-          case 'delete': return "Elimina Farmaco";
-          case 'therapy': return "Nuova Terapia";
-          default: return "";
-      }
-  };
-
-  const getModalFooter = () => {
-      if (modalMode === "delete") {
-          return (
-              <>
-                 <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Annulla</Button>
-                 <Button variant="danger" onClick={handleSubmit}>Elimina definitivamente</Button>
-              </>
-          );
-      }
-      return (
-          <>
-             <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Annulla</Button>
-             <Button onClick={handleSubmit}>Salva</Button>
-          </>
-      );
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 relative font-sans text-slate-900">
@@ -530,7 +181,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
             </div>
             
             <div className="flex gap-3">
-              <Button onClick={handleOpenAdd}>
+              <Button onClick={() => setModalState({ type: 'add', data: null })}>
                 <Icons.Plus className="w-5 h-5 mr-2" />
                 Aggiungi Farmaco
               </Button>
@@ -608,10 +259,10 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
                     </div>
                     {openDropdownId === uniqueId && (
                       <div className="absolute right-3 top-12 w-44 bg-white rounded-lg shadow-lg border border-slate-100 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
-                          <button onClick={(e) => { e.preventDefault(); handleOpenEdit(medicine); }} className="w-full flex items-center px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#14b8a6]"><Icons.Edit className="w-4 h-4 mr-2" /> Modifica</button>
-                          <button onClick={(e) => { e.preventDefault(); handleOpenTherapy(medicine); }} className="w-full flex items-center px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#14b8a6]"><Icons.Calendar className="w-4 h-4 mr-2" /> Terapia</button>
+                          <button onClick={(e) => { e.preventDefault(); setModalState({ type: 'edit', data: medicine }); setOpenDropdownId(null); }} className="w-full flex items-center px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#14b8a6]"><Icons.Edit className="w-4 h-4 mr-2" /> Modifica</button>
+                          <button onClick={(e) => { e.preventDefault(); setModalState({ type: 'therapy', data: medicine }); setOpenDropdownId(null); }} className="w-full flex items-center px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#14b8a6]"><Icons.Calendar className="w-4 h-4 mr-2" /> Terapia</button>
                           <div className="h-px bg-slate-100 my-1"></div>
-                          <button onClick={(e) => { e.preventDefault(); handleOpenDelete(medicine); }} className="w-full flex items-center px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 font-medium"><Icons.Trash2 className="w-4 h-4 mr-2" /> Elimina</button>
+                          <button onClick={(e) => { e.preventDefault(); setModalState({ type: 'delete', data: medicine }); setOpenDropdownId(null); }} className="w-full flex items-center px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 font-medium"><Icons.Trash2 className="w-4 h-4 mr-2" /> Elimina</button>
                       </div>
                     )}
                   </div>
@@ -623,20 +274,42 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
               <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Package className="w-8 h-8 text-slate-300" /></div>
               <h3 className="font-bold text-lg text-slate-800 mb-2">Nessun farmaco trovato</h3>
               <p className="text-slate-500 max-w-xs mx-auto mb-5 text-sm">Non abbiamo trovato corrispondenze. Prova a cambiare i filtri o aggiungi un nuovo farmaco.</p>
-              <Button onClick={handleOpenAdd}>Aggiungi il primo farmaco</Button>
+              <Button onClick={() => setModalState({ type: 'add', data: null })}>Aggiungi il primo farmaco</Button>
             </div>
           )}
         </div>
       </main>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title={getModalTitle()}
-        footer={getModalFooter()}
-      >
-        {renderModalContent()}
-      </Modal>
+      {/* --- MODALS --- */}
+      <AddMedicationModal
+          isOpen={modalState.type === 'add'}
+          onClose={() => setModalState({ type: null, data: null })}
+          onSuccess={handleSuccess}
+          userId={currentUser?.id_utente}
+      />
+      
+      <EditMedicationModal
+          isOpen={modalState.type === 'edit'}
+          onClose={() => setModalState({ type: null, data: null })}
+          medicine={modalState.data}
+          onSuccess={handleSuccess}
+      />
+
+      <DeleteMedicationModal
+          isOpen={modalState.type === 'delete'}
+          onClose={() => setModalState({ type: null, data: null })}
+          medicine={modalState.data}
+          onSuccess={handleSuccess}
+      />
+
+      <AddTherapyModal
+          isOpen={modalState.type === 'therapy'}
+          onClose={() => setModalState({ type: null, data: null })}
+          onSuccess={handleSuccess}
+          userId={currentUser?.id_utente}
+          cabinetMedicines={medicines}
+          initialMedicineId={modalState.data?.id_farmaco_armadietto}
+      />
 
       <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">
           <p>© 2024 MediGuard. La tua salute, organizzata.</p>

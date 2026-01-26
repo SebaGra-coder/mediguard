@@ -42,9 +42,9 @@ export async function POST(request) {
     }
 
     // VALIDAZIONE: Verifica che sia presente una dose [cite: 12]
-    if (dose_singola === undefined) {
+    if (dose_singola === undefined || isNaN(parseFloat(dose_singola))) {
       return NextResponse.json(
-        { success: false, error: "Mancanza della dose singola." }, 
+        { success: false, error: "Dose singola non valida." }, 
         { status: 400 }
       );
     }
@@ -72,8 +72,8 @@ export async function POST(request) {
         // Flag booleano: indica se la terapia è attualmente in corso [cite: 13]
         terapia_attiva: Boolean(terapia_attiva),
 
-        data_inizio: new Date(data_inizio),
-        data_fine: new Date(data_fine)
+        data_inizio: data_inizio ? new Date(data_inizio) : null,
+        data_fine: data_fine ? new Date(data_fine) : null
       },
     });
 
@@ -246,6 +246,144 @@ export async function GET(request) {
     }, { status: 500 });
   }
 }
+
+/**
+ * GESTIONE PUT: Aggiorna un piano terapeutico esistente
+ * @param {Request} request
+ */
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const { 
+      id_terapia,
+      id_farmaco_armadietto,
+      nome_utilita,
+      dose_singola,
+      solo_al_bisogno,
+      terapia_attiva,
+      data_inizio,
+      data_fine,
+      orari // New field expected for schedule regeneration
+    } = body;
+
+    if (!id_terapia) {
+      return NextResponse.json({ success: false, error: "ID terapia mancante" }, { status: 400 });
+    }
+
+    // Costruisci l'oggetto dei dati da aggiornare
+    const dataToUpdate = {};
+    
+    // Aggiorna solo i campi presenti nel body
+    if (id_farmaco_armadietto !== undefined) dataToUpdate.id_farmaco_armadietto = id_farmaco_armadietto;
+    if (nome_utilita !== undefined) dataToUpdate.nome_utilita = nome_utilita;
+    if (dose_singola !== undefined) {
+        const dose = parseFloat(dose_singola);
+        if (isNaN(dose)) {
+            return NextResponse.json({ success: false, error: "Dose singola non valida" }, { status: 400 });
+        }
+        dataToUpdate.dose_singola = dose;
+    }
+    if (solo_al_bisogno !== undefined) dataToUpdate.solo_al_bisogno = Boolean(solo_al_bisogno);
+    if (terapia_attiva !== undefined) dataToUpdate.terapia_attiva = Boolean(terapia_attiva);
+    
+    // Gestione date: accetta stringhe ISO o null
+    if (data_inizio !== undefined) dataToUpdate.data_inizio = data_inizio ? new Date(data_inizio) : null;
+    if (data_fine !== undefined) dataToUpdate.data_fine = data_fine ? new Date(data_fine) : null;
+
+    // 1. Update the Therapy Plan
+    const updatedTerapia = await prisma.piano_terapeutico.update({
+      where: { id_terapia: id_terapia },
+      data: dataToUpdate,
+    });
+
+    // 2. Schedule Regeneration Logic
+    // Only proceed if 'orari' is provided AND it's not a "solo_al_bisogno" therapy
+    if (Array.isArray(orari) && !updatedTerapia.solo_al_bisogno && updatedTerapia.terapia_attiva) {
+      
+      const now = new Date();
+      // We'll regenerate starting from "tomorrow" to avoid messing up today's partial intakes,
+      // OR we can regenerate from "now" onwards.
+      // Better strategy: Delete all FUTURE pending intakes.
+      
+      // Define "Future" as strictly > now.
+      // However, intakes are usually stored as specific timestamps.
+      
+      // Delete existing PENDING intakes in the future
+      await prisma.registro_assunzioni.deleteMany({
+        where: {
+          id_terapia: id_terapia,
+          esito: null, // Only delete pending ones
+          data_programmata: {
+            gt: now
+          }
+        }
+      });
+
+      // Calculate generation range
+      // Start from: Max(new_start_date, tomorrow) - to be safe and simple, let's say "tomorrow" 
+      // if the start date is in the past, otherwise start date.
+      // Actually, if I just changed the schedule at 10:00 AM, I might want the 12:00 PM dose to appear.
+      // So let's generate from "Now" onwards.
+      
+      let generationStart = new Date();
+      if (updatedTerapia.data_inizio && new Date(updatedTerapia.data_inizio) > generationStart) {
+        generationStart = new Date(updatedTerapia.data_inizio);
+      }
+
+      let generationEnd;
+      if (updatedTerapia.data_fine) {
+        generationEnd = new Date(updatedTerapia.data_fine);
+      } else {
+         // Default 30 days if no end date
+         generationEnd = new Date(generationStart);
+         generationEnd.setDate(generationEnd.getDate() + 30);
+      }
+
+      // Regeneration Loop
+      let currDate = new Date(generationStart);
+      
+      const intakesToCreate = [];
+
+      while (currDate <= generationEnd) {
+        const dataStr = currDate.toISOString().split('T')[0];
+        
+        for (const orario of orari) {
+           // Construct Date object for this specific slot in UTC to match assunzione logic
+           // Ensure strict ISO format with Z
+           const scheduledTime = new Date(`${dataStr}T${orario}:00Z`); 
+           
+           // Only add if it's strictly in the future compared to now
+           if (scheduledTime.getTime() > now.getTime()) {
+             intakesToCreate.push({
+               id_terapia: id_terapia,
+               data_programmata: scheduledTime,
+               esito: null,
+               orario_effettivo: null
+             });
+           }
+        }
+        currDate.setDate(currDate.getDate() + 1);
+      }
+
+      if (intakesToCreate.length > 0) {
+        await prisma.registro_assunzioni.createMany({
+          data: intakesToCreate
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Terapia aggiornata con successo (e piano ricalcolato)",
+      data: updatedTerapia
+    }, { status: 200 });
+
+  } catch (error) {
+    console.error("Errore aggiornamento terapia:", error);
+    return NextResponse.json({ success: false, error: "Errore durante l'aggiornamento" }, { status: 500 });
+  }
+}
+
 /**
  * GESTIONE DELETE: Rimuove un piano terapeutico
  * @param {Request} request - URL con parametro ?id_terapia=...

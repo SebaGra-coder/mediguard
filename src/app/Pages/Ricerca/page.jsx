@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
+import { useRouter } from "next/navigation";
 
 // --- DEFINIZIONE COLORI ---
 const primaryColorClass = "text-[#14b8a6]";
@@ -15,22 +16,65 @@ const focusRingClass = "focus:ring-[#14b8a6]";
 const Icons = {
   Search: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>,
   Scan: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /></svg>,
-  Pill: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" /><path d="m8.5 8.5 7 7" /></svg>,
+  Pill: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" /><path d="m8.5 8.5 7 7" /></svg>,
   Info: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>,
   AlertTriangle: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>,
   FileText: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>,
   Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>,
   ExternalLink: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>,
-  ChevronDown: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+  ChevronDown: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>,
+  X: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>,
+};
+
+// --- COMPONENTI UI LOCALI (Style MediGuard) ---
+const Button = ({ children, onClick, variant = "primary", className = "", type = "button", disabled }) => {
+  const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed h-11 px-5";
+  const variants = {
+    primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-md hover:shadow-lg",
+    secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
+    danger: "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200",
+    ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+  };
+  return <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
+};
+
+const Modal = ({ isOpen, onClose, title, children, footer }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+            <div className="bg-teal-50 p-1.5 rounded-lg text-[#14b8a6]"><Icons.Pill className="w-5 h-5"/></div>
+            {title}
+          </h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-full transition-colors"><Icons.X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-6 overflow-y-auto">{children}</div>
+        {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">{footer}</div>}
+      </div>
+    </div>
+  );
 };
 
 export default function Ricerca({ isAuthenticated: initialAuth = false }) {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
+  const [currentUser, setCurrentUser] = useState(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [risultati, setRisultati] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const router = useRouter();
+
+  // Stati per il Modale
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMedication, setSelectedMedication] = useState(null);
+  const [formData, setFormData] = useState({
+    quantita: "",
+    scadenza: "",
+    lotto: ""
+  });
 
   // NUOVO: Stato per gestire la paginazione
   const ITEMS_PER_PAGE = 5;
@@ -42,6 +86,9 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
         const res = await fetch('/api/auth/me');
         const data = await res.json();
         setIsUserAuthenticated(data.isAuthenticated);
+        if (data.isAuthenticated) {
+          setCurrentUser(data.user);
+        }
       } catch (err) {
         console.error("Errore verifica auth", err);
       } finally {
@@ -83,6 +130,7 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setIsUserAuthenticated(false);
+      setCurrentUser(null);
       window.location.href = '/Pages/Autenticazione';
     } catch (err) {
       console.error("Errore logout", err);
@@ -95,6 +143,59 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
 
   const loadMore = () => {
     setVisibleCount((prev) => prev + ITEMS_PER_PAGE);
+  };
+
+  // --- LOGICA AGGIUNTA ARMADIETTO ---
+  const handleAddToCabinet = (medicine) => {
+    if (!isUserAuthenticated) {
+      router.push('/Pages/Autenticazione');
+      return;
+    }
+    
+    setSelectedMedication(medicine);
+    setFormData({
+      quantita: medicine.quantita_confezione ? String(medicine.quantita_confezione) : "1",
+      scadenza: "",
+      lotto: ""
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleModalSubmit = async () => {
+    if (!currentUser?.id_utente || !selectedMedication) return;
+
+    if (!formData.quantita || !formData.scadenza) {
+      alert("Per favore compila quantità e data di scadenza.");
+      return;
+    }
+
+    try {
+      const payload = {
+        id_utente_proprietario: currentUser.id_utente,
+        codice_aic: selectedMedication.codice_aic,
+        data_scadenza: formData.scadenza,
+        quantita_rimanente: formData.quantita,
+        lotto_produzione: formData.lotto
+      };
+
+      const res = await fetch('/api/antonio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        setIsModalOpen(false);
+        alert("Farmaco aggiunto correttamente al tuo armadietto!");
+      } else {
+        alert(json.error || "Errore durante l'aggiunta del farmaco.");
+      }
+    } catch (err) {
+      console.error("Errore API:", err);
+      alert("Errore di connessione.");
+    }
   };
 
   if (isAuthChecking) {
@@ -169,24 +270,22 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
 
           {/* LISTA FARMACI */}
           {hasSearched && risultati.length > 0 ?(
-            <div className="space-y-4 max-w-4xl mx-auto"> {/* max-w-4xl limita la larghezza */}
+            <div className="space-y-4 max-w-4xl mx-auto">
               {risultati.slice(0, visibleCount).map((medicine, index) => (
                 <div
                   key={medicine.codice_aic || index}
-                  // Card più compatta (p-5, rounded-2xl)
+                  // Card più compatta
                   className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-all duration-300"
                   style={{ animation: `fadeIn 0.5s ease-out ${index * 0.1}s backwards` }}
                 >
                   {/* Contenuto Superiore */}
                   <div className="flex flex-col md:flex-row gap-5 items-start">
 
-                    {/* Icona più piccola (w-12 h-12) */}
                     <div className={`w-12 h-12 rounded-full ${bgLightClass} flex items-center justify-center shrink-0 ${primaryColorClass}`}>
                       <Icons.Pill />
                     </div>
 
                     <div className="flex-1 w-full">
-                      {/* Titolo e Badge sulla stessa riga */}
                       <div className="flex justify-between items-start mb-1">
                         <div>
                           <h3 className="font-bold text-lg text-slate-900 leading-tight">
@@ -196,7 +295,6 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
                             {medicine.principio_attivo}
                           </p>
                         </div>
-                        {/* Badge Formato Compatto */}
                         <span className={`border ${borderPrimaryClass} ${primaryColorClass} bg-white px-3 py-0.5 rounded-full text-xs font-bold whitespace-nowrap hidden sm:inline-block`}>
                           {medicine.unita_misura}
                         </span>
@@ -206,7 +304,6 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
                         {medicine.descrizione}
                       </p>
 
-                      {/* Metadati Piccoli */}
                       <div className="flex flex-wrap items-center gap-3 text-xs mb-4 text-slate-500">
                         <span className="font-bold text-slate-700">{medicine.ragione_sociale}</span>
                         <span>• AIC: {medicine.codice_aic}</span>
@@ -220,7 +317,6 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
                   {/* Azioni Compatte */}
                   <div className="border-t border-slate-100 pt-3 mt-1 flex flex-wrap items-center gap-2">
 
-                    {/* Pulsanti Info (Outline e Piccoli) */}
                     <button className={`flex items-center px-3 py-1.5 text-xs font-bold ${primaryColorClass} bg-white border ${borderPrimaryClass} rounded-full hover:${bgLightClass} transition-colors`}>
                       <span className="mr-1.5 scale-75"><Icons.Info /></span> Scheda
                     </button>
@@ -229,8 +325,10 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
                       <span className="mr-1.5 scale-75"><Icons.FileText /></span> Foglietto
                     </button>
 
-                    {/* Pulsante Aggiungi (Tutto a destra) */}
-                    <button className={`flex items-center px-4 py-1.5 text-xs font-bold text-white ${bgPrimaryClass} ${hoverBgPrimaryClass} rounded-lg transition-colors shadow-sm ml-auto w-full md:w-auto justify-center`}>
+                    <button 
+                      onClick={() => handleAddToCabinet(medicine)}
+                      className={`flex items-center px-4 py-1.5 text-xs font-bold text-white ${bgPrimaryClass} ${hoverBgPrimaryClass} rounded-lg transition-colors shadow-sm ml-auto w-full md:w-auto justify-center`}
+                    >
                       <span className="mr-1.5 scale-90"><Icons.Plus /></span> Aggiungi al mio armadietto
                     </button>
                   </div>
@@ -306,6 +404,70 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
           © {new Date().getFullYear()} MediGuard. Dati forniti da AIFA.
         </div>
       </footer>
+
+      {/* MODALE PER AGGIUNGERE FARMACO */}
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title="Aggiungi all'Armadietto"
+        footer={
+          <>
+             <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Annulla</Button>
+             <Button onClick={handleModalSubmit}>Salva nell'Armadietto</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+           {selectedMedication && (
+             <div className="bg-teal-50 p-4 rounded-lg mb-4 border border-teal-100">
+                <h4 className="font-bold text-teal-900">{selectedMedication.denominazione} {selectedMedication.dosaggio}</h4>
+                <p className="text-sm text-teal-700">{selectedMedication.principio_attivo}</p>
+                <p className="text-xs text-teal-600 mt-1">AIC: {selectedMedication.codice_aic}</p>
+             </div>
+           )}
+
+           <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Quantità Rimanente *</label>
+                <input 
+                    type="number" 
+                    step="0.5"
+                    max={selectedMedication?.quantita_confezione}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
+                    value={formData.quantita} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      const max = selectedMedication?.quantita_confezione;
+                      if (!max || val === "" || Number(val) <= Number(max)) {
+                        setFormData({...formData, quantita: val});
+                      }
+                    }} 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Scadenza *</label>
+                <input 
+                    type="date" 
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
+                    value={formData.scadenza} 
+                    onChange={e => setFormData({...formData, scadenza: e.target.value})} 
+                />
+              </div>
+           </div>
+           
+           <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Lotto di produzione</label>
+              <input 
+                  type="text" 
+                  placeholder="Opzionale"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
+                  value={formData.lotto} 
+                  onChange={e => setFormData({...formData, lotto: e.target.value})} 
+              />
+           </div>
+        </div>
+      </Modal>
 
       {/* Animazione custom */}
       <style jsx>{`

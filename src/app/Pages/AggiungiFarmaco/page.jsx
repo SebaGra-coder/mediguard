@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link"; // Assumo tu stia usando Next.js per i link, altrimenti usa <a>
 import { Navbar } from "@/components/layout/Navbar"; // Assicurati che il percorso sia giusto
 

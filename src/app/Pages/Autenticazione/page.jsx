@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation"; // Changed for Next.js
-import Link from "next/link"; // Changed for Next.js
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 
-export default function Auth({ onLogin }) {
+function AuthContent({ onLogin }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -358,5 +358,13 @@ export default function Auth({ onLogin }) {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function Auth(props) {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div></div>}>
+      <AuthContent {...props} />
+    </Suspense>
   );
 }

@@ -30,11 +30,19 @@ export async function POST(request) {
     const assunzioniCreate = [];
 
     // --- CASO 1: Generazione massiva (Pianificazione) ---
-    if (data_inizio && data_fine && Array.isArray(orari) && orari.length > 0) {
+    if (data_inizio && Array.isArray(orari) && orari.length > 0) {
 
       // Cloniamo la data per non modificare l'originale durante il ciclo se servisse
       let currDate = new Date(data_inizio);
-      const endDate = new Date(data_fine);
+      let endDate;
+
+      if (data_fine) {
+        endDate = new Date(data_fine);
+      } else {
+        // Se è una terapia a vita (data_fine null), generiamo i primi 30 giorni
+        endDate = new Date(data_inizio);
+        endDate.setDate(endDate.getDate() + 30);
+      }
 
       // Ciclo sui giorni
       while (currDate <= endDate) {
@@ -82,9 +90,24 @@ export async function POST(request) {
           data_programmata: new Date(data_programmata),
           orario_effettivo: orario_effettivo ? new Date(orario_effettivo) : null,
           esito: esito !== undefined ? Boolean(esito) : null
+        },
+        include: {
+          terapia: true
         }
       });
       assunzioniCreate.push(singolaAssunzione);
+
+      // Se l'assunzione è confermata (esito true), scala la quantità dall'armadietto
+      if (singolaAssunzione.esito === true) {
+        await prisma.farmaco_armadietto.update({
+          where: { id_farmaco_armadietto: singolaAssunzione.terapia.id_farmaco_armadietto },
+          data: {
+            quantita_rimanente: {
+              decrement: singolaAssunzione.terapia.dose_singola
+            }
+          }
+        });
+      }
     }
 
     return NextResponse.json({
@@ -180,6 +203,18 @@ export async function PUT(request) {
       );
     }
 
+    // Recupera lo stato attuale per verificare se stiamo confermando un'assunzione non ancora presa
+    const currentAssunzione = await prisma.registro_assunzioni.findUnique({
+      where: { id_evento: id_evento },
+      include: {
+        terapia: true
+      }
+    });
+
+    if (!currentAssunzione) {
+      return NextResponse.json({ error: 'Assunzione non trovata' }, { status: 404 });
+    }
+
     const dataToUpdate = {};
     if (esito !== undefined) dataToUpdate.esito = Boolean(esito);
     if (orario_effettivo) dataToUpdate.orario_effettivo = new Date(orario_effettivo);
@@ -188,6 +223,18 @@ export async function PUT(request) {
       where: { id_evento: id_evento },
       data: dataToUpdate,
     });
+
+    // Se stiamo confermando l'assunzione (esito passa a true) e prima non lo era, scala la quantità
+    if (currentAssunzione.esito !== true && Boolean(esito) === true) {
+      await prisma.farmaco_armadietto.update({
+        where: { id_farmaco_armadietto: currentAssunzione.terapia.id_farmaco_armadietto },
+        data: {
+          quantita_rimanente: {
+            decrement: currentAssunzione.terapia.dose_singola
+          }
+        }
+      });
+    }
 
     return NextResponse.json({
       success: true,
