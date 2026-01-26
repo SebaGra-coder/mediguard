@@ -31,3 +31,29 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 });
   }
 }
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const userId = searchParams.get('userId');
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Mancanza dell\'ID dell\'utente' }, { status: 400 });
+  }
+
+  try {
+    const sottoscrizione = await prisma.sottoscrizione_web_push.findFirst({
+      where: {
+        id_utente: userId,
+      },
+    });
+
+    if (!sottoscrizione) {
+      return NextResponse.json({ hasSubscription: false });
+    }
+
+    return NextResponse.json({ hasSubscription: true });
+  } catch (error) {
+    console.error("Errore GET sottoscrizione:", error);
+    return NextResponse.json({ error: 'Errore interno' }, { status: 500 });
+  }
+}

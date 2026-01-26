@@ -129,13 +129,12 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             const json = await res.json();
             
             if (json.success && Array.isArray(json.data)) {
-                // Define local day boundaries
                 const startOfDay = new Date(date);
                 startOfDay.setHours(0, 0, 0, 0);
                 
                 const endOfDay = new Date(date);
                 endOfDay.setHours(23, 59, 59, 999);
-
+    
                 const dailyIntakes = [];
                 
                 json.data.forEach(terapia => {
@@ -143,15 +142,27 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                         terapia.assunzioni.forEach(assunzione => {
                             const assunzioneDate = new Date(assunzione.data_programmata);
                             
-                            // Check overlap with local day
                             if (assunzioneDate >= startOfDay && assunzioneDate <= endOfDay) {
+                                // CORREZIONE LOGICA STATO:
+                                // 1. Se assunzione.esito è true -> "taken"
+                                // 2. Se non è preso ed è oggi -> "pending" (così appare il tasto Conferma)
+                                let currentStatus = "pending";
+                                if (assunzione.esito) {
+                                    currentStatus = "taken";
+                                } else if (assunzioneDate.getTime() > new Date().getTime() + (1000 * 60 * 60)) {
+                                    // Opzionale: se mancano più di 60 minuti, lo segna come "upcoming"
+                                    // Se vuoi poter confermare SEMPRE quelli di oggi, lascia solo "pending"
+                                    currentStatus = "upcoming";
+                                }
+    
                                 dailyIntakes.push({
                                     id: assunzione.id_evento,
-                                    time: assunzioneDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }),
+                                    // Uso toLocaleTimeString senza UTC per riflettere l'ora locale dell'utente
+                                    time: assunzioneDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit'}),
                                     medicine: terapia.nome_utilita || terapia.farmaco?.farmaco?.denominazione || "Farmaco",
                                     dosage: terapia.dose_singola + " " + (terapia.farmaco?.farmaco?.unita_misura || ""),
-                                    status: assunzione.esito ? "taken" : (assunzioneDate.getTime() > new Date().getTime() ? "upcoming" : "pending"),
-                                    takenAt: assunzione.orario_effettivo ? new Date(assunzione.orario_effettivo).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) : null
+                                    status: currentStatus,
+                                    takenAt: assunzione.orario_effettivo ? new Date(assunzione.orario_effettivo).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit'}) : null
                                 });
                             }
                         });
@@ -161,7 +172,6 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 dailyIntakes.sort((a, b) => a.time.localeCompare(b.time));
                 setTodaySchedule(dailyIntakes);
             }
-            
         } catch (err) {
             console.error("Errore caricamento programma giornaliero", err);
         }

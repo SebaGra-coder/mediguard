@@ -90,10 +90,25 @@ export default function CollegaCaregiver({ isAuthenticated: initialAuth = false 
     setTimeout(() => setToast({ message: null, type: null }), 3000);
   };
 
-  const generateCode = () => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    setGeneratedCode(code);
-    showToast("Codice generato con successo!");
+  const generateCode = async () => {
+    try {
+      const res = await fetch('/api/relazioni/codice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetRole: 'ASSISTITO' })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setGeneratedCode(data.code);
+        showToast("Codice generato con successo!");
+      } else {
+        showToast(data.message || "Errore generazione codice", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Errore di comunicazione col server", "error");
+    }
   };
 
   const copyCode = () => {
@@ -103,10 +118,29 @@ export default function CollegaCaregiver({ isAuthenticated: initialAuth = false 
     }
   };
 
-  const submitCode = () => {
+  const submitCode = async () => {
     if (inputCode.length === 6) {
-      showToast("Richiesta inviata! In attesa di conferma.", "success");
-      setInputCode("");
+      try {
+        const res = await fetch('/api/relazioni/collega', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: inputCode })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          showToast("Collegamento avvenuto con successo!", "success");
+          setInputCode("");
+          setTimeout(() => {
+             window.location.href = '/Pages/HomePage';
+          }, 2000);
+        } else {
+          showToast(data.message || "Codice non valido", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("Errore di comunicazione col server", "error");
+      }
     } else {
       showToast("Codice non valido", "error");
     }

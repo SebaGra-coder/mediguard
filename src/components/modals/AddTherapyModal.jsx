@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 
 // --- ICONE SVG ---
 const Icons = {
-    Pill: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>,
-    X: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>,
+    Pill: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" /><path d="m8.5 8.5 7 7" /></svg>,
+    X: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>,
 };
 
 // --- COMPONENTS ---
@@ -25,7 +25,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                        <div className="bg-teal-50 p-1.5 rounded-lg text-[#14b8a6]"><Icons.Pill className="w-5 h-5"/></div>
+                        <div className="bg-teal-50 p-1.5 rounded-lg text-[#14b8a6]"><Icons.Pill className="w-5 h-5" /></div>
                         {title}
                     </h3>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-full transition-colors"><Icons.X className="w-5 h-5" /></button>
@@ -100,9 +100,11 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
                     dose_singola: parseFloat(formData.dosaggio),
                     solo_al_bisogno: formData.alBisogno,
                     terapia_attiva: formData.stato === "attiva",
+                    // Assicurati che le date siano stringhe YYYY-MM-DD
                     data_inizio: formData.startDate,
-                    data_fine: formData.endDate,
-                    orari: formData.alBisogno ? [] : formData.orari // Send orari only if NOT "al bisogno"
+                    data_fine: formData.endDate || null,
+                    // Invia SEMPRE gli orari se non è "al bisogno"
+                    orari: formData.alBisogno ? [] : formData.orari
                 };
 
                 const res = await fetch('/api/terapia', {
@@ -137,7 +139,9 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
                 terapia_attiva: true,
                 orari: formData.alBisogno ? [] : formData.orari
             };
-            
+
+            // Effettua SOLO questa chiamata. 
+            // Il backend genererà automaticamente le assunzioni.
             const res = await fetch('/api/terapia', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -145,22 +149,6 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
             });
 
             const json = await res.json();
-            
-            // If not "Al bisogno", create schedule
-            if (res.ok && json.success && !formData.alBisogno) {
-               const payload = {
-                    id_terapia: json.data.id_terapia,
-                    data_inizio: formData.startDate,
-                    data_fine: formData.endDate || null, 
-                    orari: formData.orari
-                };
-
-                await fetch('/api/assunzione', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-            }
 
             if (res.ok && json.success) {
                 if (onSuccess) onSuccess();
@@ -231,11 +219,11 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
                     </div>
                     <div className="flex items-center">
                         <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer">
-                            <input 
-                                type="checkbox" 
+                            <input
+                                type="checkbox"
                                 className="w-4 h-4 text-[#14b8a6] border-slate-300 rounded focus:ring-[#14b8a6]"
                                 checked={formData.alBisogno}
-                                onChange={e => setFormData({...formData, alBisogno: e.target.checked})} 
+                                onChange={e => setFormData({ ...formData, alBisogno: e.target.checked })}
                             />
                             Assunzione "Al Bisogno"
                         </label>

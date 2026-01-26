@@ -32,10 +32,16 @@ export async function GET(request) {
           nome: true, 
           cognome: true,
           caregiver: {
-            select: { id_relazione: true }
+            select: { 
+              id_relazione: true,
+              id_assistito: true
+            }
           },
           assistito: {
-            select: { id_relazione: true }
+            select: { 
+              id_relazione: true,
+              id_caregiver: true
+            }
           }
         }
       });
@@ -44,6 +50,7 @@ export async function GET(request) {
          return NextResponse.json({ isAuthenticated: false }, { status: 200 });
       }
 
+      // Determina il ruolo in base alla presenza nella tabella relazioni
       let ruolo = "Nessuno";
       if (utente.caregiver.length > 0) {
         ruolo = "Caregiver";

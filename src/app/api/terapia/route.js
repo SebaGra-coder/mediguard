@@ -12,16 +12,16 @@ export async function POST(request) {
   try {
     // Legge il corpo della richiesta in formato JSON
     const body = await request.json();
-    
+
     // Estrae i dati necessari dal corpo della richiesta [cite: 12, 13]
-    const { 
-      id_paziente, 
-      id_farmaco_armadietto, 
-      nome_utilita, 
-      dose_singola, 
-      solo_al_bisogno, 
-      terapia_attiva, 
-      data_inizio, 
+    const {
+      id_paziente,
+      id_farmaco_armadietto,
+      nome_utilita,
+      dose_singola,
+      solo_al_bisogno,
+      terapia_attiva,
+      data_inizio,
       data_fine,
       orari
     } = body;
@@ -29,7 +29,7 @@ export async function POST(request) {
     // VALIDAZIONE: Verifica che l'ID del paziente sia presente [cite: 12]
     if (!id_paziente) {
       return NextResponse.json(
-        { success: false, error: "Mancanza dell'ID del paziente." }, 
+        { success: false, error: "Mancanza dell'ID del paziente." },
         { status: 400 }
       );
     }
@@ -37,7 +37,7 @@ export async function POST(request) {
     // VALIDAZIONE: Verifica che il farmaco dell'armadietto sia specificato [cite: 12]
     if (!id_farmaco_armadietto) {
       return NextResponse.json(
-        { success: false, error: "Mancanza dell'ID del farmaco nell'armadietto." }, 
+        { success: false, error: "Mancanza dell'ID del farmaco nell'armadietto." },
         { status: 400 }
       );
     }
@@ -45,7 +45,7 @@ export async function POST(request) {
     // VALIDAZIONE: Verifica che sia presente una dose [cite: 12]
     if (dose_singola === undefined || isNaN(parseFloat(dose_singola))) {
       return NextResponse.json(
-        { success: false, error: "Dose singola non valida." }, 
+        { success: false, error: "Dose singola non valida." },
         { status: 400 }
       );
     }
@@ -54,22 +54,22 @@ export async function POST(request) {
     const nuovoPiano = await prisma.piano_terapeutico.create({
       data: {
         // L'ID della terapia (UUID) viene generato automaticamente [cite: 12]
-        
+
         // Collega il piano al paziente (Utente) [cite: 12]
-        id_paziente: id_paziente, 
-        
+        id_paziente: id_paziente,
+
         // Collega il piano al farmaco specifico nell'armadietto [cite: 12]
-        id_farmaco_armadietto: id_farmaco_armadietto, 
-        
+        id_farmaco_armadietto: id_farmaco_armadietto,
+
         // Etichetta personalizzata per la terapia (es. "Per il mal di testa") [cite: 12]
         nome_utilita: nome_utilita,
-        
+
         // Quantità di farmaco da assumere [cite: 12]
         dose_singola: parseFloat(dose_singola),
-        
+
         // Flag booleano: indica se va preso solo al bisogno [cite: 12]
         solo_al_bisogno: Boolean(solo_al_bisogno),
-        
+
         // Flag booleano: indica se la terapia è attualmente in corso [cite: 13]
         terapia_attiva: Boolean(terapia_attiva),
 
@@ -83,41 +83,35 @@ export async function POST(request) {
     // GENERAZIONE INIZIALE ASSUNZIONI (Se ci sono orari e non è al bisogno)
     if (Array.isArray(orari) && !nuovoPiano.solo_al_bisogno && nuovoPiano.terapia_attiva) {
       const now = new Date();
-      
-      let generationStart = new Date();
-      if (nuovoPiano.data_inizio && new Date(nuovoPiano.data_inizio) > generationStart) {
-        generationStart = new Date(nuovoPiano.data_inizio);
-      }
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
 
-      let generationEnd;
-      if (nuovoPiano.data_fine) {
-        generationEnd = new Date(nuovoPiano.data_fine);
-      } else {
-         // Default 30 days
-         generationEnd = new Date(generationStart);
-         generationEnd.setDate(generationEnd.getDate() + 30);
-      }
+      let generationStart = nuovoPiano.data_inizio ? new Date(nuovoPiano.data_inizio) : startOfToday;
+      if (generationStart < startOfToday) generationStart = startOfToday;
 
-      let currDate = new Date(generationStart);
+      let generationEnd = nuovoPiano.data_fine
+        ? new Date(nuovoPiano.data_fine)
+        : new Date(generationStart.getTime() + 30 * 24 * 60 * 60 * 1000);
+
       const intakesToCreate = [];
+      let iterDate = new Date(generationStart);
 
-      while (currDate <= generationEnd) {
-        const dataStr = currDate.toISOString().split('T')[0];
-        
-        for (const orario of orari) {
-           // Assicurati che l'orario sia nel formato HH:MM
-           const scheduledTime = new Date(`${dataStr}T${orario}:00Z`);
-           
-           if (scheduledTime.getTime() > now.getTime()) {
-             intakesToCreate.push({
-               id_terapia: nuovoPiano.id_terapia,
-               data_programmata: scheduledTime,
-               esito: null,
-               orario_effettivo: null
-             });
-           }
+      while (iterDate <= generationEnd) {
+        const dateStr = iterDate.toISOString().split('T')[0];
+        for (const ora of orari) {
+          const scheduledTime = new Date(`${dateStr}T${ora}:00Z`);
+
+          // Crea solo se l'orario è valido per oggi o per il futuro
+          if (scheduledTime >= startOfToday) {
+            intakesToCreate.push({
+              id_terapia: nuovoPiano.id_terapia,
+              data_programmata: scheduledTime,
+              esito: null,
+              orario_effettivo: null
+            });
+          }
         }
-        currDate.setDate(currDate.getDate() + 1);
+        iterDate.setDate(iterDate.getDate() + 1);
       }
 
       if (intakesToCreate.length > 0) {
@@ -137,17 +131,17 @@ export async function POST(request) {
   } catch (error) {
     // Logga l'errore per il debug sul server
     console.error("Errore creazione piano terapeutico:", error);
-    
+
     // Gestione errore vincoli di integrità (es. paziente o farmaco non esistenti)
     if (error.code === 'P2003') {
       return NextResponse.json(
-        { success: false, error: "Errore: Paziente o Farmaco Armadietto non validi." }, 
+        { success: false, error: "Errore: Paziente o Farmaco Armadietto non validi." },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { success: false, error: "Errore interno durante il salvataggio del piano." }, 
+      { success: false, error: "Errore interno durante il salvataggio del piano." },
       { status: 500 }
     );
   }
@@ -279,20 +273,20 @@ export async function GET(request) {
     });
 
     // Restituisce i risultati trovati (array vuoto se nessun match)
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       count: pianiTerapeutici.length,
-      data: pianiTerapeutici 
+      data: pianiTerapeutici
     }, { status: 200 });
 
   } catch (error) {
     // Logga l'errore per il debug lato server
     console.error("Errore durante la ricerca dinamica dei piani:", error);
-    
+
     // Restituisce un errore generico in caso di problemi tecnici
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Errore interno durante il recupero dei dati' 
+    return NextResponse.json({
+      success: false,
+      error: 'Errore interno durante il recupero dei dati'
     }, { status: 500 });
   }
 }
@@ -304,7 +298,7 @@ export async function GET(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { 
+    const {
       id_terapia,
       id_farmaco_armadietto,
       nome_utilita,
@@ -322,24 +316,24 @@ export async function PUT(request) {
 
     // Costruisci l'oggetto dei dati da aggiornare
     const dataToUpdate = {};
-    
+
     // Aggiorna solo i campi presenti nel body
     if (id_farmaco_armadietto !== undefined) dataToUpdate.id_farmaco_armadietto = id_farmaco_armadietto;
     if (nome_utilita !== undefined) dataToUpdate.nome_utilita = nome_utilita;
     if (dose_singola !== undefined) {
-        const dose = parseFloat(dose_singola);
-        if (isNaN(dose)) {
-            return NextResponse.json({ success: false, error: "Dose singola non valida" }, { status: 400 });
-        }
-        dataToUpdate.dose_singola = dose;
+      const dose = parseFloat(dose_singola);
+      if (isNaN(dose)) {
+        return NextResponse.json({ success: false, error: "Dose singola non valida" }, { status: 400 });
+      }
+      dataToUpdate.dose_singola = dose;
     }
     if (solo_al_bisogno !== undefined) dataToUpdate.solo_al_bisogno = Boolean(solo_al_bisogno);
     if (terapia_attiva !== undefined) dataToUpdate.terapia_attiva = Boolean(terapia_attiva);
-    
+
     // Gestione date: accetta stringhe ISO o null
     if (data_inizio !== undefined) dataToUpdate.data_inizio = data_inizio ? new Date(data_inizio) : null;
     if (data_fine !== undefined) dataToUpdate.data_fine = data_fine ? new Date(data_fine) : null;
-    
+
     // Aggiorna gli orari se forniti
     if (orari !== undefined) dataToUpdate.orari = orari;
 
@@ -349,80 +343,79 @@ export async function PUT(request) {
       data: dataToUpdate,
     });
 
-    // 2. Schedule Regeneration Logic
-    // Only proceed if 'orari' is provided AND it's not a "solo_al_bisogno" therapy
+    // 2. Logica di Rigenerazione/Aggiornamento del Calendario
     if (Array.isArray(orari) && !updatedTerapia.solo_al_bisogno && updatedTerapia.terapia_attiva) {
-      
       const now = new Date();
-      // We'll regenerate starting from "tomorrow" to avoid messing up today's partial intakes,
-      // OR we can regenerate from "now" onwards.
-      // Better strategy: Delete all FUTURE pending intakes.
-      
-      // Define "Future" as strictly > now.
-      // However, intakes are usually stored as specific timestamps.
-      
-      // Delete existing PENDING intakes in the future
-      await prisma.registro_assunzioni.deleteMany({
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+
+      // 1. Recupero assunzioni PENDING esistenti
+      const existingPending = await prisma.registro_assunzioni.findMany({
         where: {
           id_terapia: id_terapia,
-          esito: null, // Only delete pending ones
-          data_programmata: {
-            gt: now
+          esito: null,
+          orario_effettivo: null,
+          data_programmata: { gte: startOfToday }
+        },
+        orderBy: { data_programmata: 'asc' }
+      });
+
+      // 2. Calcolo dei nuovi orari desiderati
+      let generationStart = updatedTerapia.data_inizio && new Date(updatedTerapia.data_inizio) > startOfToday
+        ? new Date(updatedTerapia.data_inizio)
+        : startOfToday;
+
+      let generationEnd = updatedTerapia.data_fine
+        ? new Date(updatedTerapia.data_fine)
+        : new Date(generationStart.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      const desiredIntakes = [];
+      let iterDate = new Date(generationStart);
+
+      while (iterDate <= generationEnd) {
+        // CORREZIONE: Costruiamo la stringa data usando i componenti locali 
+        // per evitare lo slittamento di un giorno dovuto a toISOString()
+        const year = iterDate.getFullYear();
+        const month = String(iterDate.getMonth() + 1).padStart(2, '0');
+        const day = String(iterDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        for (const ora of orari) {
+          // Usiamo l'ora locale. Se vuoi mantenere lo standard UTC nel DB:
+          const scheduledTime = new Date(`${dateStr}T${ora}:00`);
+          desiredIntakes.push(scheduledTime);
+        }
+        iterDate.setDate(iterDate.getDate() + 1);
+      }
+
+      // 3. Sincronizzazione tramite Transazione
+      await prisma.$transaction(async (tx) => {
+        const maxIndex = Math.max(existingPending.length, desiredIntakes.length);
+
+        for (let i = 0; i < maxIndex; i++) {
+          if (i < existingPending.length && i < desiredIntakes.length) {
+            // AGGIORNA senza eliminare
+            await tx.registro_assunzioni.update({
+              where: { id_evento: existingPending[i].id_evento },
+              data: { data_programmata: desiredIntakes[i] }
+            });
+          } else if (i < desiredIntakes.length) {
+            // CREA se mancano record
+            await tx.registro_assunzioni.create({
+              data: {
+                id_terapia: id_terapia,
+                data_programmata: desiredIntakes[i],
+                esito: null
+              }
+            });
+          } else if (i < existingPending.length) {
+            // ELIMINA solo se in eccesso
+            await tx.registro_assunzioni.delete({
+              where: { id_evento: existingPending[i].id_evento }
+            });
           }
         }
       });
-
-      // Calculate generation range
-      // Start from: Max(new_start_date, tomorrow) - to be safe and simple, let's say "tomorrow" 
-      // if the start date is in the past, otherwise start date.
-      // Actually, if I just changed the schedule at 10:00 AM, I might want the 12:00 PM dose to appear.
-      // So let's generate from "Now" onwards.
-      
-      let generationStart = new Date();
-      if (updatedTerapia.data_inizio && new Date(updatedTerapia.data_inizio) > generationStart) {
-        generationStart = new Date(updatedTerapia.data_inizio);
-      }
-
-      let generationEnd;
-      if (updatedTerapia.data_fine) {
-        generationEnd = new Date(updatedTerapia.data_fine);
-      } else {
-         // Default 30 days if no end date
-         generationEnd = new Date(generationStart);
-         generationEnd.setDate(generationEnd.getDate() + 30);
-      }
-
-      // Regeneration Loop
-      let currDate = new Date(generationStart);
-      
-      const intakesToCreate = [];
-
-      while (currDate <= generationEnd) {
-        const dataStr = currDate.toISOString().split('T')[0];
-        
-        for (const orario of orari) {
-           // Construct Date object for this specific slot in UTC to match assunzione logic
-           // Ensure strict ISO format with Z
-           const scheduledTime = new Date(`${dataStr}T${orario}:00Z`);
-           
-           // Only add if it's strictly in the future compared to now
-           if (scheduledTime.getTime() > now.getTime()) {
-             intakesToCreate.push({
-               id_terapia: id_terapia,
-               data_programmata: scheduledTime,
-               esito: null,
-               orario_effettivo: null
-             });
-           }
-        }
-        currDate.setDate(currDate.getDate() + 1);
-      }
-
-      if (intakesToCreate.length > 0) {
-        await prisma.registro_assunzioni.createMany({
-          data: intakesToCreate
-        });
-      }
     }
 
     return NextResponse.json({

@@ -163,8 +163,10 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
 
                             todaysIntakes.push({
                                 id: assunzione.id_evento,
-                                time: scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' , timeZone: 'UTC'}),
+                                time: scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}),
                                 medicine: therapy.farmaco?.farmaco?.denominazione || therapy.nome_utilita || "Farmaco",
+                                dose: therapy.dose_singola || "Dose",
+                                unit: therapy.farmaco?.farmaco?.unita_misura || "Unità",
                                 status: status,
                                 originalDate: scheduledDate // For sorting
                             });
@@ -225,7 +227,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
         const qtyPercent = (med.quantita_rimanente / (med.farmaco?.quantita_confezione || 100)) * 100;
         if (days <= 0) return "expired";
         if (days <= 30) return "expiring";
-        if (med.quantita_rimanente <= 5 || qtyPercent < 20) return "low";
+        if (qtyPercent < 50) return "low";
         return "ok";
     };
 
@@ -330,7 +332,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
                                                         <span className="text-sm font-mono font-bold text-slate-500 w-12">{item.time}</span>
                                                         <div className="flex-1">
                                                             <p className={`font-semibold text-slate-800 ${item.status === 'taken' ? 'line-through opacity-50' : ''}`}>
-                                                                {item.medicine}
+                                                                {item.medicine.toUpperCase()} - <span className="lowercase">{item.dose} {item.unit}</span>
                                                             </p>
                                                         </div>
                                                         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${style.bg} ${style.text}`}>

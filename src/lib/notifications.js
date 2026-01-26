@@ -5,9 +5,8 @@ export async function subscribeUserToPush() {
     }
   
     try {
-      // 1. Registra il Service Worker
-      const registration = await navigator.serviceWorker.register('/sw.js');
-  
+          // 1. Registra il Service Worker
+          const registration = await navigator.serviceWorker.register('/sw.js');  
       // 2. Chiedi il permesso all'utente (appare il popup del browser)
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
