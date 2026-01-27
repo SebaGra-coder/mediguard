@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
@@ -7,31 +8,20 @@ import { GuestOverlay } from "@/components/GuestOverlay";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
-  Plus: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
-  Users: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>,
-  Clock: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  Bell: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
-  Phone: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
-  Mail: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
-  Settings: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
-  ChevronRight: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
-  Shield: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>,
-  Heart: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>,
+  Plus: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>,
+  Users: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
+  AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" x2="12" y1="9" y2="13" /><line x1="12" x2="12.01" y1="17" y2="17" /></svg>,
+  Clock: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
+  Bell: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>,
+  Phone: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>,
+  Mail: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>,
+  Settings: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>,
+  ChevronRight: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>,
+  Shield: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /></svg>,
+  Heart: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg>,
 };
 
-// --- MOCK DATA ---
-const patients = [
-  { id: 1, name: "Maria Rossi", relationship: "Madre", initials: "MR", adherenceToday: 100, adherenceWeek: 92, lastActivity: "12:15", status: "ok", nextDose: "Tutto ok", alerts: 0, lowStock: 1 },
-  { id: 2, name: "Giuseppe Rossi", relationship: "Padre", initials: "GR", adherenceToday: 66, adherenceWeek: 78, lastActivity: "08:30", status: "warning", nextDose: "14:00", alerts: 1, lowStock: 2 },
-  { id: 3, name: "Anna Bianchi", relationship: "Nonna", initials: "AB", adherenceToday: 50, adherenceWeek: 65, lastActivity: "Ieri", status: "alert", nextDose: "In ritardo", alerts: 2, lowStock: 0 },
-];
-
-const recentAlerts = [
-  { id: 1, patient: "Anna Bianchi", message: "Mancata conferma assunzione Cardioaspirin", time: "15 minuti fa", type: "critical" },
-  { id: 2, patient: "Giuseppe Rossi", message: "Dose in ritardo: Metformina", time: "1 ora fa", type: "warning" },
-  { id: 3, patient: "Maria Rossi", message: "Scorta bassa: Enalapril (5 giorni)", time: "3 ore fa", type: "info" },
-];
+// --- MOCK DATA RIMOSSO ---
 
 // --- COMPONENTI UI RIUTILIZZABILI ---
 const Card = ({ children, className = "" }) => (
@@ -62,22 +52,82 @@ const Badge = ({ children, variant = "default" }) => {
 
 // --- LOGICA PRINCIPALE ---
 export default function CaregiverDashboard({ isAuthenticated: initialAuth = false }) {
+  const router = useRouter();
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-  
+  const [patients, setPatients] = useState([]);
+  const [recentAlerts, setRecentAlerts] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+
   useEffect(() => {
-    const checkAuth = async () => {
+    const init = async () => {
       try {
-        const res = await fetch('/api/auth/me');
-        const data = await res.json();
-        setIsUserAuthenticated(data.isAuthenticated);
+        // 1. Verifica Auth
+        const authRes = await fetch('/api/auth/me');
+        const authData = await authRes.json();
+        setIsUserAuthenticated(authData.isAuthenticated);
+
+        // 2. Se autenticato, carica i dati via RUD-account
+        if (authData.isAuthenticated) {
+          setLoadingData(true);
+          const res = await fetch('/api/RUD-account?me');
+          if (res.ok) {
+            const userData = await res.json();
+
+            if (userData.caregiver && Array.isArray(userData.caregiver)) {
+              const mappedPatients = userData.caregiver.map(rel => {
+                const p = rel.assistito;
+                const s = p.dashboardStats || {};
+                return {
+                  id: p.id_utente,
+                  name: `${p.nome} ${p.cognome}`,
+                  relationship: "Assistito", // Default
+                  initials: `${p.nome?.[0] || '?'}${p.cognome?.[0] || '?'}`.toUpperCase(),
+                  adherenceToday: s.adherenceToday ?? 0,
+                  adherenceWeek: s.adherenceWeek ?? 0,
+                  lastActivity: s.lastActivity || "N/A",
+                  status: s.status || "ok",
+                  nextDose: s.nextDose || "Nessuna",
+                  alerts: s.alerts ?? 0,
+                  lowStock: s.lowStock ?? 0
+                };
+              });
+              setPatients(mappedPatients);
+
+              // Genera alert fittizi basati sui dati reali (opzionale, per popolare la UI)
+              const generatedAlerts = [];
+              mappedPatients.forEach(p => {
+                if (p.alerts > 0) {
+                  generatedAlerts.push({
+                    id: p.id + '_alert',
+                    patient: p.name,
+                    message: "Attenzione richiesta (aderenza o ritardo)",
+                    time: "Oggi",
+                    type: "warning"
+                  });
+                }
+                if (p.lowStock > 0) {
+                  generatedAlerts.push({
+                    id: p.id + '_stock',
+                    patient: p.name,
+                    message: `Scorte in esaurimento: ${p.lowStock} farmaci`,
+                    time: "Oggi",
+                    type: "info"
+                  });
+                }
+              });
+              setRecentAlerts(generatedAlerts);
+            }
+          }
+        }
       } catch (err) {
-        console.error("Errore verifica auth", err);
+        console.error("Errore inizializzazione dashboard", err);
       } finally {
         setIsAuthChecking(false);
+        setLoadingData(false);
       }
     };
-    checkAuth();
+    init();
   }, []);
 
   const handleLogout = async () => {
@@ -90,8 +140,13 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
     }
   };
 
+  const navigateToPatient = (id) => {
+    // Naviga direttamente all'URL dinamico
+    router.push(`/Pages/Assistito/${id}`);
+  };
+
   const totalAlerts = patients.reduce((sum, p) => sum + p.alerts, 0);
-  const avgAdherence = Math.round(patients.reduce((sum, p) => sum + p.adherenceWeek, 0) / patients.length);
+  const avgAdherence = patients.length > 0 ? Math.round(patients.reduce((sum, p) => sum + p.adherenceWeek, 0) / patients.length) : 0;
   const lowStockCount = patients.reduce((sum, p) => sum + p.lowStock, 0);
 
   if (isAuthChecking) {
@@ -107,21 +162,21 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
       <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
 
       {!isUserAuthenticated && (
-              <GuestOverlay 
-                title="Dashboard Caregiver"
-                description="Monitora la salute dei tuoi cari da remoto"
-                features={[
-                  "Collegare pazienti tramite codice sicuro",
-                  "Ricevere alert per mancate assunzioni",
-                  "Visualizzare l'aderenza terapeutica",
-                  "Gestire le terapie da remoto"
-                ]}
-              />
-            )}
+        <GuestOverlay
+          title="Dashboard Caregiver"
+          description="Monitora la salute dei tuoi cari da remoto"
+          features={[
+            "Collegare pazienti tramite codice sicuro",
+            "Ricevere alert per mancate assunzioni",
+            "Visualizzare l'aderenza terapeutica",
+            "Gestire le terapie da remoto"
+          ]}
+        />
+      )}
 
       <main className="pt-10 pb-16">
         <div className="container mx-auto px-4 max-w-7xl">
-          
+
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
             <div>
@@ -129,7 +184,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
               <p className="text-slate-500">Monitora e gestisci le terapie dei tuoi assistiti</p>
             </div>
             <Link href="CollegaCaregiver" className="inline-flex items-center justify-center h-11 px-6 rounded-lg font-bold text-sm bg-[#14b8a6] text-white shadow-md hover:bg-[#0d9488] hover:shadow-lg transition-all">
-               <Icons.Plus className="w-5 h-5 mr-2" /> Collega paziente
+              <Icons.Plus className="w-5 h-5 mr-2" /> Collega paziente
             </Link>
           </div>
 
@@ -142,17 +197,17 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            
+
             {/* --- LISTA PAZIENTI (Colonna Sinistra) --- */}
             <div className="lg:col-span-2 space-y-4">
               <h2 className="font-bold text-lg text-slate-800">I tuoi assistiti</h2>
-              
+
               {patients.map((patient) => (
-                <Link key={patient.id} href={`/assistito/${patient.id}`} className="block group">
+                <div key={patient.id} onClick={() => navigateToPatient(patient.id)} className="block group cursor-pointer">
                   <Card className="p-5 hover:border-[#14b8a6]/50 transition-all hover:shadow-md relative overflow-hidden">
                     {/* Status Bar Left */}
                     <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${patient.status === 'ok' ? 'bg-emerald-500' : patient.status === 'warning' ? 'bg-amber-500' : 'bg-rose-500'}`} />
-                    
+
                     <div className="flex items-start gap-4 pl-2">
                       {/* Avatar */}
                       <div className="relative">
@@ -168,52 +223,52 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
                           {patient.alerts > 0 && <Badge variant="destructive">{patient.alerts} alert</Badge>}
                         </div>
                         <p className="text-sm text-slate-500 mb-4">{patient.relationship} • Ultima attività: {patient.lastActivity}</p>
-                        
+
                         <div className="grid sm:grid-cols-3 gap-6">
                           {/* Progress Oggi */}
                           <div>
                             <div className="flex justify-between text-xs mb-1.5 font-medium text-slate-500">
-                               <span>Oggi</span>
-                               <span className={patient.status === 'ok' ? 'text-emerald-600' : patient.status === 'warning' ? 'text-amber-600' : 'text-rose-600'}>{patient.adherenceToday}%</span>
+                              <span>Oggi</span>
+                              <span className={patient.status === 'ok' ? 'text-emerald-600' : patient.status === 'warning' ? 'text-amber-600' : 'text-rose-600'}>{patient.adherenceToday}%</span>
                             </div>
                             <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                               <div className={`h-full rounded-full ${patient.status === 'ok' ? 'bg-emerald-500' : patient.status === 'warning' ? 'bg-amber-500' : 'bg-rose-500'}`} style={{ width: `${patient.adherenceToday}%` }} />
+                              <div className={`h-full rounded-full ${patient.status === 'ok' ? 'bg-emerald-500' : patient.status === 'warning' ? 'bg-amber-500' : 'bg-rose-500'}`} style={{ width: `${patient.adherenceToday}%` }} />
                             </div>
                           </div>
 
                           {/* Progress Settimana */}
                           <div>
                             <div className="flex justify-between text-xs mb-1.5 font-medium text-slate-500">
-                               <span>Settimana</span>
-                               <span className="text-slate-700">{patient.adherenceWeek}%</span>
+                              <span>Settimana</span>
+                              <span className="text-slate-700">{patient.adherenceWeek}%</span>
                             </div>
                             <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                               <div className="h-full rounded-full bg-[#14b8a6]" style={{ width: `${patient.adherenceWeek}%` }} />
+                              <div className="h-full rounded-full bg-[#14b8a6]" style={{ width: `${patient.adherenceWeek}%` }} />
                             </div>
                           </div>
 
                           {/* Next Dose Info */}
                           <div className="flex items-center gap-2 text-sm font-medium">
-                             <Icons.Clock className={`w-4 h-4 ${patient.nextDose === "In ritardo" ? "text-rose-500" : "text-slate-400"}`} />
-                             <span className={patient.nextDose === "In ritardo" ? "text-rose-600" : "text-slate-600"}>
-                                {patient.nextDose}
-                             </span>
+                            <Icons.Clock className={`w-4 h-4 ${patient.nextDose === "In ritardo" ? "text-rose-500" : "text-slate-400"}`} />
+                            <span className={patient.nextDose === "In ritardo" ? "text-rose-600" : "text-slate-600"}>
+                              {patient.nextDose}
+                            </span>
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="self-center">
-                         <Icons.ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-[#14b8a6]" />
+                        <Icons.ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-[#14b8a6]" />
                       </div>
                     </div>
                   </Card>
-                </Link>
+                </div>
               ))}
             </div>
 
             {/* --- SIDEBAR (Colonna Destra) --- */}
             <div className="space-y-6">
-              
+
               {/* Alert Recenti */}
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -223,9 +278,9 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
                 <div className="space-y-3">
                   {recentAlerts.map((alert) => (
                     <Card key={alert.id} className={`p-4 border-l-4 ${alert.type === 'critical' ? 'border-l-rose-500' : alert.type === 'warning' ? 'border-l-amber-500' : 'border-l-[#14b8a6]'}`}>
-                       <p className="font-bold text-sm text-slate-800 mb-1">{alert.patient}</p>
-                       <p className="text-sm text-slate-600 mb-2">{alert.message}</p>
-                       <p className="text-xs text-slate-400">{alert.time}</p>
+                      <p className="font-bold text-sm text-slate-800 mb-1">{alert.patient}</p>
+                      <p className="text-sm text-slate-600 mb-2">{alert.message}</p>
+                      <p className="text-xs text-slate-400">{alert.time}</p>
                     </Card>
                   ))}
                 </div>
@@ -235,9 +290,9 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
           </div>
         </div>
       </main>
-      
+
       <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">
-         <p>© 2024 MediGuard. La tua salute, organizzata.</p>
+        <p>© 2024 MediGuard. La tua salute, organizzata.</p>
       </footer>
     </div>
   );
@@ -259,8 +314,8 @@ function StatCard({ icon, bg, value, label }) {
 function ActionButton({ icon, label }) {
   return (
     <button className="w-full flex items-center gap-3 p-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-left">
-       <div className="text-slate-400">{icon}</div>
-       {label}
+      <div className="text-slate-400">{icon}</div>
+      {label}
     </button>
   );
 }

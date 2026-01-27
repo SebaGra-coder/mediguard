@@ -180,14 +180,33 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
 
             setTodaySchedule(todaysIntakes);
             
-            // Only update currentUser with full authData logic if we had more info there, but we already set it above
-            // setCurrentUser(authData.user); 
-
             const taken = todaysIntakes.filter(s => s.status === "taken").length;
             const totalScheduled = todaysIntakes.length;
             setAdherenceToday(totalScheduled > 0 ? Math.round((taken / totalScheduled) * 100) : 0);
 
-            const totalPatientAlerts = patients.reduce((sum, p) => sum + p.alerts, 0);
+            // 4. Fetch Caregiver Data (Patients) via RUD-account
+            let fetchedPatients = [];
+            const profileRes = await fetch('/api/RUD-account?me');
+            if (profileRes.ok) {
+                const profileData = await profileRes.json();
+                if (profileData.caregiver && Array.isArray(profileData.caregiver)) {
+                    fetchedPatients = profileData.caregiver.map(rel => {
+                        const p = rel.assistito;
+                        const s = p.dashboardStats || {};
+                        return {
+                            id: p.id_utente,
+                            name: `${p.nome} ${p.cognome}`,
+                            initials: `${p.nome?.[0] || '?'}${p.cognome?.[0] || '?'}`.toUpperCase(),
+                            adherence: s.adherenceToday ?? 0, // Using adherenceToday for the UI bar
+                            status: s.status || "ok",
+                            alerts: s.alerts ?? 0
+                        };
+                    });
+                    setPatients(fetchedPatients);
+                }
+            }
+
+            const totalPatientAlerts = fetchedPatients.reduce((sum, p) => sum + p.alerts, 0);
             setTotalAlerts(expiring + low + totalPatientAlerts); // Combine all alerts
 
         } catch (error) {
@@ -197,7 +216,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
             setIsLoading(false);
             setIsAuthChecking(false);
         }
-    }, [patients]);
+    }, []);
 
     useEffect(() => {
         initDashboard();
@@ -356,7 +375,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
                                             <div className="text-[#14b8a6]"><Icons.Users /></div>
                                             <h2 className="font-bold text-lg text-slate-800">I Tuoi Assistiti</h2>
                                         </div>
-                                        <Link href="/caregiver" className="text-sm font-medium text-slate-500 hover:text-[#14b8a6] flex items-center gap-1 transition-colors">
+                                        <Link href="/Pages/Caregiver" className="text-sm font-medium text-slate-500 hover:text-[#14b8a6] flex items-center gap-1 transition-colors">
                                             Vedi tutto <Icons.ChevronRight />
                                         </Link>
                                     </div>
