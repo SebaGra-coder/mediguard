@@ -99,7 +99,7 @@ export async function POST(request) {
       while (iterDate <= generationEnd) {
         const dateStr = iterDate.toISOString().split('T')[0];
         for (const ora of orari) {
-          const scheduledTime = new Date(`${dateStr}T${ora}:00Z`);
+          const scheduledTime = new Date(`${dateStr}T${ora}:00`);
 
           // Crea solo se l'orario è valido per oggi o per il futuro
           if (scheduledTime >= startOfToday) {
@@ -353,8 +353,6 @@ export async function PUT(request) {
       const existingPending = await prisma.registro_assunzioni.findMany({
         where: {
           id_terapia: id_terapia,
-          esito: null,
-          orario_effettivo: null,
           data_programmata: { gte: startOfToday }
         },
         orderBy: { data_programmata: 'asc' }

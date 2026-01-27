@@ -8,6 +8,7 @@ import AddTherapyModal from "@/components/modals/AddTherapyModal";
 import TherapyDetailsModal from "@/components/modals/TherapyDetailsModal";
 import DeleteTherapyModal from "@/components/modals/DeleteTherapyModal";
 import QuickAssumptionModal from "@/components/modals/QuickAssumptionModal";
+import { useTherapies } from "@/hooks/useTherapies";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -72,8 +73,9 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const [isAuthChecking, setIsAuthChecking] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [todaySchedule, setTodaySchedule] = useState([]);
-    const [therapyPlans, setTherapyPlans] = useState([]);
     const [cabinetMedicines, setCabinetMedicines] = useState([]);
+
+    const { therapyPlans, fetchTherapies, isLoading: isTherapyLoading } = useTherapies();
 
     // Modals state
     const [modalState, setModalState] = useState({ type: null, data: null }); // type: 'view' | 'edit' | 'add' | 'delete' | 'quick-add'
@@ -109,7 +111,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             }
         };
         checkAuth();
-    }, [selectedDate]);
+    }, [selectedDate, fetchTherapies]);
 
     const fetchCabinet = async (userId) => {
         try {
@@ -158,11 +160,11 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                 dailyIntakes.push({
                                     id: assunzione.id_evento,
                                     // Uso toLocaleTimeString senza UTC per riflettere l'ora locale dell'utente
-                                    time: assunzioneDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit'}),
+                                    time: assunzioneDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}),
                                     medicine: terapia.nome_utilita || terapia.farmaco?.farmaco?.denominazione || "Farmaco",
                                     dosage: terapia.dose_singola + " " + (terapia.farmaco?.farmaco?.unita_misura || ""),
                                     status: currentStatus,
-                                    takenAt: assunzione.orario_effettivo ? new Date(assunzione.orario_effettivo).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit'}) : null
+                                    takenAt: assunzione.orario_effettivo ? new Date(assunzione.orario_effettivo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}) : null
                                 });
                             }
                         });
@@ -174,63 +176,6 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             }
         } catch (err) {
             console.error("Errore caricamento programma giornaliero", err);
-        }
-    };
-
-    const fetchTherapies = async (userId) => {
-        try {
-            const res = await fetch(`/api/terapia?id_paziente=${userId}`);
-            const json = await res.json();
-            if (json.success && Array.isArray(json.data)) {
-                const mappedPlans = json.data.map(t => ({
-                    id: t.id_terapia,
-                    medicine: t.nome_utilita || t.farmaco?.farmaco?.denominazione || "Farmaco sconosciuto",
-                    dosaggio: t.dose_singola + (t.farmaco?.farmaco?.unita_misura || ""),
-                    frequency: t.solo_al_bisogno
-                        ? "Al bisogno"
-                        : (() => {
-                            const dateValide = (t.assunzioni || [])
-                                .map(a => new Date(a.data_programmata))
-                                .filter(d => !isNaN(d.getTime()))
-                                .sort((a, b) => a - b);
-
-                            if (dateValide.length === 0) return "N/D";
-                            const primoGiornoIso = dateValide[0].toISOString().split('T')[0];
-                            const assunzioniGiornaliere = new Set(
-                                dateValide
-                                    .filter(d => d.toISOString().startsWith(primoGiornoIso))
-                                    .map(d => d.toISOString().split('T')[1].slice(0, 5))
-                            );
-
-                            return assunzioniGiornaliere.size > 0
-                                ? `${assunzioniGiornaliere.size} volte al giorno`
-                                : "N/D";
-                        })(),
-                    duration: t.data_fine ? "Fino a: " + t.data_fine.split('T')[0] : "Continuativa",
-                    startDate: t.data_inizio ? t.data_inizio.split('T')[0] : "",
-                    endDate: t.data_fine ? t.data_fine.split('T')[0] : "",
-                    adherence: (() => {
-                        const now = new Date();
-                        const endOfToday = new Date(now);
-                        endOfToday.setHours(23, 59, 59, 999);
-                        
-                        const relevantIntakes = (t.assunzioni || []).filter(a => new Date(a.data_programmata) <= endOfToday);
-                        if (relevantIntakes.length === 0) return 0;
-                        const taken = relevantIntakes.filter(a => a.esito === true).length;
-                        return Math.round((taken / relevantIntakes.length) * 100);
-                    })(),
-                    orari: (Array.isArray(t.orari) && t.orari.length > 0) 
-                        ? t.orari 
-                        : Array.from(new Set((t.assunzioni || []).map(a => {
-                            return a.data_programmata.split('T')[1].slice(0, 5);
-                        }))).sort(),
-                    stato: t.terapia_attiva ? "attiva" : "sospesa",
-                    originalData: t
-                }));
-                setTherapyPlans(mappedPlans);
-            }
-        } catch (err) {
-            console.error("Errore caricamento terapie", err);
         }
     };
 
@@ -295,7 +240,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             });
             
             if (res.ok) {
-                const timeStr = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'});
                 setTodaySchedule(sched => sched.map(s => s.id === id ? { ...s, status: "taken", takenAt: timeStr } : s));
                 fetchTherapies(userData.id_utente);
             } else {

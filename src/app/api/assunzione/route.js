@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { time } from 'console';
 
 /**
  * GESTIONE POST: Registra una nuova assunzione (o mancata assunzione)
@@ -139,17 +140,41 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
 
+    const id_utente = searchParams.get('id_utente');
     const id_terapia = searchParams.get('id_terapia');
     const id_evento = searchParams.get('id_evento');
     const data_inizio = searchParams.get('data_inizio'); // Filtro data programmata dal...
     const data_fine = searchParams.get('data_fine');     // ...al
+    const data_programmata = searchParams.get('data_programmata');
 
     const filtri = {};
 
     if (id_terapia) filtri.id_terapia = id_terapia;
     if (id_evento) filtri.id_evento = id_evento;
+    if (id_utente) {
+      filtri.terapia = {
+        id_paziente: id_utente
+      };
+    } else {
+      // Opzionale: se non c'è id_utente e l'API non è protetta, 
+      // potresti voler restituire errore invece di tutte le assunzioni del DB
+      return NextResponse.json({ success: false, error: "ID utente obbligatorio" }, { status: 400 });
+    }
 
-    if (data_inizio || data_fine) {
+    if (data_programmata) {
+      const dataTarget = new Date(data_programmata);
+
+      // Creiamo un intervallo che copre l'intera giornata (dalle 00:00 alle 23:59)
+      const inizioGiorno = new Date(dataTarget.setHours(0, 0, 0, 0));
+      const fineGiorno = new Date(dataTarget.setHours(23, 59, 59, 999));
+
+      filtri.data_programmata = {
+        gte: inizioGiorno,
+        lte: fineGiorno
+      };
+    }
+    // 3. Manteniamo la logica esistente per l'intervallo (se non è presente data_programmata)
+    else if (data_inizio || data_fine) {
       filtri.data_programmata = {};
       if (data_inizio) filtri.data_programmata.gte = new Date(data_inizio);
       if (data_fine) filtri.data_programmata.lte = new Date(data_fine);
