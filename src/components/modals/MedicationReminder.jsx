@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from "react-dom";
 
 // --- ICONE SVG ---
 const Icons = {
@@ -88,12 +89,21 @@ export default function MedicationReminder() {
     return () => clearInterval(interval);
   }, [userId]); // Riesegui se l'userId cambia (es. login)
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
+
   // ... Il resto del codice (handleClose, render del Modal, ecc.) rimane uguale ...
   
   // (Inserisco una versione semplificata del render per completezza)
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
        {/* ... Contenuto del tuo modale ... */}
        <div className="bg-white p-6 rounded-xl shadow-xl">
@@ -107,6 +117,7 @@ export default function MedicationReminder() {
             Chiudi
           </button>
        </div>
-    </div>
+    </div>,
+    document.body
   );
 }

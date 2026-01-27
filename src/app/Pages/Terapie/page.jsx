@@ -265,13 +265,13 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
             {!isUserAuthenticated && (
                 <GuestOverlay
-                    title="Dashboard Caregiver"
-                    description="Monitora la salute dei tuoi cari da remoto"
+                    title="Gestione Terapie"
+                    description="Organizza e monitora tutte le tue assunzioni quotidiane"
                     features={[
-                        "Collegare pazienti tramite codice sicuro",
-                        "Ricevere alert per mancate assunzioni",
-                        "Visualizzare l'aderenza terapeutica",
-                        "Gestire le terapie da remoto"
+                        "Creare piani terapeutici personalizzati",
+                        "Ricevere notifiche per ogni assunzione",
+                        "Confermare le assunzioni con un tap",
+                        "Monitorare l'aderenza nel tempo"
                     ]}
                 />
             )}

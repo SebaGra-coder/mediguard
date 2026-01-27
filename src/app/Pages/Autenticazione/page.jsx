@@ -298,14 +298,6 @@ function AuthContent({ onLogin }) {
                 </div>
               )}
 
-              {isLogin && (
-                <div className="flex justify-end">
-                  <a href="#" className={`text-sm font-medium ${primaryColor} hover:underline`}>
-                    Password dimenticata?
-                  </a>
-                </div>
-              )}
-
               <button 
                 type="submit" 
                 disabled={isLoading}

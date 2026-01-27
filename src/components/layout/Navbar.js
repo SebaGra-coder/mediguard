@@ -137,9 +137,9 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
           {/* --- 2. MENU CENTRALE (Desktop) --- */}
           <div className="hidden md:flex items-center space-x-8">
 
-            {/* Home ora punta alla radice "/" dato che abbiamo sistemato il layout */}
-            {isUserAuthenticated && (
-              <Link href="/" className={getLinkClass("HomePage")}>
+            {/* Home ora punta a /Pages/HomePage per coerenza con il routing */}
+            {!isLoading && isUserAuthenticated && (
+              <Link href="/Pages/HomePage" className={getLinkClass("HomePage")}>
                 <Icons.Home />
                 Home
               </Link>

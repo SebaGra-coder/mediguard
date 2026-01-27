@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
+
 // --- COMPONENTS ---
 const Badge = ({ children, variant = "default", className = "" }) => {
     const styles = {
@@ -12,8 +15,18 @@ const Badge = ({ children, variant = "default", className = "" }) => {
 };
 
 const Modal = ({ isOpen, onClose, title, children }) => {
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [isOpen]);
+
     if (!isOpen) return null;
-    return (
+
+    return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -24,7 +37,8 @@ const Modal = ({ isOpen, onClose, title, children }) => {
                 </div>
                 <div className="p-6 overflow-y-auto">{children}</div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

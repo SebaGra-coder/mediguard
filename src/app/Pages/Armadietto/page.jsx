@@ -160,13 +160,13 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
 
       {!isUserAuthenticated && (
         <GuestOverlay 
-          title="Dashboard Caregiver"
-          description="Monitora la salute dei tuoi cari da remoto"
+          title="Il tuo Armadietto Digitale"
+          description="Gestisci tutti i tuoi farmaci in un unico posto sicuro"
           features={[
-            "Collegare pazienti tramite codice sicuro",
-            "Ricevere alert per mancate assunzioni",
-            "Visualizzare l'aderenza terapeutica",
-            "Gestire le terapie da remoto"
+            "Aggiungere farmaci tramite scansione barcode",
+            "Monitorare quantità e scadenze automaticamente",
+            "Ricevere alert per scorte basse",
+            "Sincronizzare con le tue terapie"
           ]}
         />
       )}
@@ -233,6 +233,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
                             <div>
                                 <h3 className="font-bold text-lg text-slate-800 leading-tight">{medicine.farmaco?.denominazione + " " + medicine.farmaco?.dosaggio || "Farmaco non disponibile"}</h3>
                                 <p className="text-xs text-slate-500 mt-0.5 font-medium">{medicine.farmaco?.forma || "Forma non specificata"}</p>
+                                {medicine.lotto_produzione && <p className="text-xs text-slate-400 mt-0.5">Lotto: {medicine.lotto_produzione}</p>}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
