@@ -78,9 +78,6 @@ export default function DeleteMedicationModal({ isOpen, onClose, medicine, onSuc
             }
         >
             <div className="text-center py-4">
-                <div className="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-red-500" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                </div>
                 <h4 className="text-lg font-bold text-slate-800 mb-2">Sei sicuro?</h4>
                 <p className="text-slate-500 text-sm">
                     Stai eliminando <strong>{medicine.farmaco?.denominazione}</strong> dal tuo armadietto.

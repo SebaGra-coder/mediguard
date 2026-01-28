@@ -438,7 +438,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
                                         {lowStockMedicines.map((med) => (
                                             <div key={med.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors">
                                                 <span className="text-sm font-medium text-slate-700">{med.name}</span>
-                                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
+                                                <span className={med.quantity === 0 ? "px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold" : "px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold"}>
                                                     {med.quantity === 0 ? 'Terminato' : med.quantity + "/" + med.total}
                                                 </span>
                                             </div>

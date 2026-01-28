@@ -161,7 +161,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                     id: assunzione.id_evento,
                                     // Uso toLocaleTimeString senza UTC per riflettere l'ora locale dell'utente
                                     time: assunzioneDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}),
-                                    medicine: terapia.nome_utilita || terapia.farmaco?.farmaco?.denominazione || "Farmaco",
+                                    medicine: terapia.farmaco?.farmaco?.denominazione || "Farmaco",
                                     dosage: terapia.dose_singola + " " + (terapia.farmaco?.farmaco?.unita_misura || ""),
                                     status: currentStatus,
                                     takenAt: assunzione.orario_effettivo ? new Date(assunzione.orario_effettivo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}) : null

@@ -75,6 +75,9 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
     scadenza: "",
     lotto: ""
   });
+  
+  // Stati per le allergie
+  const [userAllergies, setUserAllergies] = useState([]);
 
   // NUOVO: Stato per gestire la paginazione
   const ITEMS_PER_PAGE = 5;
@@ -125,6 +128,21 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Fetch Allergie quando l'utente è loggato
+  useEffect(() => {
+    if (currentUser?.id_utente) {
+      fetch(`/api/CRUD-allergia-utente?id_utente=${currentUser.id_utente}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && Array.isArray(data.data)) {
+                // Mappiamo solo i nomi delle sostanze, lowercase per confronto facile
+                setUserAllergies(data.data.map(item => item.allergene.sostanza_allergene.toLowerCase()));
+            }
+        })
+        .catch(err => console.error("Error fetching allergies", err));
+    }
+  }, [currentUser]);
 
   const handleLogout = async () => {
     try {
@@ -304,6 +322,28 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
                         {medicine.descrizione}
                       </p>
 
+                      {/* Warning Allergie */}
+                      {(() => {
+                        if (!medicine.principio_attivo || userAllergies.length === 0) return null;
+                        const pa = medicine.principio_attivo.toLowerCase();
+                        const conflict = userAllergies.find(allergy => pa.includes(allergy));
+                        
+                        if (conflict) {
+                          return (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3 flex items-start gap-3 animate-pulse">
+                               <div className="text-red-500 mt-0.5"><Icons.AlertTriangle /></div>
+                               <div>
+                                 <p className="font-bold text-red-700 text-sm">Attenzione: Possibile allergia</p>
+                                 <p className="text-red-600 text-xs">
+                                   Contiene <span className="font-bold capitalize">{conflict}</span>, presente nelle tue allergie.
+                                 </p>
+                               </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+
                       <div className="flex flex-wrap items-center gap-3 text-xs mb-4 text-slate-500">
                         <span className="font-bold text-slate-700">{medicine.ragione_sociale}</span>
                         <span>• AIC: {medicine.codice_aic}</span>
@@ -425,6 +465,28 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
                 <p className="text-xs text-teal-600 mt-1">AIC: {selectedMedication.codice_aic}</p>
              </div>
            )}
+
+           {/* Warning Allergie nel Modale */}
+           {selectedMedication && (() => {
+                if (!selectedMedication.principio_attivo || userAllergies.length === 0) return null;
+                const pa = selectedMedication.principio_attivo.toLowerCase();
+                const conflict = userAllergies.find(allergy => pa.includes(allergy));
+                
+                if (conflict) {
+                  return (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-start gap-3 animate-pulse">
+                        <div className="text-red-500 mt-0.5"><Icons.AlertTriangle /></div>
+                        <div>
+                          <p className="font-bold text-red-700 text-sm">Attenzione: Possibile allergia</p>
+                          <p className="text-red-600 text-xs">
+                            Questo farmaco contiene <span className="font-bold capitalize">{conflict}</span>, a cui risulti allergico.
+                          </p>
+                        </div>
+                    </div>
+                  );
+                }
+                return null;
+           })()}
 
            <div className="grid grid-cols-2 gap-4">
               <div>

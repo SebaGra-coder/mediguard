@@ -155,7 +155,7 @@ export async function DELETE(request) {
 
     // Se l'ID del record nell'armadietto non è presente, restituisce errore 400
     if (!idFarmacoArmadietto) {
-      return NextResponse.json({ error: 'ID farmaco mancante' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'ID farmaco mancante' }, { status: 400 });
     }
 
     // Utilizziamo una transazione per essere sicuri che se una operazione fallisce, l'altra non venga eseguita
@@ -200,13 +200,38 @@ export async function DELETE(request) {
     // Logga l'errore sul server per debugging
     console.error("Errore durante lo spostamento in disuso:", error);
 
-    // Gestione specifica se il farmaco non è stato trovato
-    if (error.message === "Farmaco non trovato nell'armadietto") {
-      return NextResponse.json({ error: error.message }, { status: 404 });
+    // Gestione errore specifico: ID non valido (es. non è un UUID)
+    if (error.code === 'P2023') {
+      return NextResponse.json({ 
+        success: false, 
+        error: "ID farmaco non valido (formato errato)" 
+      }, { status: 400 });
     }
+
+    // Gestione specifica se il farmaco non è stato trovato (errore lanciato manualmente)
+    if (error.message === "Farmaco non trovato nell'armadietto") {
+      return NextResponse.json({ success: false, error: error.message }, { status: 404 });
+    }
+
+    // Gestione errore Prisma: Record da eliminare non trovato (caso limite concorrenza)
+    if (error.code === 'P2025') {
+      return NextResponse.json({ 
+       success: false, 
+       error: "Il farmaco non esiste o è già stato eliminato." 
+     }, { status: 404 });
+   }
+
+   // Gestione errore Prisma: Violazione vincolo integrità (es. utente non più esistente)
+   if (error.code === 'P2003') {
+      return NextResponse.json({ 
+       success: false, 
+       error: "Impossibile completare l'operazione: violazione dei vincoli dei dati (es. utente non trovato)." 
+     }, { status: 400 });
+   }
 
     // Restituisce errore 500 generico
     return NextResponse.json({ 
+      success: false, 
       error: 'Impossibile completare l\'operazione di dismissione' 
     }, { status: 500 });
   }

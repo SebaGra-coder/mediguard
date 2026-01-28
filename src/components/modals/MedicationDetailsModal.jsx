@@ -46,33 +46,35 @@ export default function MedicationDetailsModal({ isOpen, onClose, farmaco }) {
     if (!isOpen || !farmaco) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`Dettagli: ${farmaco.medicine}`}>
+        <Modal isOpen={isOpen} onClose={onClose} title={`Dettagli: ${farmaco.farmaco.denominazione}`}>
             <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
+                     <div>
                         <p className="text-slate-500">Dosaggio</p>
-                        <p className="font-bold">{farmaco.dosaggio}</p>
+                        <p className="font-bold">{farmaco.farmaco.dosaggio}</p>
                     </div>
                     <div>
-                        <p className="text-slate-500">Stato</p>
-                        <Badge variant={farmaco.stato === 'attiva' ? 'success' : 'default'}>{farmaco.stato}</Badge>
+                        <p className="text-slate-500">Quantità Rimanente</p>
+                        <Badge variant={((farmaco.quantita_rimanente / (farmaco.farmaco.quantita_confezione || 100)) * 100) < 50 ? "destructive" : "default"}>{farmaco.quantita_rimanente}</Badge>
                     </div>
                     <div>
-                        <p className="text-slate-500">Frequenza</p>
-                        <p className="font-bold">{farmaco.frequency}</p>
+                        <p className="text-slate-500">Data Scadenza</p>
+                        <p className="font-bold">{new Date(farmaco.data_scadenza).toLocaleDateString()}</p>
                     </div>
                     <div>
-                        <p className="text-slate-500">Orari</p>
-                        <p className="font-bold">{farmaco.orari?.join(", ")}</p>
+                        <p className="text-slate-500">Lotto Produzione</p>
+                        <p className="font-bold">{farmaco.lotto_produzione || "-"}</p>
                     </div>
                     <div>
-                        <p className="text-slate-500">Inizio</p>
-                        <p className="font-bold">{new Date(farmaco.startDate).toLocaleDateString()}</p>
+                        <p className="text-slate-500">Codice AIC</p>
+                        <p className="font-bold">{farmaco.farmaco.codice_aic}</p>
                     </div>
-                    <div>
-                        <p className="text-slate-500">Fine</p>
-                        <p className="font-bold">{farmaco.endDate ? new Date(farmaco.endDate).toLocaleDateString() : "Continuativa"}</p>
-                    </div>
+                     {farmaco.farmaco?.ragione_sociale && (
+                        <div>
+                            <p className="text-slate-500">Produttore</p>
+                            <p className="font-bold">{farmaco.farmaco.ragione_sociale}</p>
+                        </div>
+                     )}
                 </div>
                 {farmaco.note && (
                     <div className="bg-slate-50 p-3 rounded-lg text-sm">

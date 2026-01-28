@@ -16,11 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "MediGuard",
   description: "Gestione Farmaci e Listini",
+  locale: "it",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="it">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
