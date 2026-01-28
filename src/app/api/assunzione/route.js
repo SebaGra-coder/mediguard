@@ -81,6 +81,14 @@ export async function POST(request) {
     }
     // --- CASO 2: Inserimento singolo (Opzionale, se serve inserire manualmente un record) ---
     else if (data_programmata) {
+      const farmacoInfo = await prisma.farmaco_armadietto.findUnique({
+        where: { id_farmaco_armadietto: id_farmaco_armadietto_della_terapia } // Recuperalo tramite la terapia
+      });
+
+      if (esito === true && farmacoInfo.quantita_rimanente < dose_richiesta) {
+        return NextResponse.json({ success: false, error: "Farmaco esaurito" }, { status: 400 });
+      }
+      
       const singolaAssunzione = await prisma.registro_assunzioni.create({
         data: {
           terapia: {
@@ -232,12 +240,26 @@ export async function PUT(request) {
     const currentAssunzione = await prisma.registro_assunzioni.findUnique({
       where: { id_evento: id_evento },
       include: {
-        terapia: true
+        terapia: {
+          include: { farmaco: true } // Includiamo i dettagli del farmaco nell'armadietto
+        }
       }
     });
 
     if (!currentAssunzione) {
       return NextResponse.json({ error: 'Assunzione non trovata' }, { status: 404 });
+    }
+
+    if (Boolean(esito) === true && currentAssunzione.esito !== true) {
+      const farmaco = currentAssunzione.terapia.farmaco;
+      const dose = currentAssunzione.terapia.dose_singola;
+
+      if (farmaco.quantita_rimanente < dose) {
+        return NextResponse.json({
+          success: false,
+          error: "Quantità insufficiente nell'armadietto. Il farmaco è terminato."
+        }, { status: 400 });
+      }
     }
 
     const dataToUpdate = {};

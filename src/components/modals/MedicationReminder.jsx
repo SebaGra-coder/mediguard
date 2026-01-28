@@ -106,7 +106,7 @@ export default function MedicationReminder() {
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
        {/* ... Contenuto del tuo modale ... */}
-       <div className="bg-white p-6 rounded-xl shadow-xl">
+       <div className="bg-white text-slate-700 p-6 rounded-xl shadow-xl">
           <h2 className="text-xl font-bold mb-4">🔔 È ora delle medicine!</h2>
           {farmaci.map((f, i) => (
             <div key={i} className="mb-2">

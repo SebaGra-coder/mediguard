@@ -67,6 +67,24 @@ const getPatientStatusColor = (status) => {
     }
 };
 
+const getDaysUntilExpiry = (expiryDate) => {
+    if (!expiryDate) return 999;
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+const getMedicineStatus = (med) => {
+    const days = getDaysUntilExpiry(med.data_scadenza);
+    const qtyPercent = (med.quantita_rimanente / (med.farmaco?.quantita_confezione || 100)) * 100;
+    if (med.quantita_rimanente <= 0) return "terminated";
+    if (days <= 0) return "expired";
+    if (days <= 30) return "expiring";
+    if (qtyPercent < 50) return "low";
+    return "ok";
+};
+
 export default function Dashboard({ isAuthenticated: initialAuth = false }) {
     const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
@@ -112,14 +130,14 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
             }));
 
             const total = processedInventoryData.length;
-            const low = processedInventoryData.filter(m => m.computedStatus === 'low').length;
+            const low = processedInventoryData.filter(m => ['low', 'terminated'].includes(m.computedStatus)).length;
             const expiring = processedInventoryData.filter(m => ['expiring', 'expired'].includes(m.computedStatus)).length;
 
             setInventoryStats({ total, low, expiring });
 
             setLowStockMedicines(
                 processedInventoryData
-                    .filter(m => m.computedStatus === 'low')
+                    .filter(m => ['low', 'terminated'].includes(m.computedStatus))
                     .map(m => ({
                         id: m.id_farmaco_armadietto,
                         name: m.farmaco?.denominazione || "Farmaco Sconosciuto",
@@ -163,7 +181,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
 
                             todaysIntakes.push({
                                 id: assunzione.id_evento,
-                                time: scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}),
+                                time: scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                                 medicine: therapy.farmaco?.farmaco?.denominazione || therapy.nome_utilita || "Farmaco",
                                 dose: therapy.dose_singola || "Dose",
                                 unit: therapy.farmaco?.farmaco?.unita_misura || "Unità",
@@ -179,7 +197,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
             todaysIntakes.sort((a, b) => a.originalDate - b.originalDate);
 
             setTodaySchedule(todaysIntakes);
-            
+
             const taken = todaysIntakes.filter(s => s.status === "taken").length;
             const totalScheduled = todaysIntakes.length;
             setAdherenceToday(totalScheduled > 0 ? Math.round((taken / totalScheduled) * 100) : 0);
@@ -230,24 +248,6 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
         } catch (err) {
             console.error("Errore logout", err);
         }
-    };
-
-    // Helper functions from Armadietto page (re-defined here or imported if in a shared util)
-    const getDaysUntilExpiry = (expiryDate) => {
-        if (!expiryDate) return 999;
-        const today = new Date();
-        const expiry = new Date(expiryDate);
-        const diffTime = expiry.getTime() - today.getTime();
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    };
-
-    const getMedicineStatus = (med) => {
-        const days = getDaysUntilExpiry(med.data_scadenza);
-        const qtyPercent = (med.quantita_rimanente / (med.farmaco?.quantita_confezione || 100)) * 100;
-        if (days <= 0) return "expired";
-        if (days <= 30) return "expiring";
-        if (qtyPercent < 50) return "low";
-        return "ok";
     };
 
     const takenCount = todaySchedule.filter(s => s.status === "taken").length;
@@ -385,30 +385,32 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
                                     ) : patients.length > 0 ? (
                                         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                             {patients.map((patient) => (
-                                                <div key={patient.id} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-[#14b8a6]/30 hover:shadow-md transition-all cursor-pointer group bg-white">
-                                                    <div className="relative">
-                                                        <div className="w-12 h-12 rounded-full bg-teal-50 text-[#14b8a6] font-bold flex items-center justify-center border-2 border-white shadow-sm">
-                                                            {patient.initials}
-                                                        </div>
-                                                        <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${getPatientStatusColor(patient.status)}`} />
-                                                    </div>
-
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-semibold text-slate-800 truncate group-hover:text-[#14b8a6] transition-colors">{patient.name}</p>
-                                                        <div className="flex items-center gap-2 mt-1.5">
-                                                            <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                                                                <div className={`h-full rounded-full ${patient.adherence > 80 ? 'bg-emerald-500' : patient.adherence > 50 ? 'bg-amber-400' : 'bg-rose-500'}`} style={{ width: `${patient.adherence}%` }} />
+                                                <Link key={patient.id} href={`/Pages/Assistito/${patient.id}`} className="block group cursor-pointer">
+                                                    <div key={patient.id} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-[#14b8a6]/30 hover:shadow-md transition-all cursor-pointer group bg-white">
+                                                        <div className="relative">
+                                                            <div className="w-12 h-12 rounded-full bg-teal-50 text-[#14b8a6] font-bold flex items-center justify-center border-2 border-white shadow-sm">
+                                                                {patient.initials}
                                                             </div>
-                                                            <span className="text-xs text-slate-400 font-medium">{patient.adherence}%</span>
+                                                            <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${getPatientStatusColor(patient.status)}`} />
                                                         </div>
-                                                    </div>
 
-                                                    {patient.alerts > 0 && (
-                                                        <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold shrink-0">
-                                                            {patient.alerts}
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-semibold text-slate-800 truncate group-hover:text-[#14b8a6] transition-colors">{patient.name}</p>
+                                                            <div className="flex items-center gap-2 mt-1.5">
+                                                                <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                                                                    <div className={`h-full rounded-full ${patient.adherence > 80 ? 'bg-emerald-500' : patient.adherence > 50 ? 'bg-amber-400' : 'bg-rose-500'}`} style={{ width: `${patient.adherence}%` }} />
+                                                                </div>
+                                                                <span className="text-xs text-slate-400 font-medium">{patient.adherence}%</span>
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                </div>
+
+                                                        {patient.alerts > 0 && (
+                                                            <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold shrink-0">
+                                                                {patient.alerts}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </Link>
                                             ))}
                                         </div>
                                     ) : (
@@ -437,7 +439,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
                                             <div key={med.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors">
                                                 <span className="text-sm font-medium text-slate-700">{med.name}</span>
                                                 <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
-                                                    {med.quantity}/{med.total}
+                                                    {med.quantity === 0 ? 'Terminato' : med.quantity + "/" + med.total}
                                                 </span>
                                             </div>
                                         ))}

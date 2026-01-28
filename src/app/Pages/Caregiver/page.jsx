@@ -140,11 +140,6 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
     }
   };
 
-  const navigateToPatient = (id) => {
-    // Naviga direttamente all'URL dinamico
-    router.push(`/Pages/Assistito/${id}`);
-  };
-
   const totalAlerts = patients.reduce((sum, p) => sum + p.alerts, 0);
   const avgAdherence = patients.length > 0 ? Math.round(patients.reduce((sum, p) => sum + p.adherenceWeek, 0) / patients.length) : 0;
   const lowStockCount = patients.reduce((sum, p) => sum + p.lowStock, 0);
@@ -203,7 +198,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
               <h2 className="font-bold text-lg text-slate-800">I tuoi assistiti</h2>
 
               {patients.map((patient) => (
-                <div key={patient.id} onClick={() => navigateToPatient(patient.id)} className="block group cursor-pointer">
+                <Link key={patient.id} href={`/Pages/Assistito/${patient.id}`} className="block group cursor-pointer">
                   <Card className="p-5 hover:border-[#14b8a6]/50 transition-all hover:shadow-md relative overflow-hidden">
                     {/* Status Bar Left */}
                     <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${patient.status === 'ok' ? 'bg-emerald-500' : patient.status === 'warning' ? 'bg-amber-500' : 'bg-rose-500'}`} />
@@ -262,7 +257,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
                       </div>
                     </div>
                   </Card>
-                </div>
+                </Link>
               ))}
             </div>
 
@@ -273,7 +268,6 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-bold text-lg text-slate-800">Alert Recenti</h2>
-                  <button className="text-xs font-bold text-[#14b8a6] hover:underline">Vedi tutti</button>
                 </div>
                 <div className="space-y-3">
                   {recentAlerts.map((alert) => (

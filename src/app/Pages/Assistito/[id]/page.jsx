@@ -12,6 +12,7 @@ import DeleteMedicationModal from "@/components/modals/DeleteMedicationModal";
 import AddTherapyModal from "@/components/modals/AddTherapyModal";
 import TherapyDetailsModal from "@/components/modals/TherapyDetailsModal";
 import DeleteTherapyModal from "@/components/modals/DeleteTherapyModal";
+import AddAllergyModal from "@/components/modals/AddAllergyModal";
 
 import { useTherapies } from "@/hooks/useTherapies";
 
@@ -29,6 +30,8 @@ const Icons = {
   AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" x2="12" y1="9" y2="13" /><line x1="12" x2="12.01" y1="17" y2="17" /></svg>,
   ArrowLeft: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>,
   Package: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22v-9" /></svg>,
+  User: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Shield: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
 };
 
 // --- COMPONENTI UI LOCALI ---
@@ -70,6 +73,40 @@ export default function AssistitoDetail() {
   const [modalState, setModalState] = useState({ type: null, data: null });
 
   const { therapyPlans, fetchTherapies, isLoading: isTherapyLoading } = useTherapies();
+
+  const [allergies, setAllergies] = useState([]);
+  const [availableAllergens, setAvailableAllergens] = useState([]);
+
+  const fetchAllergies = async () => {
+    try {
+      const res = await fetch(`/api/CRUD-allergia-utente?id_utente=${patientId}`);
+      const json = await res.json();
+      if (json.success) setAllergies(json.data);
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchAllergens = async () => {
+    try {
+      const res = await fetch(`/api/visualizza-allergeni`);
+      const json = await res.json();
+      if (json.success) setAvailableAllergens(json.data);
+    } catch (err) { console.error(err); }
+  };
+
+  useEffect(() => {
+    if (activeTab === "Profilo e Allergie") {
+      fetchAllergies();
+      fetchAllergens();
+    }
+  }, [activeTab, patientId]);
+
+  const handleDeleteAllergy = async (id) => {
+    if(!confirm("Sei sicuro di voler rimuovere questa allergia?")) return;
+    try {
+      await fetch(`/api/CRUD-allergia-utente?id_allergia=${id}`, { method: 'DELETE' });
+      fetchAllergies();
+    } catch (err) { console.error(err); }
+  };
 
   const [data, setData] = useState({
     info: null,
@@ -119,12 +156,17 @@ export default function AssistitoDetail() {
         const resAssunzioni = await fetch(`/api/assunzione?id_utente=${patientId}&data_programmata=${oggi}`);
         const assunzioniData = await resAssunzioni.json();
 
+        // Ordina le assunzioni per orario
+        const sortedAssunzioni = (assunzioniData.data || []).sort((a, b) => 
+          new Date(a.data_programmata) - new Date(b.data_programmata)
+        );
+
         const resArmadietto = await fetch(`/api/antonio?id_utente=${patientId}`);
         const armadiettoData = await resArmadietto.json();
 
         setData({
           info: infoPaziente,
-          assunzioniOggi: assunzioniData.data || [],
+          assunzioniOggi: sortedAssunzioni,
           armadietto: armadiettoData.data || [],
           loading: false
         });
@@ -205,21 +247,37 @@ export default function AssistitoDetail() {
         alerts.push({
           id: `scorte-${item.id_farmaco_armadietto}`,
           type: 'critical',
-          title: 'Scorta Esaurita',
-          message: `Rimangono solo ${item.quantita_rimanente} ${item.farmaco.unita_misura} di ${item.farmaco.denominazione} ${item.farmaco.dosaggio}`,
+          title: item.quantita_rimanente === 0 ? 'Scorta Esaurita' : 'Scorta in Esaurimento',
+          message: item.quantita_rimanente === 0 ? `Il farmaco ${item.farmaco.denominazione} ${item.farmaco.dosaggio} è terminato.` : `Rimangono solo ${item.quantita_rimanente} ${item.farmaco.unita_misura} di ${item.farmaco.denominazione} ${item.farmaco.dosaggio}`,
           icon: <Icons.Package className="text-rose-500" />
         });
       }
 
       // Controllo Scadenza
-      if (item.data_scadenza && new Date(item.data_scadenza) < oraAttuale) {
-        alerts.push({
-          id: `scadenza-${item.id_farmaco_armadietto}`,
-          type: 'critical',
-          title: 'Farmaco Scaduto',
-          message: `Il farmaco ${item.farmaco.denominazione} ${item.farmaco.dosaggio} nell'armadietto è scaduto.`,
-          icon: <Icons.AlertTriangle className="text-rose-600" />
-        });
+      if (item.data_scadenza) {
+        const dataScadenza = new Date(item.data_scadenza);
+        const diffMs = dataScadenza - oraAttuale;
+        const diffGiorni = diffMs / (1000 * 60 * 60 * 24);
+
+        if (diffMs < 0) {
+          // Farmaco Scaduto
+          alerts.push({
+            id: `scadenza-${item.id_farmaco_armadietto}`,
+            type: 'critical',
+            title: 'Farmaco Scaduto',
+            message: `Il farmaco ${item.farmaco.denominazione} ${item.farmaco.dosaggio} è scaduto il ${dataScadenza.toLocaleDateString()}.`,
+            icon: <Icons.AlertTriangle className="text-rose-600" />
+          });
+        } else if (diffGiorni <= 7) {
+          // In scadenza nei prossimi 7 giorni
+          alerts.push({
+            id: `scadenza-prossima-${item.id_farmaco_armadietto}`,
+            type: 'warning',
+            title: 'Farmaco in Scadenza',
+            message: `Il farmaco ${item.farmaco.denominazione} scade tra ${Math.ceil(diffGiorni)} giorni.`,
+            icon: <Icons.Clock className="text-amber-500" />
+          });
+        }
       }
     });
 
@@ -264,7 +322,7 @@ export default function AssistitoDetail() {
           </div>
 
           <div className="flex gap-2 mb-8 bg-slate-200/50 p-1.5 rounded-xl w-fit">
-            {["panoramica", "armadietto", "terapie"].map((tab) => (
+            {["panoramica", "armadietto", "terapie", "Profilo e Allergie"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -403,6 +461,56 @@ export default function AssistitoDetail() {
                 )}
               </div>
             )}
+
+            {activeTab === "Profilo e Allergie" && (
+              <div className="grid lg:grid-cols-2 gap-8">
+                 <Card className="p-6 h-fit">
+                    <h3 className="font-bold text-lg mb-6 flex items-center gap-2 text-slate-800">
+                       <Icons.User className="w-5 h-5 text-[#14b8a6]" /> Dati Personali
+                    </h3>
+                    <div className="space-y-4">
+                       <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nome Completo</p><p className="font-medium text-slate-800">{info?.nome} {info?.cognome}</p></div>
+                       <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</p><p className="font-medium text-slate-800">{info?.email}</p></div>
+                       <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Data di Nascita</p><p className="font-medium text-slate-800">{info?.data_nascita ? new Date(info.data_nascita).toLocaleDateString() : 'N/D'}</p></div>
+                    </div>
+                 </Card>
+
+                 <Card className="p-6">
+                    <div className="flex justify-between items-center mb-6">
+                       <h3 className="font-bold text-lg flex items-center gap-2 text-slate-800">
+                          <Icons.Shield className="w-5 h-5 text-rose-500" /> Allergie e Intolleranze
+                       </h3>
+                       <Button onClick={() => setModalState({ type: 'add_allergy' })} variant="secondary" className="h-8 px-3 text-xs">
+                          <Icons.Plus className="w-3 h-3 mr-1" /> Aggiungi
+                       </Button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                       {allergies.length > 0 ? allergies.map(a => (
+                          <div key={a.id_allergia} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                             <div>
+                                <p className="font-bold text-slate-700">{a.allergene?.sostanza_allergene}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                   <span className="text-xs text-slate-500">Gravità:</span>
+                                   <div className="flex gap-0.5">
+                                      {[...Array(5)].map((_, i) => (
+                                         <div key={i} className={`w-2 h-2 rounded-full ${i < a.gravita_reazione ? 'bg-rose-500' : 'bg-slate-200'}`} />
+                                      ))}
+                                   </div>
+                                </div>
+                             </div>
+                             <button onClick={() => handleDeleteAllergy(a.id_allergia)} className="p-2 text-slate-400 hover:text-rose-500 transition-colors">
+                                <Icons.Trash2 className="w-4 h-4" />
+                             </button>
+                          </div>
+                       )) : (
+                          <p className="text-slate-500 text-sm text-center py-4 italic">Nessuna allergia segnalata.</p>
+                       )}
+                    </div>
+                 </Card>
+              </div>
+            )}
+            
           </div>
         </div>
       </main>
@@ -432,6 +540,14 @@ export default function AssistitoDetail() {
         onClose={() => setModalState({ type: null, data: null })}
         therapy={modalState.data}
         onSuccess={handleSuccess}
+      />
+      
+      <AddAllergyModal
+        isOpen={modalState.type === 'add_allergy'}
+        onClose={() => setModalState({ type: null, data: null })}
+        onSuccess={() => { fetchAllergies(); setModalState({ type: null, data: null }); }}
+        userId={patientId}
+        availableAllergens={availableAllergens}
       />
 
       <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">

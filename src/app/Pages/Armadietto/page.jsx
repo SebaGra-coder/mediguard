@@ -45,6 +45,7 @@ const getDaysUntilExpiry = (expiryDate) => {
 const getMedicineStatus = (med) => {
   const days = getDaysUntilExpiry(med.data_scadenza);
   const qtyPercent = (med.quantita_rimanente / (med.farmaco?.quantita_confezione || 100)) * 100;
+  if (med.quantita_rimanente <= 0) return "terminated";
   if (days <= 0) return "expired";
   if (days <= 30) return "expiring";
   if (qtyPercent < 50) return "low";
@@ -57,8 +58,9 @@ const StatusBadge = ({ status }) => {
     low: "bg-yellow-500 text-white",
     expiring: "bg-orange-500 text-white",
     expired: "bg-red-500 text-white",
+    terminated: "bg-slate-500 text-white",
   };
-  const labels = { ok: "Disponibile", low: "Scorta Bassa", expiring: "In Scadenza", expired: "Scaduto" };
+  const labels = { ok: "Disponibile", low: "Scorta Bassa", expiring: "In Scadenza", expired: "Scaduto", terminated: "Terminato" };
   return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${styles[status] || styles.ok}`}>{labels[status] || "Sconosciuto"}</span>;
 };
 
@@ -91,7 +93,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
       setMedicines(processedData);
       setStats({
         total: processedData.length,
-        low: processedData.filter(m => m.computedStatus === 'low').length,
+        low: processedData.filter(m => ['low', 'terminated'].includes(m.computedStatus)).length,
         expiring: processedData.filter(m => ['expiring', 'expired'].includes(m.computedStatus)).length
       });
     } catch (error) {

@@ -34,7 +34,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
 
     return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
+            <div className="bg-white text-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
                         <div className="bg-teal-50 p-1.5 rounded-lg text-[#14b8a6]"><Icons.Pill className="w-5 h-5"/></div>
@@ -58,15 +58,35 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
     const [formData, setFormData] = useState({
         nome: "", principio: "", forma: "compresse", dosaggio: "", quantita: "", scadenza: "", aic: "", lotto: "", quantita_totale: 0
     });
+    
+    // Date parts state
+    const [expiryDay, setExpiryDay] = useState("");
+    const [expiryMonth, setExpiryMonth] = useState("");
+    const [expiryYear, setExpiryYear] = useState("");
 
     // Reset form when opening
     useEffect(() => {
         if (isOpen) {
             setFormData({ nome: "", principio: "", forma: "compresse", dosaggio: "", quantita: "", scadenza: "", aic: "", lotto: "", quantita_totale: 0 });
+            setExpiryDay("");
+            setExpiryMonth("");
+            setExpiryYear("");
             setModalSearchTerm("");
             setModalSearchResults([]);
         }
     }, [isOpen]);
+
+    // Update scadenza when parts change
+    useEffect(() => {
+        if (expiryYear && expiryMonth) {
+            // Default to day 01 if not provided
+            const day = expiryDay ? expiryDay.padStart(2, '0') : "01";
+            const month = expiryMonth.padStart(2, '0');
+            setFormData(prev => ({ ...prev, scadenza: `${expiryYear}-${month}-${day}` }));
+        } else {
+            setFormData(prev => ({ ...prev, scadenza: "" }));
+        }
+    }, [expiryDay, expiryMonth, expiryYear]);
 
     // Debounce Search
     useEffect(() => {
@@ -110,6 +130,7 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
         if (!userId) return;
 
         try {
+            
             const payload = {
                 id_utente_proprietario: userId,
                 codice_aic: formData.aic,
@@ -218,7 +239,7 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
                         <label className="block text-sm font-semibold text-slate-700 mb-1">Quantità Rimanente *</label>
                         <input 
                             type="number" 
-                            max={formData.quantita_totale > 0 ? formData.quantita_totale : undefined}
+                            max={formData.quantita_totale > 0 ? formData.quantita_totale : undefined} min={0}
                             className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
                             value={formData.quantita} 
                             onChange={e => setFormData({...formData, quantita: e.target.value})} 
@@ -227,13 +248,35 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
                     </div>
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1">Scadenza *</label>
-                        <input 
-                            type="date" 
-                            min={new Date().toISOString().split('T')[0]}
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                            value={formData.scadenza} 
-                            onChange={e => setFormData({...formData, scadenza: e.target.value})} 
-                        />
+                        <div className="flex gap-2">
+                            <input 
+                                type="number" 
+                                min="1" max="31"
+                                placeholder="GG"
+                                className="w-[27%] rounded-lg border border-slate-200 px-2 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
+                                value={expiryDay} 
+                                onChange={e => setExpiryDay(e.target.value)} 
+                            />
+                            <input 
+                                type="number" 
+                                min="1" max="12"
+                                placeholder="MM"
+                                className="w-[27%] rounded-lg border border-slate-200 px-2 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
+                                value={expiryMonth} 
+                                onChange={e => setExpiryMonth(e.target.value)} 
+                            />
+                            <input 
+                                type="number" 
+                                min={new Date().getFullYear()}
+                                placeholder="AAAA"
+                                className="w-[35%] rounded-lg border border-slate-200 px-2 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
+                                value={expiryYear} 
+                                onChange={e => setExpiryYear(e.target.value)} 
+                            />
+                        </div>
+                        <label className="text-xs text-slate-400 mt-1">
+                            {formData.scadenza ? `Data: ${new Date(formData.scadenza).toLocaleDateString('it-IT')}` : "Inserisci Anno e Mese"}
+                        </label>
                     </div>
                 </div>
             </div>
