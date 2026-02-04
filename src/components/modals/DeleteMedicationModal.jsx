@@ -52,7 +52,7 @@ export default function DeleteMedicationModal({ isOpen, onClose, medicine, onSuc
             });
 
             if (res.ok) {
-                if (onSuccess) onSuccess();
+                if (onSuccess) onSuccess("Farmaco eliminato con successo");
                 onClose();
             } else {
                 alert("Impossibile eliminare il farmaco");

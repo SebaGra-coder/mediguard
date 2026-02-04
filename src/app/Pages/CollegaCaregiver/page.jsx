@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
+import { useToast } from "@/hooks/useToast";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -41,25 +42,13 @@ const Badge = ({ children }) => (
   </span>
 );
 
-// --- TOAST NOTIFICATION COMPONENT ---
-const Toast = ({ message, type, onClose }) => {
-  if (!message) return null;
-  const bg = type === 'success' ? 'bg-emerald-600' : 'bg-rose-600';
-  return (
-    <div className={`fixed bottom-6 right-6 ${bg} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom-5 z-50`}>
-      {type === 'success' ? <Icons.Check className="w-5 h-5"/> : <Icons.Shield className="w-5 h-5"/>}
-      <span>{message}</span>
-    </div>
-  );
-};
-
 // --- MAIN PAGE ---
 export default function CollegaCaregiver({ isAuthenticated: initialAuth = false }) {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
   const [selectedRole, setSelectedRole] = useState(null);
   const [generatedCode, setGeneratedCode] = useState(null);
   const [inputCode, setInputCode] = useState("");
-  const [toast, setToast] = useState({ message: null, type: null });
+  const { showToast, ToastComponent } = useToast();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -82,12 +71,6 @@ export default function CollegaCaregiver({ isAuthenticated: initialAuth = false 
     } catch (err) {
       console.error("Errore logout", err);
     }
-  };
-
-  // Helpers
-  const showToast = (msg, type = 'success') => {
-    setToast({ message: msg, type });
-    setTimeout(() => setToast({ message: null, type: null }), 3000);
   };
 
   const generateCode = async () => {
@@ -151,7 +134,7 @@ export default function CollegaCaregiver({ isAuthenticated: initialAuth = false 
       <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
       
       {/* Toast Container */}
-      <Toast message={toast.message} type={toast.type} />
+      <ToastComponent />
 
       <main className="container mx-auto px-4 pt-10 pb-16">
         

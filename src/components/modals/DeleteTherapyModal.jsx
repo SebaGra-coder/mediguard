@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useToast } from "@/hooks/useToast";
 
 // --- COMPONENTS ---
 const Button = ({ children, onClick, variant = "primary", className = "", disabled }) => {
@@ -44,6 +45,8 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
 };
 
 export default function DeleteTherapyModal({ isOpen, onClose, therapy, onSuccess }) {
+    const { showToast, ToastComponent } = useToast();
+
     const handleDelete = async () => {
         if (!therapy) return;
         try {
@@ -56,14 +59,14 @@ export default function DeleteTherapyModal({ isOpen, onClose, therapy, onSuccess
                 method: 'DELETE'
             });
             if (res.ok) {
-                if (onSuccess) onSuccess();
+                if (onSuccess) onSuccess("Terapia eliminata con successo");
                 onClose();
             } else {
-                alert("Impossibile eliminare la terapia");
+                showToast("Impossibile eliminare la terapia", "error");
             }
         } catch (e) {
             console.error(e);
-            alert("Errore durante l'eliminazione");
+            showToast("Errore durante l'eliminazione", "error");
         }
     };
 
@@ -81,6 +84,7 @@ export default function DeleteTherapyModal({ isOpen, onClose, therapy, onSuccess
                 </>
             }
         >
+            <ToastComponent />
             <p className="text-slate-600">
                 Sei sicuro di voler eliminare la terapia <strong>{therapy.medicine}</strong>? 
                 Questa azione non può essere annullata e perderai lo storico dell'aderenza.

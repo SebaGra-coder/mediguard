@@ -9,6 +9,7 @@ import TherapyDetailsModal from "@/components/modals/TherapyDetailsModal";
 import DeleteTherapyModal from "@/components/modals/DeleteTherapyModal";
 import QuickAssumptionModal from "@/components/modals/QuickAssumptionModal";
 import { useTherapies } from "@/hooks/useTherapies";
+import { useToast } from "@/hooks/useToast";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -36,7 +37,7 @@ const Button = ({ children, onClick, variant = "primary", size = "md", className
     const base = "inline-flex items-center justify-center rounded-lg font-medium transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variants = {
-        primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-sm hover:shadow-md",
+        primary: "bg-[#2dd4bf] text-white hover:bg-[#0d9488] shadow-sm hover:shadow-md",
         secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
         ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
         destructive: "bg-rose-50 text-rose-600 hover:bg-rose-100",
@@ -59,7 +60,7 @@ const Button = ({ children, onClick, variant = "primary", size = "md", className
 const Badge = ({ children, variant = "default", className = "" }) => {
     const styles = {
         default: "bg-slate-100 text-slate-700",
-        success: "bg-teal-50 text-[#14b8a6]",
+        success: "bg-teal-50 text-[#2dd4bf]",
         warning: "bg-amber-50 text-amber-600",
         destructive: "bg-rose-50 text-rose-600",
     };
@@ -74,6 +75,8 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [todaySchedule, setTodaySchedule] = useState([]);
     const [cabinetMedicines, setCabinetMedicines] = useState([]);
+
+    const { showToast, ToastComponent } = useToast();
 
     const { therapyPlans, fetchTherapies, isLoading: isTherapyLoading } = useTherapies();
 
@@ -192,12 +195,13 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const takenCount = todaySchedule.filter(s => s.status === "taken").length;
     const adherencePercentage = todaySchedule.length > 0 ? Math.round((takenCount / todaySchedule.length) * 100) : 100;
 
-    const handleSuccess = () => {
+    const handleSuccess = (message) => {
         if (userData) {
             fetchTherapies(userData.id_utente);
             fetchDailySchedule(userData.id_utente, selectedDate);
         }
         setModalState({ type: null, data: null });
+        if (message) showToast(message, 'success');
     };
 
     const handleToggleStatus = async (id) => {
@@ -218,11 +222,13 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
             if (res.ok) {
                 fetchTherapies(userData.id_utente);
+                showToast(`Terapia ${newStatus ? 'attivata' : 'sospesa'}`, 'success');
             } else {
-                alert("Errore aggiornamento stato");
+                showToast("Errore aggiornamento stato", "error");
             }
         } catch (e) {
             console.error("Errore toggle status:", e);
+            showToast("Errore di connessione", "error");
         }
     };
 
@@ -243,18 +249,20 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'});
                 setTodaySchedule(sched => sched.map(s => s.id === id ? { ...s, status: "taken", takenAt: timeStr } : s));
                 fetchTherapies(userData.id_utente);
+                showToast("Assunzione confermata", "success");
             } else {
-                alert("Errore durante la conferma dell'assunzione");
+                showToast("Errore durante la conferma", "error");
             }
         } catch (error) {
             console.error("Errore conferma assunzione", error);
+            showToast("Errore di connessione", "error");
         }
     };
 
     if (isAuthChecking) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2dd4bf]"></div>
             </div>
         );
     }
@@ -262,6 +270,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
             <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
+            <ToastComponent />
 
             {!isUserAuthenticated && (
                 <GuestOverlay
@@ -306,7 +315,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                             </Card>
 
                             {/* Progress Bar Aderenza */}
-                            <Card className="p-6 bg-white from-[#14b8a6] to-teal-600 text-white border-none shadow-lg">
+                            <Card className="p-6 bg-white from-[#2dd4bf] to-teal-600 text-white border-none shadow-lg">
                                 <div className="flex justify-between items-end mb-4">
                                     <div>
                                         <p className="text-slate-500 font-medium mb-1">Aderenza giornaliera</p>
@@ -318,7 +327,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                     </div>
                                 </div>
                                 <div className="h-2 w-full bg-black/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-[#14b8a6] rounded-full transition-all duration-700" style={{ width: `${adherencePercentage}%` }} />
+                                    <div className="h-full bg-[#2dd4bf] rounded-full transition-all duration-700" style={{ width: `${adherencePercentage}%` }} />
                                 </div>
                             </Card>
 
@@ -330,7 +339,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                     const isTaken = item.status === "taken";
 
                                     return (
-                                        <Card key={item.id} className={`p-0 overflow-hidden transition-all ${isCurrent ? "ring-2 ring-[#14b8a6] ring-offset-2" : "opacity-70 hover:opacity-100"}`}>
+                                        <Card key={item.id} className={`p-0 overflow-hidden transition-all ${isCurrent ? "ring-2 ring-[#2dd4bf] ring-offset-2" : "opacity-70 hover:opacity-100"}`}>
                                             <div className="flex">
                                                 {/* Fascia Oraria Laterale */}
                                                 <div className={`w-20 flex flex-col items-center justify-center border-r border-slate-100 ${isTaken ? "bg-teal-50" : "bg-slate-50"}`}>
@@ -348,7 +357,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                                     <div>
                                                         {item.status === 'pending' ? (
                                                             <div className="flex gap-2">
-                                                                <Button size="sm" onClick={() => handleConfirmIntake(item.id)} className="bg-[#14b8a6] hover:bg-[#0d9488] text-white">
+                                                                <Button size="sm" onClick={() => handleConfirmIntake(item.id)} className="bg-[#2dd4bf] hover:bg-[#0d9488] text-white">
                                                                     <Icons.Check className="w-4 h-4 mr-1" /> Conferma
                                                                 </Button>
                                                             </div>
@@ -369,6 +378,22 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
                         {/* --- COLONNA DESTRA: TERAPIE ATTIVE --- */}
                         <div className="space-y-6">
+                            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center bg-white hover:bg-slate-50/50 transition-colors">
+                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3 text-slate-400">
+                                    <Icons.Plus className="w-6 h-6" />
+                                </div>
+                                <h3 className="font-bold text-slate-800 mb-1">Registra assunzione</h3>
+                                <p className="text-sm text-slate-500 mb-4">Per farmaci &quot;al bisogno&quot;</p>
+
+                                <Button
+                                    variant="outline"
+                                    className="bg-[#2dd4bfcc] text-white hover:bg-teal-50 hover:text-[#0d9488]"
+                                    onClick={() => setModalState({ type: 'quick-add', data: null })}
+                                >
+                                    Registra ora
+                                </Button>
+                            </div>
+
                             <div className="flex items-center justify-between">
                                 <h2 className="font-bold text-lg text-slate-800">Terapie Attive</h2>
                                 <Badge variant="default">{therapyPlans.filter(t => t.stato === 'attiva').length} in corso</Badge>
@@ -378,7 +403,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                 <Card key={plan.id} className="p-5 hover:shadow-md transition-shadow group">
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#14b8a6] flex items-center justify-center">
+                                            <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#2dd4bf] flex items-center justify-center">
                                                 <Icons.Pill className="w-5 h-5" />
                                             </div>
                                             <div>
@@ -395,7 +420,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                             <span className="font-bold text-slate-700">{plan.adherence}%</span>
                                         </div>
                                         <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                            <div className={`h-full rounded-full ${plan.adherence > 80 ? 'bg-[#14b8a6]' : 'bg-amber-400'}`} style={{ width: `${plan.adherence}%` }} />
+                                            <div className={`h-full rounded-full ${plan.adherence > 80 ? 'bg-[#2dd4bf]' : 'bg-amber-400'}`} style={{ width: `${plan.adherence}%` }} />
                                         </div>
                                         <div className="flex justify-between text-xs pt-1">
                                             <span className="text-slate-400">Durata: <span className="text-slate-600 font-medium">{plan.duration}</span></span>
@@ -414,21 +439,6 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                     </div>
                                 </Card>
                             ))}
-                            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center bg-white hover:bg-slate-50/50 transition-colors">
-                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3 text-slate-400">
-                                    <Icons.Plus className="w-6 h-6" />
-                                </div>
-                                <h3 className="font-bold text-slate-800 mb-1">Registra assunzione</h3>
-                                <p className="text-sm text-slate-500 mb-4">Per farmaci &quot;al bisogno&quot;</p>
-
-                                <Button
-                                    variant="outline"
-                                    className="border-[#14b8a6] text-[#14b8a6] hover:bg-teal-50 hover:text-[#0d9488]"
-                                    onClick={() => setModalState({ type: 'quick-add', data: null })}
-                                >
-                                    Registra ora
-                                </Button>
-                            </div>
                         </div>
                     </div>
                 </div>

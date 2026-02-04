@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useToast } from "@/hooks/useToast";
 
 const Button = ({ children, onClick, variant = "primary", className = "", disabled }) => {
     const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed h-11 px-5";
@@ -43,6 +44,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
 
 export default function QuickAssumptionModal({ isOpen, onClose, userId, cabinetMedicines = [], onSuccess, therapyPlans = [] }) {
     const [quickAddData, setQuickAddData] = useState({ medicine: "", id_farmaco_armadietto: "", time: "", note: "" });
+    const { showToast, ToastComponent } = useToast();
 
     useEffect(() => {
         if (isOpen) {
@@ -92,7 +94,7 @@ export default function QuickAssumptionModal({ isOpen, onClose, userId, cabinetM
                 if (tRes.ok && tJson.success) {
                     therapyId = tJson.data.id_terapia;
                 } else {
-                    alert("Errore creazione terapia al bisogno: " + (tJson.error || "Sconosciuto"));
+                    showToast("Errore creazione terapia al bisogno", "error");
                     return;
                 }
             }
@@ -118,16 +120,16 @@ export default function QuickAssumptionModal({ isOpen, onClose, userId, cabinetM
                 });
 
                 if (iRes.ok) {
-                    if (onSuccess) onSuccess();
+                    if (onSuccess) onSuccess("Assunzione registrata con successo");
                     onClose();
                 } else {
-                    alert("Errore registrazione assunzione");
+                    showToast("Errore registrazione assunzione", "error");
                 }
             }
 
         } catch (error) {
             console.error("Errore quick add", error);
-            alert("Si è verificato un errore");
+            showToast("Si è verificato un errore", "error");
         }
     };
 
@@ -143,6 +145,7 @@ export default function QuickAssumptionModal({ isOpen, onClose, userId, cabinetM
                 </>
             }
         >
+            <ToastComponent />
             <div className="space-y-5">
                 <div className="bg-teal-50 p-4 rounded-xl border border-teal-100 flex gap-3">
                     <div className="bg-white p-2 rounded-full shadow-sm text-[#14b8a6]">

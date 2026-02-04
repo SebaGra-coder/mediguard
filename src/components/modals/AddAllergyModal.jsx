@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useToast } from "@/hooks/useToast";
 
 // --- ICONE SVG ---
 const Icons = {
@@ -56,6 +57,8 @@ export default function AddAllergyModal({ isOpen, onClose, onSuccess, userId, av
     const [severity, setSeverity] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const { showToast, ToastComponent } = useToast();
+
     useEffect(() => {
         if (isOpen) {
             setSearchTerm("");
@@ -85,15 +88,15 @@ export default function AddAllergyModal({ isOpen, onClose, onSuccess, userId, av
             });
 
             if (res.ok) {
-                if (onSuccess) onSuccess();
+                if (onSuccess) onSuccess("Allergia aggiunta con successo");
                 onClose();
             } else {
                 const errorData = await res.json();
-                alert(errorData.message || "Errore durante il salvataggio");
+                showToast("Errore durante il salvataggio", "error");
             }
         } catch (err) {
             console.error("Errore operazione:", err);
-            alert("Errore di connessione");
+            showToast("Errore di rete", "error");
         } finally {
             setIsSubmitting(false);
         }
@@ -113,6 +116,7 @@ export default function AddAllergyModal({ isOpen, onClose, onSuccess, userId, av
                 </>
             }
         >
+            <ToastComponent />
             <div className="space-y-6">
                 <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Cerca Allergene</label>

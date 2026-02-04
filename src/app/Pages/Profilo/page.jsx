@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { GuestOverlay } from "@/components/GuestOverlay";
 import AddAllergyModal from "@/components/modals/AddAllergyModal";
+import { useToast } from "@/hooks/useToast";
 
 // --- ICONE SVG INLINE (Coerenti con lo stile MediGuard) ---
 const Icons = {
@@ -38,6 +39,8 @@ export default function ProfiloPage() {
     // Stato per gestione modale allergie
     const [showAllergyModal, setShowAllergyModal] = useState(false);
     const [availableAllergens, setAvailableAllergens] = useState([]);
+
+    const { showToast, ToastComponent } = useToast();
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
@@ -90,6 +93,7 @@ export default function ProfiloPage() {
                 // Resetta la password nel form per sicurezza
                 setFormUser(prev => ({ ...prev, password: '' }));
                 loadData();
+                showToast("Profilo aggiornato con successo", "success");
             }
         } catch (err) { console.error(err); }
     };
@@ -98,8 +102,16 @@ export default function ProfiloPage() {
         if (!confirm("Rimuovere questa allergia?")) return;
         try {
             const res = await fetch(`/api/CRUD-allergia-utente?id_allergia=${id}`, { method: 'DELETE' });
-            if (res.ok) loadData();
+            if (res.ok) {
+                loadData();
+                showToast("Allergia rimossa", "success");
+            }
         } catch (err) { console.error(err); }
+    };
+
+    const handleAllergySuccess = (message) => {
+        loadData();
+        if (message) showToast(message, "success");
     };
 
     if (isLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#14b8a6]"></div></div>;
@@ -107,6 +119,7 @@ export default function ProfiloPage() {
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
             <Navbar isAuthenticated={isAuthenticated} />
+            <ToastComponent />
 
             <main className="pt-10 pb-16 relative">
                 {!isAuthenticated && (
@@ -247,12 +260,12 @@ export default function ProfiloPage() {
             <AddAllergyModal
                 isOpen={showAllergyModal}
                 onClose={() => setShowAllergyModal(false)}
-                onSuccess={loadData}
+                onSuccess={handleAllergySuccess}
                 userId={user?.id_utente}
                 availableAllergens={availableAllergens}
             />
 
-            <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-400 bg-white">
+            <footer className="fixed bottom-0 left-0 right-0 border-t border-slate-200 py-8 text-center text-sm text-slate-400 bg-white">
                 <p>© 2024 MediGuard.</p>
             </footer>
         </div>

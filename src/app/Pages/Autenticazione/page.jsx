@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useToast } from "@/hooks/useToast";
 import Link from "next/link";
 
 function AuthContent({ onLogin }) {
@@ -11,6 +12,7 @@ function AuthContent({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { showToast, ToastComponent } = useToast();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -33,7 +35,7 @@ function AuthContent({ onLogin }) {
 
     // Validate form
     if (!isLogin && formData.password !== formData.confirmPassword) {
-      alert("Errore: Le password non coincidono");
+      showToast("Errore: Le password non coincidono", "error");
       setIsLoading(false);
       return;
     }
@@ -57,7 +59,7 @@ function AuthContent({ onLogin }) {
           // Redirect alla HomePage o dove preferisci
           window.location.href = "/Pages/HomePage";
         } else {
-          alert(data.message || "Errore durante il login");
+          showToast("Errore durante il login", "error");
         }
 
       } else {
@@ -77,15 +79,15 @@ function AuthContent({ onLogin }) {
         const data = await res.json();
 
         if (res.ok) {
-          alert("Registrazione completata! Ora puoi accedere.");
+          showToast("Registrazione effettuata con successo!", "success");
           setIsLogin(true); // Passa alla modalità login
         } else {
-          alert(data.message || "Errore durante la registrazione");
+          showToast("Errore durante la registrazione", "error");
         }
       }
     } catch (error) {
       console.error("Errore di rete:", error);
-      alert("Si è verificato un errore di comunicazione con il server.");
+      showToast("Errore di rete", "error");
     } finally {
       setIsLoading(false);
     }
@@ -118,6 +120,7 @@ function AuthContent({ onLogin }) {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 relative overflow-hidden font-sans text-slate-900">
+      <ToastComponent className="absolute top-4 right-4" />
       
       {/* Background decorations */}
       <div className="absolute inset-0 pointer-events-none">
@@ -326,15 +329,6 @@ function AuthContent({ onLogin }) {
                 {isLogin ? "Registrati" : "Accedi"}
               </button>
             </div>
-
-            {!isLogin && (
-              <p className="mt-6 text-xs text-center text-slate-400 leading-relaxed">
-                Registrandoti accetti i nostri{" "}
-                <a href="#" className={`${primaryColor} hover:underline`}>Termini di Servizio</a>
-                {" "}e la{" "}
-                <a href="#" className={`${primaryColor} hover:underline`}>Privacy Policy</a>.
-              </p>
-            )}
           </div>
         </div>
       </div>

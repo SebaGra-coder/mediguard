@@ -8,6 +8,7 @@ import AddMedicationModal from "@/components/modals/AddMedicationModal";
 import EditMedicationModal from "@/components/modals/EditMedicationModal";
 import DeleteMedicationModal from "@/components/modals/DeleteMedicationModal";
 import AddTherapyModal from "@/components/modals/AddTherapyModal";
+import { useToast } from "@/hooks/useToast";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -75,6 +76,8 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
   const [stats, setStats] = useState({ total: 0, low: 0, expiring: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
+  const { showToast, ToastComponent } = useToast();
+
   // Stato Modali
   const [modalState, setModalState] = useState({ type: null, data: null }); // type: 'add' | 'edit' | 'delete' | 'therapy'
 
@@ -136,9 +139,10 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
     }
   };
 
-  const handleSuccess = () => {
+  const handleSuccess = (message) => {
       fetchData(currentUser.id_utente);
       setModalState({ type: null, data: null });
+      if (message) showToast(message, 'success');
   };
 
   const filteredMedicines = medicines.filter((medicine) => {
@@ -159,7 +163,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
   return (
     <div className="min-h-screen bg-slate-50 relative font-sans text-slate-900">
       <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
-
+      <ToastComponent />
       {!isUserAuthenticated && (
         <GuestOverlay 
           title="Il tuo Armadietto Digitale"

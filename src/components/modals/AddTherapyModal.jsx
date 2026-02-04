@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useToast } from "@/hooks/useToast";
 
 // --- ICONE SVG ---
 const Icons = {
@@ -61,6 +62,8 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
         note: "",
         stato: "attiva"
     });
+
+    const { showToast, ToastComponent } = useToast();
 
     useEffect(() => {
         if (isOpen) {
@@ -128,10 +131,12 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
                 const json = await res.json();
 
                 if (res.ok && json.success) {
-                    if (onSuccess) onSuccess();
+                    if (onSuccess) onSuccess("Terapia aggiornata con successo");
                     onClose();
                 } else {
-                    alert("Errore aggiornamento: " + (json.error || "Sconosciuto"));
+                    console.error("Errore aggiornamento: " + (json.error || "Sconosciuto"));
+                    showToast("Errore aggiornamento terapia", "error");
+                    // Potresti voler passare l'errore al parent se necessario
                 }
                 return;
             }
@@ -163,15 +168,16 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
             const json = await res.json();
 
             if (res.ok && json.success) {
-                if (onSuccess) onSuccess();
+                if (onSuccess) onSuccess("Terapia creata con successo");
                 onClose();
             } else {
-                alert("Errore salvataggio: " + (json.error || "Sconosciuto"));
+                console.error("Errore salvataggio: " + (json.error || "Sconosciuto"));
+                showToast("Errore creazione terapia", "error");
             }
 
         } catch (e) {
             console.error("Errore chiamata API", e);
-            alert("Errore di connessione");
+            showToast("Errore di connessione", "error");
         }
     };
 
@@ -189,6 +195,7 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
                 </>
             }
         >
+            <ToastComponent />
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">Seleziona Farmaco</label>

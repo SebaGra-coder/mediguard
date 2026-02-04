@@ -76,7 +76,7 @@ export default function EditMedicationModal({ isOpen, onClose, medicine, onSucce
             });
 
             if (res.ok) {
-                if (onSuccess) onSuccess();
+                if (onSuccess) onSuccess("Farmaco modificato con successo");
                 onClose();
             } else {
                 const errorData = await res.json();
