@@ -74,7 +74,7 @@ export async function POST(request) {
         lotto_produzione: lotto_produzione,
         
         // Assicura che la quantità sia trattata come numero decimale (Float) 
-        quantita_rimanente: parseFloat(quantita_rimanente), 
+        quantita_rimanente: parseFloat(quantita_rimanente),
       },
     });
 

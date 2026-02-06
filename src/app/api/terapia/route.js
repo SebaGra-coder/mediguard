@@ -23,6 +23,7 @@ export async function POST(request) {
       terapia_attiva,
       data_inizio,
       data_fine,
+      note,
       orari
     } = body;
 
@@ -75,6 +76,8 @@ export async function POST(request) {
 
         data_inizio: data_inizio ? new Date(data_inizio) : null,
         data_fine: data_fine ? new Date(data_fine) : null,
+
+        note: note,
 
         orari: orari || []
       },
@@ -257,12 +260,6 @@ export async function GET(request) {
       };
     }
 
-    if (note)
-      filtri.note = {
-        contains: note,
-        mode: 'insensitive',
-      };
-
 
 
     // Esegue la ricerca sul database con i filtri accumulati
@@ -277,7 +274,8 @@ export async function GET(request) {
           }
         },
         // Include l'elenco delle assunzioni programmate [cite: 14]
-        assunzioni: true
+        assunzioni: true,
+        assunzioni_passate: true
       }
     });
 

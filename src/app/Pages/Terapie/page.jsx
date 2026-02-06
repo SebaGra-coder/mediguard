@@ -168,8 +168,13 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 const dailyIntakes = [];
                 
                 json.data.forEach(terapia => {
-                    if (terapia.assunzioni) {
-                        terapia.assunzioni.forEach(assunzione => {
+                    const allAssunzioni = [
+                        ...(terapia.assunzioni || []),
+                        ...(terapia.assunzioni_passate || [])
+                    ];
+
+                    if (allAssunzioni.length > 0) {
+                        allAssunzioni.forEach(assunzione => {
                             const assunzioneDate = new Date(assunzione.data_programmata);
                             
                             if (assunzioneDate >= startOfDay && assunzioneDate <= endOfDay) {
@@ -186,7 +191,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                 }
     
                                 dailyIntakes.push({
-                                    id: assunzione.id_evento,
+                                    id: assunzione.id_evento || assunzione.id,
                                     // Uso toLocaleTimeString senza UTC per riflettere l'ora locale dell'utente
                                     time: assunzioneDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}),
                                     medicine: terapia.farmaco?.farmaco?.denominazione || "Farmaco",
