@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 // Assicurati che il percorso di importazione sia corretto in base a dove hai salvato il file
 import MedicationReminder from "@/components/modals/MedicationReminder"; 
+import ClientLayout from "@/components/layout/ClientLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,10 +26,12 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Non serve più passare userId come prop */}
-        <MedicationReminder />
-        
-        {children}
+        <ClientLayout>
+            {/* Non serve più passare userId come prop */}
+            <MedicationReminder />
+            
+            {children}
+        </ClientLayout>
       </body>
     </html>
   );

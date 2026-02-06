@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Navbar } from "@/components/layout/Navbar";
 import { GuestOverlay } from "@/components/GuestOverlay";
 import MedicationDetailsModal from "@/components/modals/MedicationDetailsModal";
 import AddMedicationModal from "@/components/modals/AddMedicationModal";
@@ -288,7 +287,7 @@ export default function AssistitoDetail() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
+      
 
       {!isUserAuthenticated && (
         <GuestOverlay
@@ -315,10 +314,10 @@ export default function AssistitoDetail() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatCard icon={<Icons.Pill className="text-[#14b8a6]" />} bg="bg-teal-50" value={therapyPlans.length} label="Terapie Attive" />
-            <StatCard icon={<Icons.Clock className="text-blue-500" />} bg="bg-blue-50" value={therapyPlans.filter(t => t.terapia_attiva).length} label="In Corso" />
+            <StatCard icon={<Icons.Pill className="text-[#14b8a6]" />} bg="bg-teal-50" value={therapyPlans.length} label="Terapie Totali" />
+            <StatCard icon={<Icons.Clock className="text-blue-500" />} bg="bg-blue-50" value={therapyPlans.filter(t => t.stato === 'attiva').length} label="Terapie Attive" />
             <StatCard icon={<Icons.CheckCircle className="text-emerald-500" />} bg="bg-emerald-50" value={`${assunzioniOggi.filter(a => a.esito).length}/${assunzioniOggi.length}`} label="Assunzioni Oggi" />
-            <StatCard icon={<Icons.AlertTriangle className="text-rose-500" />} bg="bg-rose-50" value={stats.alerts || 0} label="Alert Attivi" />
+            <StatCard icon={<Icons.AlertTriangle className="text-rose-500" />} bg="bg-rose-50" value={activeAlerts.length} label="Alert Attivi" />
           </div>
 
           <div className="flex gap-2 mb-8 bg-slate-200/50 p-1.5 rounded-xl w-fit">

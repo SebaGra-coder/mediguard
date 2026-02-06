@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Navbar } from "@/components/layout/Navbar";
 import { GuestOverlay } from "@/components/GuestOverlay";
 import AddTherapyModal from "@/components/modals/AddTherapyModal";
 import TherapyDetailsModal from "@/components/modals/TherapyDetailsModal";
@@ -26,6 +25,8 @@ const Icons = {
     Trash2: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>,
     Play: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>,
     Pause: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>,
+    AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>,
+    Bell: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>,
 };
 
 // --- COMPONENTI UI RIUTILIZZABILI (Style MediGuard) ---
@@ -75,6 +76,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [todaySchedule, setTodaySchedule] = useState([]);
     const [cabinetMedicines, setCabinetMedicines] = useState([]);
+    const [rawTherapies, setRawTherapies] = useState([]);
 
     const { showToast, ToastComponent } = useToast();
 
@@ -116,6 +118,28 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
         checkAuth();
     }, [selectedDate, fetchTherapies]);
 
+    // Registrazione Service Worker e Listener per aggiornamenti da notifica
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker registrato'))
+                .catch(err => console.error('Errore registrazione SW:', err));
+
+            const handleMessage = (event) => {
+                if (event.data && event.data.type === 'REFRESH_DATA') {
+                    if (userData?.id_utente) {
+                        fetchTherapies(userData.id_utente);
+                        fetchDailySchedule(userData.id_utente, selectedDate);
+                        showToast("Assunzione confermata da notifica!", "success");
+                    }
+                }
+            };
+
+            navigator.serviceWorker.addEventListener('message', handleMessage);
+            return () => navigator.serviceWorker.removeEventListener('message', handleMessage);
+        }
+    }, [userData, selectedDate, fetchTherapies, showToast]);
+
     const fetchCabinet = async (userId) => {
         try {
             const res = await fetch(`/api/antonio?id_utente=${userId}`);
@@ -134,6 +158,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             const json = await res.json();
             
             if (json.success && Array.isArray(json.data)) {
+                setRawTherapies(json.data);
                 const startOfDay = new Date(date);
                 startOfDay.setHours(0, 0, 0, 0);
                 
@@ -233,6 +258,11 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
     };
 
     const handleConfirmIntake = async (id) => {
+        if (!id) {
+            showToast("ID evento non valido", "error");
+            return;
+        }
+
         try {
             const now = new Date();
             const res = await fetch('/api/assunzione', {
@@ -248,15 +278,109 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             if (res.ok) {
                 const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'});
                 setTodaySchedule(sched => sched.map(s => s.id === id ? { ...s, status: "taken", takenAt: timeStr } : s));
-                fetchTherapies(userData.id_utente);
+                if (userData?.id_utente) {
+                    fetchTherapies(userData.id_utente);
+                }
                 showToast("Assunzione confermata", "success");
             } else {
-                showToast("Errore durante la conferma", "error");
+                const errorData = await res.json().catch(() => ({}));
+                console.error("Errore API assunzione:", errorData);
+                showToast(errorData.error || "Errore durante la conferma", "error");
             }
         } catch (error) {
             console.error("Errore conferma assunzione", error);
             showToast("Errore di connessione", "error");
         }
+    };
+
+    const handleTestNotifications = async () => {
+        try {
+            showToast("Verifica notifiche in corso...", "info");
+            const res = await fetch('/api/terapia/check-now?force=true');
+            const data = await res.json();
+            
+            if (data.success) {
+                if (data.notifiche_processate > 0) {
+                    showToast(`Simulate ${data.notifiche_processate} notifiche! Controlla la console del server.`, "success");
+                } else {
+                    showToast("Nessuna terapia programmata per quest'ora esatta.", "warning");
+                }
+            }
+        } catch (error) {
+            console.error("Errore test notifiche", error);
+            showToast("Errore durante il test", "error");
+        }
+    };
+
+    const getTherapyWarnings = (therapyId) => {
+        const therapy = rawTherapies.find(t => t.id_terapia === therapyId);
+        if (!therapy || !therapy.farmaco) return [];
+
+        const warnings = [];
+        const farmaco = therapy.farmaco;
+        const now = new Date();
+
+        // 1. Scadenza
+        if (farmaco.data_scadenza) {
+            const expiry = new Date(farmaco.data_scadenza);
+            const daysToExpiry = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+            
+            if (daysToExpiry < 0) {
+                warnings.push({ type: 'destructive', icon: Icons.AlertTriangle, text: "Farmaco scaduto!" });
+            } else if (daysToExpiry <= 30) {
+                warnings.push({ type: 'warning', icon: Icons.Clock, text: `Scade tra ${daysToExpiry} giorni` });
+            }
+        }
+
+        // 2. Scorte e Predizione
+        if (!therapy.solo_al_bisogno && therapy.terapia_attiva && therapy.orari && therapy.orari.length > 0) {
+            const stock = farmaco.quantita_rimanente || 0;
+            const dailyDose = parseFloat(therapy.dose_singola) * therapy.orari.length;
+            
+            let totalNeeded = 0;
+            let isFinite = false;
+            let isEnded = false;
+
+            if (therapy.data_fine) {
+                const end = new Date(therapy.data_fine);
+                end.setHours(23, 59, 59, 999);
+                
+                if (end >= now) {
+                    const diffMs = end.getTime() - now.getTime();
+                    const daysNeeded = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                    totalNeeded = dailyDose * daysNeeded;
+                    isFinite = true;
+                } else {
+                    isEnded = true;
+                }
+            }
+
+            const daysCovered = dailyDose > 0 ? Math.floor(stock / dailyDose) : 0;
+
+            if (isFinite) {
+                if (stock < totalNeeded) {
+                    warnings.push({ 
+                        type: 'warning', 
+                        icon: Icons.AlertTriangle, 
+                        text: stock === 0 ? 'Farmaco terminato' :`Scorta insufficiente. Hai ${stock}, servono ${totalNeeded}. Copri solo ${daysCovered} giorni.` 
+                    });
+                }
+            } else if (!isEnded) {
+                if (daysCovered < 7) {
+                     warnings.push({ 
+                        type: 'warning', 
+                        icon: Icons.AlertTriangle, 
+                        text: `Scorta bassa: copre solo ${daysCovered} giorni.` 
+                    });
+                }
+            }
+        } else if (therapy.solo_al_bisogno) {
+             if ((farmaco.quantita_rimanente || 0) < 5) {
+                 warnings.push({ type: 'warning', icon: Icons.AlertTriangle, text: `Scorta bassa (${farmaco.quantita_rimanente} rimasti)` });
+             }
+        }
+
+        return warnings;
     };
 
     if (isAuthChecking) {
@@ -269,7 +393,6 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-            <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
             <ToastComponent />
 
             {!isUserAuthenticated && (
@@ -294,9 +417,14 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                             <h1 className="text-3xl font-bold mb-2 text-slate-800 tracking-tight">Le Mie Terapie</h1>
                             <p className="text-slate-500">Gestisci i tuoi piani terapeutici e monitora le assunzioni.</p>
                         </div>
-                        <Button onClick={() => setModalState({ type: 'add', data: null })} className="h-11 px-6 shadow-md hover:shadow-lg">
-                            <Icons.Plus className="w-5 h-5 mr-2" /> Nuova Terapia
-                        </Button>
+                        <div className="flex gap-3">
+                            <Button onClick={handleTestNotifications} variant="secondary" className="h-11 px-4 shadow-sm">
+                                <Icons.Bell className="w-5 h-5 mr-2" /> Test Notifiche
+                            </Button>
+                            <Button onClick={() => setModalState({ type: 'add', data: null })} className="h-11 px-6 shadow-md hover:shadow-lg">
+                                <Icons.Plus className="w-5 h-5 mr-2" /> Nuova Terapia
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="grid lg:grid-cols-3 gap-8">
@@ -426,6 +554,16 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                             <span className="text-slate-400">Durata: <span className="text-slate-600 font-medium">{plan.duration}</span></span>
                                             {plan.daysLeft && <span className="text-amber-600 font-bold">{plan.daysLeft} gg rimasti</span>}
                                         </div>
+                                    </div>
+
+                                    {/* Warnings Section */}
+                                    <div className="mt-3 space-y-2">
+                                        {getTherapyWarnings(plan.id).map((warn, idx) => (
+                                            <div key={idx} className={`flex items-start gap-2 text-xs p-2 rounded-lg ${warn.type === 'destructive' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>
+                                                <warn.icon className="w-4 h-4 shrink-0" />
+                                                <span>{warn.text}</span>
+                                            </div>
+                                        ))}
                                     </div>
 
                                     {/* Pulsanti Azione (Visibili on Hover su Desktop) */}

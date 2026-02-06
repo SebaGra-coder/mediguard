@@ -203,6 +203,8 @@ export async function GET(request) {
     const terapia_attiva = searchParams.get('terapia_attiva');
     const data_inizio = searchParams.get('data_inizio');
     const data_fine = searchParams.get('data_fine');
+    const note = searchParams.get('note');
+
 
     // Inizializza l'oggetto dei filtri per Prisma
     const filtri = {};//RIVEDERE IL PERCHé UN OGGETTO é INIZZIALIZZATO CON UNA PARANTESI GRAFFA
@@ -254,6 +256,13 @@ export async function GET(request) {
         lte: new Date(data_fine),
       };
     }
+
+    if (note)
+      filtri.note = {
+        contains: note,
+        mode: 'insensitive',
+      };
+
 
 
     // Esegue la ricerca sul database con i filtri accumulati
@@ -307,6 +316,7 @@ export async function PUT(request) {
       terapia_attiva,
       data_inizio,
       data_fine,
+      note,
       orari // New field expected for schedule regeneration
     } = body;
 
@@ -333,6 +343,9 @@ export async function PUT(request) {
     // Gestione date: accetta stringhe ISO o null
     if (data_inizio !== undefined) dataToUpdate.data_inizio = data_inizio ? new Date(data_inizio) : null;
     if (data_fine !== undefined) dataToUpdate.data_fine = data_fine ? new Date(data_fine) : null;
+    
+    if (note !== undefined) dataToUpdate.note = note;
+
 
     // Aggiorna gli orari se forniti
     if (orari !== undefined) dataToUpdate.orari = orari;

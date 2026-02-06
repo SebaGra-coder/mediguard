@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Navbar } from "@/components/layout/Navbar";
 import { GuestOverlay } from "@/components/GuestOverlay";
 
 // --- ICONE SVG INTERNE ---
@@ -94,25 +93,54 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
               });
               setPatients(mappedPatients);
 
-              // Genera alert fittizi basati sui dati reali (opzionale, per popolare la UI)
+              // Genera alert reali basati sui dati
               const generatedAlerts = [];
-              mappedPatients.forEach(p => {
-                if (p.alerts > 0) {
-                  generatedAlerts.push({
-                    id: p.id + '_alert',
-                    patient: p.name,
-                    message: "Attenzione richiesta (aderenza o ritardo)",
-                    time: "Oggi",
-                    type: "warning"
+              const now = new Date();
+
+              userData.caregiver.forEach(rel => {
+                const p = rel.assistito;
+                if (!p) return;
+
+                // 1. Alert Terapie (Ritardi/Mancate)
+                if (p.terapie) {
+                  p.terapie.forEach(t => {
+                    if (t.assunzioni) {
+                      t.assunzioni.forEach(a => {
+                        const d = new Date(a.data_programmata);
+                        // Logic matches backend: last 24h
+                        const isRecent = d > new Date(now.getTime() - 24 * 60 * 60 * 1000) && d <= now;
+                        const isMissed = a.esito === false;
+                        const isLate = a.esito === null && d < new Date(now.getTime() - 60 * 60 * 1000);
+
+                        if (isRecent && (isMissed || isLate)) {
+                           generatedAlerts.push({
+                             id: `alert_${a.id_evento}`,
+                             patient: `${p.nome} ${p.cognome}`,
+                             message: isMissed 
+                               ? `Mancata assunzione: ${t.nome_utilita || 'Farmaco'}`
+                               : `In ritardo: ${t.nome_utilita || 'Farmaco'}`,
+                             time: d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                             type: isMissed ? 'critical' : 'warning'
+                           });
+                        }
+                      });
+                    }
                   });
                 }
-                if (p.lowStock > 0) {
-                  generatedAlerts.push({
-                    id: p.id + '_stock',
-                    patient: p.name,
-                    message: `Scorte in esaurimento: ${p.lowStock} farmaci`,
-                    time: "Oggi",
-                    type: "info"
+
+                // 2. Alert Scorte (Low Stock)
+                if (p.armadietto) {
+                  p.armadietto.forEach(f => {
+                    if (f.quantita_rimanente < 5) {
+                       const drugName = f.farmaco?.denominazione || 'Farmaco'; 
+                       generatedAlerts.push({
+                         id: `stock_${f.id_farmaco_armadietto}`,
+                         patient: `${p.nome} ${p.cognome}`,
+                         message: `Scorta in esaurimento: ${drugName} (${f.quantita_rimanente} rimasti)`,
+                         time: "Oggi",
+                         type: "info"
+                       });
+                    }
                   });
                 }
               });
@@ -140,7 +168,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
     }
   };
 
-  const totalAlerts = patients.reduce((sum, p) => sum + p.alerts, 0);
+  const totalAlerts = patients.reduce((sum, p) => sum + p.alerts + p.lowStock, 0);
   const avgAdherence = patients.length > 0 ? Math.round(patients.reduce((sum, p) => sum + p.adherenceWeek, 0) / patients.length) : 0;
   const lowStockCount = patients.reduce((sum, p) => sum + p.lowStock, 0);
 
@@ -154,7 +182,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
+      
 
       {!isUserAuthenticated && (
         <GuestOverlay
@@ -215,7 +243,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="font-bold text-lg text-slate-800 group-hover:text-[#14b8a6] transition-colors">{patient.name}</h3>
-                          {patient.alerts > 0 && <Badge variant="destructive">{patient.alerts} alert</Badge>}
+                          {(patient.alerts + patient.lowStock) > 0 && <Badge variant="destructive">{patient.alerts + patient.lowStock} alert</Badge>}
                         </div>
                         <p className="text-sm text-slate-500 mb-4">{patient.relationship} • Ultima attività: {patient.lastActivity}</p>
 

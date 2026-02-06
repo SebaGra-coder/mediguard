@@ -48,6 +48,11 @@ self.addEventListener('notificationclick', function(event) {
           }
           // Se va a buon fine, non facciamo nulla (o potresti mostrare un'altra notifica)
           console.log("Assunzione confermata!");
+          
+          // Notifica tutte le finestre aperte per aggiornare la UI
+          return self.clients.matchAll({ type: 'window' }).then(clients => {
+              clients.forEach(client => client.postMessage({ type: 'REFRESH_DATA' }));
+          });
         })
         .catch(err => {
           console.error("Errore fetch:", err);

@@ -262,7 +262,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-            <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
+            {/* Navbar rimossa da qui e spostata nel layout */}
 
             <main className="pt-10 pb-16">
                 <div className="container mx-auto px-4 max-w-7xl">

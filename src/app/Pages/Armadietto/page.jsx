@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Navbar } from "@/components/layout/Navbar";
 import { GuestOverlay } from "@/components/GuestOverlay";
 import AddMedicationModal from "@/components/modals/AddMedicationModal";
 import EditMedicationModal from "@/components/modals/EditMedicationModal";
@@ -162,7 +161,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
 
   return (
     <div className="min-h-screen bg-slate-50 relative font-sans text-slate-900">
-      <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
+      
       <ToastComponent />
       {!isUserAuthenticated && (
         <GuestOverlay 

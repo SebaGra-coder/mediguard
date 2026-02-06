@@ -72,7 +72,11 @@ export async function GET(req) {
                             cognome: true,
                             email: true,
                             data_nascita: true,
-                            armadietto: true, // Serve per Low Stock
+                            armadietto: {
+                                include: {
+                                    farmaco: true
+                                }
+                            }, // Serve per Low Stock
                             terapie: {
                                 where: { terapia_attiva: true },
                                 include: {
@@ -132,7 +136,7 @@ export async function GET(req) {
          today.setHours(0,0,0,0);
          const now = new Date();
 
-         utente.caregiver = utente.caregiver.map(relazione => {
+         utente.caregiver = await Promise.all(utente.caregiver.map(async (relazione) => {
              const paziente = relazione.assistito;
              if (!paziente) return relazione;
 
@@ -181,17 +185,33 @@ export async function GET(req) {
              const lowStock = paziente.armadietto ? paziente.armadietto.filter(f => f.quantita_rimanente < 5).length : 0;
 
              // Ultima attività
-             const takenAssunzioni = allAssunzioniWeek.filter(a => a.orario_effettivo !== null);
-             takenAssunzioni.sort((a, b) => new Date(b.orario_effettivo) - new Date(a.orario_effettivo));
+             // Recupera l'ultima assunzione effettiva dal DB (indipendentemente dalla settimana o stato terapia)
+             const userTherapies = await prisma.piano_terapeutico.findMany({
+                 where: { id_paziente: paziente.id_utente },
+                 select: { id_terapia: true }
+             });
+             
+             const therapyIds = userTherapies.map(t => t.id_terapia);
              
              let lastActivity = "N/A";
-             if (takenAssunzioni.length > 0) {
-                 const laDate = new Date(takenAssunzioni[0].orario_effettivo);
+             
+             if (therapyIds.length > 0) {
+                 const lastIntake = await prisma.registro_assunzioni.findFirst({
+                 where: {
+                     id_terapia: { in: therapyIds },
+                     orario_effettivo: { not: null }
+                 },
+                 orderBy: { orario_effettivo: 'desc' }
+             });
+             
+             if (lastIntake && lastIntake.orario_effettivo) {
+                 const laDate = new Date(lastIntake.orario_effettivo);
                  if (laDate.toDateString() === now.toDateString()) {
                      lastActivity = laDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
                  } else {
                      lastActivity = laDate.toLocaleDateString('it-IT');
                  }
+             }
              }
 
              // Prossima dose (Future assunzioni non ancora esitate)
@@ -231,7 +251,7 @@ export async function GET(req) {
                      }
                  }
              };
-         });
+         }));
       }
 
       return NextResponse.json(utente, { status: 200 });

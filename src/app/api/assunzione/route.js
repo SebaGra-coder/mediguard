@@ -223,19 +223,20 @@ export async function GET(request) {
 
 /**
  * GESTIONE PUT: Aggiorna un'assunzione esistente
- */
+*/
 export async function PUT(request) {
   try {
     const body = await request.json();
+    console.log(body);
     const { id_evento, esito, orario_effettivo } = body;
-
+    
     if (!id_evento) {
       return NextResponse.json(
         { success: false, error: "ID evento mancante." },
         { status: 400 }
       );
     }
-
+    
     // Recupera lo stato attuale per verificare se stiamo confermando un'assunzione non ancora presa
     const currentAssunzione = await prisma.registro_assunzioni.findUnique({
       where: { id_evento: id_evento },
@@ -249,6 +250,7 @@ export async function PUT(request) {
     if (!currentAssunzione) {
       return NextResponse.json({ error: 'Assunzione non trovata' }, { status: 404 });
     }
+
 
     if (Boolean(esito) === true && currentAssunzione.esito !== true) {
       const farmaco = currentAssunzione.terapia.farmaco;

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link"; // Assumo tu stia usando Next.js per i link, altrimenti usa <a>
-import { Navbar } from "@/components/layout/Navbar"; // Assicurati che il percorso sia giusto
 
 // --- ICONE SVG INLINE ---
 const Icons = {
@@ -92,8 +91,7 @@ export default function AggiungiFarmaco({ isAuthenticated: initialAuth = false }
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       
-      {/* NAVBAR */}
-      <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
+      
       
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         

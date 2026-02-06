@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Navbar } from "@/components/layout/Navbar";
 import { useToast } from "@/hooks/useToast";
 
 // --- ICONE SVG INTERNE ---
@@ -131,7 +130,7 @@ export default function CollegaCaregiver({ isAuthenticated: initialAuth = false 
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 relative">
-      <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
+      
       
       {/* Toast Container */}
       <ToastComponent />

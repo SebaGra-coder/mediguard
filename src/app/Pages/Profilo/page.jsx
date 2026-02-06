@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
-import { Navbar } from "@/components/layout/Navbar";
 import { GuestOverlay } from "@/components/GuestOverlay";
 import AddAllergyModal from "@/components/modals/AddAllergyModal";
 import { useToast } from "@/hooks/useToast";
@@ -118,7 +117,6 @@ export default function ProfiloPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-            <Navbar isAuthenticated={isAuthenticated} />
             <ToastComponent />
 
             <main className="pt-10 pb-16 relative">

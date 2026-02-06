@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Navbar } from "@/components/layout/Navbar";
 import { useRouter } from "next/navigation";
 
 // --- DEFINIZIONE COLORI ---
@@ -226,10 +225,7 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Navbar */}
-      <div className="fixed top-0 w-full z-50">
-        <Navbar isAuthenticated={isUserAuthenticated} onLogout={handleLogout} />
-      </div>
+      
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-6xl">

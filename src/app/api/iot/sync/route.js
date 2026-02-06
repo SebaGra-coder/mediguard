@@ -2,9 +2,26 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as googleTTS from 'google-tts-api';
 
+// Importiamo la mappa dei farmaci (quella con 4000 voci)
 import { audioMap } from '@/lib/audioMap';
 
+// Mappa delle DOSI (Numeri -> ID File Audio cartella 02)
+const doseMap = {
+  "0.5": 1,
+  "1": 2,
+  "2": 3,
+  "3": 4,
+  "4": 5,
+  "5": 6,
+  "6": 7,
+  "7": 8,
+  "8": 9,
+  "9": 10,
+  "10": 11
+};
+
 export const dynamic = 'force-dynamic';
+
 // ============================================================================
 // 2. GENERATORE AUDIO PER MEDI-PENDANT (Google TTS)
 // ============================================================================
@@ -17,7 +34,7 @@ async function generateTTSHex(text) {
     const arrayBuffer = await response.arrayBuffer();
     const voiceBuffer = Buffer.from(arrayBuffer);
     
-    // 50 byte di silenzio iniziale per evitare il "pop" dell'altoparlante
+    // 50 byte di silenzio iniziale
     const silenceHex = "FFFB90C4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".repeat(50);
     const silenceBuffer = Buffer.from(silenceHex, 'hex');
     const combinedBuffer = Buffer.concat([silenceBuffer, voiceBuffer]);
@@ -37,7 +54,7 @@ export async function GET(request) {
   const userId = searchParams.get('userId');
   const mode = searchParams.get('mode');
 
-  // --- MODALITÀ AUDIO (Usata solo dal Pendant per scaricare TTS) ---
+  // --- MODALITÀ AUDIO (Usata solo dal Pendant) ---
   if (mode === 'audio') {
     const text = searchParams.get('text');
     if (!text) return NextResponse.json({ error: 'Testo mancante' }, { status: 400 });
@@ -94,23 +111,16 @@ export async function GET(request) {
       // A. Logica per Pendant (Testo TTS)
       const textToSpeak = `è ora di prendere ${dose} di ${nomeFarmaco}`;
 
-      // B. Logica per Station (ID Audio da Mappa)
-      // Convertiamo in maiuscolo e rimuoviamo spazi extra per cercare nella mappa
+      // B. Logica per Station (ID Audio e Dose)
+      
+      // 1. GESTIONE FARMACO (AudioMap)
       const nomeClean = nomeFarmaco.toUpperCase().trim();
-      
-      // Cerchiamo l'ID nella mappa. Se non c'è, mettiamo 0 (suono generico).
-      // NOTA: Se il nome nel DB è "TACHIPIRINA 500", ma nella mappa hai solo "TACHIPIRINA",
-      // potresti dover gestire una logica di "contains" qui se necessario.
-      // Per ora cerchiamo la corrispondenza esatta o parziale semplice.
-      
       let audioId = 0;
       
-      // Tentativo 1: Corrispondenza Esatta
       if (audioMap[nomeClean]) {
         audioId = audioMap[nomeClean];
       } else {
-        // Tentativo 2: Cerca se una chiave della mappa è contenuta nel nome del farmaco
-        // Es: DB="TACHIPIRINA 500MG", Mappa="TACHIPIRINA" -> Trovato!
+        // Fallback: cerca corrispondenza parziale
         const keys = Object.keys(audioMap);
         for (const key of keys) {
             if (nomeClean.includes(key)) {
@@ -120,6 +130,12 @@ export async function GET(request) {
         }
       }
 
+      // 2. GESTIONE DOSE (DoseMap) - NUOVA MODIFICA
+      // Convertiamo in stringa (per sicurezza), maiuscolo e trim
+      const doseClean = String(dose || "").toUpperCase().trim();
+      // Cerchiamo nella mappa. Se non c'è corrispondenza, ID = 0.
+      const doseId = doseMap[doseClean] || 0;
+
       schedule.push({
         id_evento: evento.id_evento,
         time: timeStr,
@@ -128,8 +144,9 @@ export async function GET(request) {
         // Campo per Pendant
         text_tts: textToSpeak, 
         
-        // Campo per Station (Se è 0, la Station suonerà l'allarme generico)
+        // Campi per Station
         audio_id: audioId, 
+        dose_id: doseId, // <--- ID della dose per la cartella 02
         
         taken: evento.esito === true
       });

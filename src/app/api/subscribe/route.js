@@ -12,19 +12,41 @@ export async function POST(request) {
     // Ottieni lo User Agent dagli header (opzionale ma utile per debug)
     const userAgent = request.headers.get('user-agent') || 'Unknown';
 
-    // 2. Salva nel database usando la tua tabella
-    const nuovaSottoscrizione = await prisma.sottoscrizione_web_push.create({
-      data: {
-        id_utente: userId, // L'ID dell'utente loggato
+    // 2. Salva o aggiorna nel database
+    // Cerca se esiste già una sottoscrizione con lo stesso endpoint per questo utente
+    const sottoscrizioneEsistente = await prisma.sottoscrizione_web_push.findFirst({
+      where: {
         endpoint_browser: subscription.endpoint,
-        // Salviamo le chiavi (p256dh e auth) come JSON
-        chiavi_cifratura_json: subscription.keys, 
-        user_agent: userAgent,
-        data_creazione: new Date(),
-      },
+        id_utente: userId
+      }
     });
 
-    return NextResponse.json({ success: true, id: nuovaSottoscrizione.id_sottoscrizione });
+    let risultato;
+
+    if (sottoscrizioneEsistente) {
+      // Aggiorna esistente
+      risultato = await prisma.sottoscrizione_web_push.update({
+        where: { id_sottoscrizione: sottoscrizioneEsistente.id_sottoscrizione },
+        data: {
+          chiavi_cifratura_json: subscription.keys,
+          user_agent: userAgent,
+          // Opzionale: aggiorna data_creazione o aggiungi un campo 'ultimo_accesso' se presente nel DB
+        }
+      });
+    } else {
+      // Crea nuova
+      risultato = await prisma.sottoscrizione_web_push.create({
+        data: {
+          id_utente: userId,
+          endpoint_browser: subscription.endpoint,
+          chiavi_cifratura_json: subscription.keys,
+          user_agent: userAgent,
+          data_creazione: new Date(),
+        },
+      });
+    }
+
+    return NextResponse.json({ success: true, id: risultato.id_sottoscrizione });
 
   } catch (error) {
     console.error("Errore salvataggio push:", error);
