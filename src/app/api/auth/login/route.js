@@ -46,7 +46,7 @@ export async function POST(request) {
         iat: Math.floor(Date.now() / 1000) 
       }, 
       secret, 
-      { expiresIn: '1d' }
+      { expiresIn: '1h' }
     );
 
     // 6. Salva il nuovo token nel cookie

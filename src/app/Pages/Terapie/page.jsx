@@ -1,0 +1,656 @@
+'use client';
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { GuestOverlay } from "@/components/GuestOverlay";
+import AddTherapyModal from "@/components/modals/AddTherapyModal";
+import TherapyDetailsModal from "@/components/modals/TherapyDetailsModal";
+
+import QuickAssumptionModal from "@/components/modals/QuickAssumptionModal";
+import { useTherapies } from "@/hooks/useTherapies";
+import { useToast } from "@/hooks/useToast";
+
+// --- ICONE SVG INTERNE ---
+const Icons = {
+    Plus: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>,
+    Calendar: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>,
+    Clock: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
+    Check: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>,
+    X: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>,
+    ChevronLeft: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>,
+    ChevronRight: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>,
+    Pill: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" /><path d="m8.5 8.5 7 7" /></svg>,
+    Eye: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>,
+    Edit: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>,
+
+    Play: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>,
+    Pause: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>,
+    AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>,
+    Bell: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>,
+};
+
+// --- COMPONENTI UI RIUTILIZZABILI (Style MediGuard) ---
+const Card = ({ children, className = "" }) => (
+    <div className={`bg-white rounded-xl border border-slate-200 shadow-sm ${className}`}>{children}</div>
+);
+
+const Button = ({ children, onClick, variant = "primary", size = "md", className = "", type = "button", disabled }) => {
+    const base = "inline-flex items-center justify-center rounded-lg font-medium transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
+
+    const variants = {
+        primary: "bg-[#2dd4bf] text-white hover:bg-[#0d9488] shadow-sm hover:shadow-md",
+        secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
+        ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+        destructive: "bg-rose-50 text-rose-600 hover:bg-rose-100",
+        outline: "border border-slate-200 text-slate-600 hover:bg-slate-50"
+    };
+
+    const sizes = {
+        sm: "h-8 px-3 text-xs",
+        md: "h-10 px-4 text-sm",
+        icon: "h-9 w-9 p-0",
+    };
+
+    return (
+        <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>
+            {children}
+        </button>
+    );
+};
+
+const Badge = ({ children, variant = "default", className = "" }) => {
+    const styles = {
+        default: "bg-slate-100 text-slate-700",
+        success: "bg-teal-50 text-[#2dd4bf]",
+        warning: "bg-amber-50 text-amber-600",
+        destructive: "bg-rose-50 text-rose-600",
+    };
+    return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border border-transparent ${styles[variant]} ${className}`}>{children}</span>;
+};
+
+// --- LOGICA PRINCIPALE ---
+export default function Terapie({ isAuthenticated: initialAuth = false }) {
+    const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
+    const [userData, setUserData] = useState(null);
+    const [isAuthChecking, setIsAuthChecking] = useState(true);
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [todaySchedule, setTodaySchedule] = useState([]);
+    const [cabinetMedicines, setCabinetMedicines] = useState([]);
+    const [rawTherapies, setRawTherapies] = useState([]);
+
+    const { showToast, ToastComponent } = useToast();
+
+    const { therapyPlans, fetchTherapies, isLoading: isTherapyLoading } = useTherapies();
+
+    // Modals state
+    const [modalState, setModalState] = useState({ type: null, data: null }); // type: 'view' | 'edit' | 'add' | 'delete' | 'quick-add'
+
+    const handlePrevDay = () => {
+        const newDate = new Date(selectedDate);
+        newDate.setDate(selectedDate.getDate() - 1);
+        setSelectedDate(newDate);
+    };
+
+    const handleNextDay = () => {
+        const newDate = new Date(selectedDate);
+        newDate.setDate(selectedDate.getDate() + 1);
+        setSelectedDate(newDate);
+    };
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const res = await fetch('/api/auth/me');
+                const data = await res.json();
+                setIsUserAuthenticated(data.isAuthenticated);
+                if (data.isAuthenticated) {
+                    setUserData(data.user);
+                    fetchCabinet(data.user.id_utente);
+                    fetchTherapies(data.user.id_utente);
+                    fetchDailySchedule(data.user.id_utente, selectedDate);
+                }
+            } catch (err) {
+                console.error("Errore verifica auth", err);
+            } finally {
+                setIsAuthChecking(false);
+            }
+        };
+        checkAuth();
+    }, [selectedDate, fetchTherapies]);
+
+    // Registrazione Service Worker e Listener per aggiornamenti da notifica
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker registrato'))
+                .catch(err => console.error('Errore registrazione SW:', err));
+
+            const handleMessage = (event) => {
+                if (event.data && event.data.type === 'REFRESH_DATA') {
+                    if (userData?.id_utente) {
+                        fetchTherapies(userData.id_utente);
+                        fetchDailySchedule(userData.id_utente, selectedDate);
+                        showToast("Assunzione confermata da notifica!", "success");
+                    }
+                }
+            };
+
+            navigator.serviceWorker.addEventListener('message', handleMessage);
+            return () => navigator.serviceWorker.removeEventListener('message', handleMessage);
+        }
+    }, [userData, selectedDate, fetchTherapies, showToast]);
+
+    const fetchCabinet = async (userId) => {
+        try {
+            const res = await fetch(`/api/armadietto?id_utente=${userId}`);
+            const data = await res.json();
+            if (data.data) {
+                setCabinetMedicines(data.data);
+            }
+        } catch (err) {
+            console.error("Errore caricamento armadietto", err);
+        }
+    };
+
+    const fetchDailySchedule = async (userId, date) => {
+        try {
+            const res = await fetch(`/api/terapia?id_paziente=${userId}`);
+            const json = await res.json();
+            
+            if (json.success && Array.isArray(json.data)) {
+                setRawTherapies(json.data);
+                const startOfDay = new Date(date);
+                startOfDay.setHours(0, 0, 0, 0);
+                
+                const endOfDay = new Date(date);
+                endOfDay.setHours(23, 59, 59, 999);
+    
+                const dailyIntakes = [];
+                
+                json.data.forEach(terapia => {
+                    const allAssunzioni = [
+                        ...(terapia.assunzioni || []),
+                        ...(terapia.assunzioni_passate || [])
+                    ];
+
+                    if (allAssunzioni.length > 0) {
+                        allAssunzioni.forEach(assunzione => {
+                            const assunzioneDate = new Date(assunzione.data_programmata);
+                            
+                            if (assunzioneDate >= startOfDay && assunzioneDate <= endOfDay) {
+                                // CORREZIONE LOGICA STATO:
+                                const nowTime = new Date().getTime();
+                                const scheduledTime = assunzioneDate.getTime();
+                                const LATE_THRESHOLD_MS = 60 * 60 * 1000; // 1 ora di tolleranza
+
+                                let currentStatus = "pending";
+                                let isTakenLate = false;
+
+                                if (assunzione.esito) {
+                                    currentStatus = "taken";
+                                    // Se assunto dopo 1 ora dall'orario programmato
+                                    if (assunzione.orario_effettivo) {
+                                        const takenTime = new Date(assunzione.orario_effettivo).getTime();
+                                        if (takenTime > scheduledTime + LATE_THRESHOLD_MS) {
+                                            isTakenLate = true;
+                                        }
+                                    }
+                                } else {
+                                    if (nowTime > scheduledTime + LATE_THRESHOLD_MS) {
+                                        currentStatus = "late"; // In ritardo
+                                    } else if (scheduledTime > nowTime + LATE_THRESHOLD_MS) {
+                                        currentStatus = "upcoming";
+                                    }
+                                }
+    
+                                dailyIntakes.push({
+                                    id: assunzione.id_evento || assunzione.id,
+                                    // Uso toLocaleTimeString senza UTC per riflettere l'ora locale dell'utente
+                                    time: assunzioneDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}),
+                                    medicine: terapia.farmaco?.farmaco?.denominazione || "Farmaco",
+                                    dosage: terapia.dose_singola + " " + (terapia.farmaco?.farmaco?.unita_misura || ""),
+                                    status: currentStatus,
+                                    isTakenLate: isTakenLate,
+                                    takenAt: assunzione.orario_effettivo ? new Date(assunzione.orario_effettivo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}) : null
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                dailyIntakes.sort((a, b) => a.time.localeCompare(b.time));
+                setTodaySchedule(dailyIntakes);
+            }
+        } catch (err) {
+            console.error("Errore caricamento programma giornaliero", err);
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            setIsUserAuthenticated(false);
+            window.location.href = '/Pages/Autenticazione';
+        } catch (err) {
+            console.error("Errore logout", err);
+        }
+    };
+
+    const takenCount = todaySchedule.filter(s => s.status === "taken").length;
+    const adherencePercentage = todaySchedule.length > 0 ? Math.round((takenCount / todaySchedule.length) * 100) : 100;
+
+    const handleSuccess = (message) => {
+        if (userData) {
+            fetchTherapies(userData.id_utente);
+            fetchDailySchedule(userData.id_utente, selectedDate);
+        }
+        setModalState({ type: null, data: null });
+        if (message) showToast(message, 'success');
+    };
+
+    const handleToggleStatus = async (id) => {
+        const therapy = therapyPlans.find(p => p.id === id);
+        if (!therapy) return;
+
+        const newStatus = therapy.stato === "attiva" ? false : true;
+
+        try {
+            const res = await fetch('/api/terapia', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_terapia: id,
+                    terapia_attiva: newStatus
+                })
+            });
+
+            if (res.ok) {
+                fetchTherapies(userData.id_utente);
+                fetchDailySchedule(userData.id_utente, selectedDate);
+                showToast(`Terapia ${newStatus ? 'attivata' : 'sospesa'}`, 'success');
+            } else {
+                showToast("Errore aggiornamento stato", "error");
+            }
+        } catch (e) {
+            console.error("Errore toggle status:", e);
+            showToast("Errore di connessione", "error");
+        }
+    };
+
+    const handleConfirmIntake = async (id) => {
+        if (!id) {
+            showToast("ID evento non valido", "error");
+            return;
+        }
+
+        try {
+            const now = new Date();
+            const res = await fetch('/api/assunzione', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_evento: id,
+                    esito: true,
+                    orario_effettivo: now.toISOString()
+                })
+            });
+            
+            if (res.ok) {
+                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'});
+                setTodaySchedule(sched => sched.map(s => s.id === id ? { ...s, status: "taken", takenAt: timeStr } : s));
+                if (userData?.id_utente) {
+                    fetchTherapies(userData.id_utente);
+                }
+                showToast("Assunzione confermata", "success");
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                console.error("Errore API assunzione:", errorData);
+                showToast(errorData.error || "Errore durante la conferma", "error");
+            }
+        } catch (error) {
+            console.error("Errore conferma assunzione", error);
+            showToast("Errore di connessione", "error");
+        }
+    };
+
+    const handleTestNotifications = async () => {
+        try {
+            showToast("Verifica notifiche in corso...", "info");
+            const res = await fetch('/api/terapia/check-now?force=true');
+            const data = await res.json();
+            
+            if (data.success) {
+                if (data.notifiche_processate > 0) {
+                    showToast(`Simulate ${data.notifiche_processate} notifiche! Controlla la console del server.`, "success");
+                } else {
+                    showToast("Nessuna terapia programmata per quest'ora esatta.", "warning");
+                }
+            }
+        } catch (error) {
+            console.error("Errore test notifiche", error);
+            showToast("Errore durante il test", "error");
+        }
+    };
+
+    const getTherapyWarnings = (therapyId) => {
+        const therapy = rawTherapies.find(t => t.id_terapia === therapyId);
+        if (!therapy || !therapy.farmaco) return [];
+
+        const warnings = [];
+        const farmaco = therapy.farmaco;
+        const now = new Date();
+
+        // 1. Scadenza (Controlla la scadenza della scatola attualmente in uso)
+        if (farmaco.data_scadenza) {
+            const expiry = new Date(farmaco.data_scadenza);
+            const daysToExpiry = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+            
+            if (daysToExpiry < 0) {
+                warnings.push({ type: 'destructive', icon: Icons.AlertTriangle, text: "Farmaco in uso scaduto!" });
+            } else if (daysToExpiry <= 30) {
+                warnings.push({ type: 'warning', icon: Icons.Clock, text: `Scatola in uso scade tra ${daysToExpiry} giorni` });
+            }
+        }
+
+        // 2. Scorte e Predizione (Basato sul TOTALE delle scorte con stesso AIC)
+        if (!therapy.solo_al_bisogno && therapy.terapia_attiva && therapy.orari && therapy.orari.length > 0) {
+            
+            // Calcola lo stock totale sommando tutte le scatole con lo stesso AIC
+            const targetAIC = farmaco.codice_aic;
+            const totalStock = cabinetMedicines
+                .filter(med => med.codice_aic === targetAIC)
+                .reduce((sum, med) => sum + med.quantita_rimanente, 0);
+
+            const dailyDose = parseFloat(therapy.dose_singola) * therapy.orari.length;
+            
+            let totalNeeded = 0;
+            let isFinite = false;
+            let isEnded = false;
+
+            if (therapy.data_fine) {
+                const end = new Date(therapy.data_fine);
+                end.setHours(23, 59, 59, 999);
+                
+                if (end >= now) {
+                    const diffMs = end.getTime() - now.getTime();
+                    const daysNeeded = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                    totalNeeded = dailyDose * daysNeeded;
+                    isFinite = true;
+                } else {
+                    isEnded = true;
+                }
+            }
+
+            const daysCovered = dailyDose > 0 ? Math.floor(totalStock / dailyDose) : 0;
+
+            if (isFinite) {
+                if (totalStock < totalNeeded) {
+                    warnings.push({ 
+                        type: 'warning', 
+                        icon: Icons.AlertTriangle, 
+                        text: totalStock === 0 ? 'Scorta terminata (tutte le scatole)' :`Scorta totale insufficiente. Hai ${totalStock}, servono ${totalNeeded}. Copri solo ${daysCovered} giorni.` 
+                    });
+                }
+            } else if (!isEnded) {
+                if (daysCovered < 7) {
+                     warnings.push({ 
+                        type: 'warning', 
+                        icon: Icons.AlertTriangle, 
+                        text: `Scorta totale bassa: copre solo ${daysCovered} giorni.` 
+                    });
+                }
+            }
+        } else if (therapy.solo_al_bisogno) {
+             // Anche per "al bisogno", controlliamo il totale
+             const targetAIC = farmaco.codice_aic;
+             const totalStock = cabinetMedicines
+                .filter(med => med.codice_aic === targetAIC)
+                .reduce((sum, med) => sum + med.quantita_rimanente, 0);
+
+             if (totalStock < 5) {
+                 warnings.push({ type: 'warning', icon: Icons.AlertTriangle, text: `Scorta totale bassa (${totalStock} rimasti)` });
+             }
+        }
+
+        return warnings;
+    };
+
+    if (isAuthChecking) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2dd4bf]"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+            <ToastComponent />
+
+            {!isUserAuthenticated && (
+                <GuestOverlay
+                    title="Gestione Terapie"
+                    description="Organizza e monitora tutte le tue assunzioni quotidiane"
+                    features={[
+                        "Creare piani terapeutici personalizzati",
+                        "Ricevere notifiche per ogni assunzione",
+                        "Confermare le assunzioni con un tap",
+                        "Monitorare l'aderenza nel tempo"
+                    ]}
+                />
+            )}
+
+            <main className="pt-10 pb-16">
+                <div className="container mx-auto px-4 max-w-7xl">
+
+                    {/* HEADER PAGINA */}
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+                        <div>
+                            <h1 className="text-3xl font-bold mb-2 text-slate-800 tracking-tight">Le Mie Terapie</h1>
+                            <p className="text-slate-500">Gestisci i tuoi piani terapeutici e monitora le assunzioni.</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <Button onClick={handleTestNotifications} variant="secondary" className="h-11 px-4 shadow-sm">
+                                <Icons.Bell className="w-5 h-5 mr-2" /> Test Notifiche
+                            </Button>
+                            <Button onClick={() => setModalState({ type: 'add', data: null })} className="h-11 px-6 shadow-md hover:shadow-lg">
+                                <Icons.Plus className="w-5 h-5 mr-2" /> Nuova Terapia
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="grid lg:grid-cols-3 gap-8">
+
+                        {/* --- COLONNA SINISTRA: PROGRAMMA GIORNALIERO --- */}
+                        <div className="lg:col-span-2 space-y-6">
+
+                            {/* Navigazione Data */}
+                            <Card className="p-4 flex items-center justify-between">
+                                <Button variant="ghost" size="icon" onClick={handlePrevDay}><Icons.ChevronLeft className="w-5 h-5" /></Button>
+                                <div className="text-center">
+                                    <p className="text-sm text-slate-500 font-medium tracking-wide">{selectedDate.toLocaleDateString("it-IT", { weekday: "long" })}</p>
+                                    <p className="text-xl font-bold text-slate-800">{selectedDate.toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</p>
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={handleNextDay}><Icons.ChevronRight className="w-5 h-5" /></Button>
+                            </Card>
+
+                            {/* Progress Bar Aderenza */}
+                            <Card className="p-6 bg-white from-[#2dd4bf] to-teal-600 text-white border-none shadow-lg">
+                                <div className="flex justify-between items-end mb-4">
+                                    <div>
+                                        <p className="text-slate-500 font-medium mb-1">Aderenza giornaliera</p>
+                                        <p className="text-slate-800 text-3xl font-bold">{adherencePercentage}%</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[#006629] text-sm">Assunzioni completate</p>
+                                        <p className="text-l text-slate-800 font-normal">{takenCount} <span className="text-slate-800 text-l font-bold">/ {todaySchedule.length}</span></p>
+                                    </div>
+                                </div>
+                                <div className="h-2 w-full bg-black/5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-[#2dd4bf] rounded-full transition-all duration-700" style={{ width: `${adherencePercentage}%` }} />
+                                </div>
+                            </Card>
+
+                            {/* Lista Oraria */}
+                            <div className="space-y-4">
+                                <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Icons.Clock className="w-5 h-5 text-slate-400" /> Programma di oggi</h2>
+                                {todaySchedule.map((item) => {
+                                    const isCurrent = item.status === "pending" || item.status === "late";
+                                    const isTaken = item.status === "taken";
+
+                                    return (
+                                        <Card key={item.id} className={`p-0 overflow-hidden transition-all ${isCurrent ? "ring-2 ring-[#2dd4bf] ring-offset-2" : "opacity-70 hover:opacity-100"}`}>
+                                            <div className="flex">
+                                                {/* Fascia Oraria Laterale */}
+                                                <div className={`w-20 flex flex-col items-center justify-center border-r border-slate-100 ${isTaken ? "bg-teal-50" : "bg-slate-50"}`}>
+                                                    <span className="font-bold text-lg text-slate-700">{item.time}</span>
+                                                </div>
+
+                                                {/* Contenuto Card */}
+                                                <div className="flex-1 p-4 flex items-center justify-between gap-4">
+                                                    <div>
+                                                        <p className={`font-bold text-lg ${isTaken ? "text-slate-500 line-through decoration-slate-300" : "text-slate-800"}`}>{item.medicine}</p>
+                                                        <p className="text-sm text-slate-500">{item.dosage}</p>
+                                                    </div>
+
+                                                    {/* Azioni / Status */}
+                                                    <div>
+                                                        {isCurrent ? (
+                                                            <div className="flex flex-col gap-1 items-end">
+                                                                {item.status === 'late' && (
+                                                                    <span className="text-xs text-rose-600 font-bold flex items-center gap-1">
+                                                                        <Icons.AlertTriangle className="w-3 h-3" /> In ritardo
+                                                                    </span>
+                                                                )}
+                                                                <Button size="sm" onClick={() => handleConfirmIntake(item.id)} className={`${item.status === 'late' ? 'bg-rose-500 hover:bg-rose-600' : 'bg-[#2dd4bf] hover:bg-[#0d9488]'} text-white`}>
+                                                                    <Icons.Check className="w-4 h-4 mr-1" /> Conferma
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <Badge variant={isTaken ? (item.isTakenLate ? "warning" : "success") : "default"} className="flex items-center gap-1 px-3 py-1">
+                                                                {isTaken ? <Icons.Check className="w-3 h-3" /> : <Icons.Clock className="w-3 h-3" />}
+                                                                {isTaken 
+                                                                    ? (item.isTakenLate ? `Assunto in ritardo alle ${item.takenAt}` : `Assunto alle ${item.takenAt}`)
+                                                                    : "Programmato"}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    )
+                                })}
+                            </div>
+                        </div>
+
+                        {/* --- COLONNA DESTRA: TERAPIE ATTIVE --- */}
+                        <div className="space-y-6">
+                            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center bg-white hover:bg-slate-50/50 transition-colors">
+                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3 text-slate-400">
+                                    <Icons.Plus className="w-6 h-6" />
+                                </div>
+                                <h3 className="font-bold text-slate-800 mb-1">Registra assunzione</h3>
+                                <p className="text-sm text-slate-500 mb-4">Per farmaci &quot;al bisogno&quot;</p>
+
+                                <Button
+                                    variant="outline"
+                                    className="bg-[#2dd4bfcc] text-white hover:bg-teal-50 hover:text-[#0d9488]"
+                                    onClick={() => setModalState({ type: 'quick-add', data: null })}
+                                >
+                                    Registra ora
+                                </Button>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <h2 className="font-bold text-lg text-slate-800">Terapie Attive</h2>
+                                <Badge variant="default">{therapyPlans.filter(t => t.stato === 'attiva').length} in corso</Badge>
+                            </div>
+
+                            {therapyPlans.map((plan) => (
+                                <Card key={plan.id} className="p-5 hover:shadow-md transition-shadow group">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#2dd4bf] flex items-center justify-center">
+                                                <Icons.Pill className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-slate-800 leading-tight">{plan.medicine}</h3>
+                                                <p className="text-xs text-slate-500 mt-1">{plan.frequency}</p>
+                                            </div>
+                                        </div>
+                                        <Badge variant={plan.stato === 'attiva' ? 'success' : 'default'}>{plan.stato}</Badge>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Aderenza</span>
+                                            <span className="font-bold text-slate-700">{plan.adherence}%</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                            <div className={`h-full rounded-full ${plan.adherence > 80 ? 'bg-[#2dd4bf]' : 'bg-amber-400'}`} style={{ width: `${plan.adherence}%` }} />
+                                        </div>
+                                        <div className="flex justify-between text-xs pt-1">
+                                            <span className="text-slate-400">Durata: <span className="text-slate-600 font-medium">{plan.duration}</span></span>
+                                            {plan.daysLeft && <span className="text-amber-600 font-bold">{plan.daysLeft} gg rimasti</span>}
+                                        </div>
+                                    </div>
+
+                                    {/* Warnings Section */}
+                                    <div className="mt-3 space-y-2">
+                                        {getTherapyWarnings(plan.id).map((warn, idx) => (
+                                            <div key={idx} className={`flex items-start gap-2 text-xs p-2 rounded-lg ${warn.type === 'destructive' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>
+                                                <warn.icon className="w-4 h-4 shrink-0" />
+                                                <span>{warn.text}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Pulsanti Azione (Visibili on Hover su Desktop) */}
+                                    <div className="flex justify-end gap-1 mt-5 border-t border-slate-50">
+                                        <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'view', data: plan })} title="Dettagli"><Icons.Eye className="w-4 h-4" /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => handleToggleStatus(plan.id)} title={plan.stato === 'attiva' ? "Sospendi" : "Attiva"}>
+                                            {plan.stato === 'attiva' ? <Icons.Pause className="w-4 h-4 text-amber-500" /> : <Icons.Play className="w-4 h-4 text-emerald-500" />}
+                                        </Button>
+                                        <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'edit', data: plan })} title="Modifica"><Icons.Edit className="w-4 h-4" /></Button>
+
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            {/* --- MODALS --- */}
+            <AddTherapyModal
+                isOpen={modalState.type === 'add' || modalState.type === 'edit'}
+                onClose={() => setModalState({ type: null, data: null })}
+                onSuccess={handleSuccess}
+                userId={userData?.id_utente}
+                cabinetMedicines={cabinetMedicines}
+                initialData={modalState.type === 'edit' ? modalState.data : null}
+            />
+
+            <TherapyDetailsModal
+                isOpen={modalState.type === 'view'}
+                onClose={() => setModalState({ type: null, data: null })}
+                therapy={modalState.data}
+            />
+
+
+
+            <QuickAssumptionModal
+                isOpen={modalState.type === 'quick-add'}
+                onClose={() => setModalState({ type: null, data: null })}
+                userId={userData?.id_utente}
+                cabinetMedicines={cabinetMedicines}
+                onSuccess={handleSuccess}
+                therapyPlans={therapyPlans}
+            />
+
+            <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">
+                <p>© 2026 MediGuard. La tua salute, organizzata.</p>
+            </footer>
+        </div>
+    );
+}

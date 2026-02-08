@@ -148,15 +148,18 @@ model Farmaco_armadietto_disuso{
 model Piano_terapeutico{
   id_terapia                  String @id @default(uuid()) @db.Uuid
   id_paziente                 String @db.Uuid
-  id_farmaco_armadietto       String @db.Uuid
+  id_farmaco_armadietto       String? @db.Uuid
   nome_utilita                String
   dose_singola                Float
   solo_al_bisogno             Boolean
+  data_inizio                 DateTime?
+  data_fine                   DateTime?
+  orari                       Json?    @default("[]")
   terapia_attiva              Boolean
-  for_life                    Boolean
+  note                        String?
 
   paziente Utente @relation(fields: [id_paziente], references: [id_utente])
-  farmaco Farmaco_armadietto @relation(fields: [id_farmaco_armadietto], references: [id_farmaco_armadietto])
+  farmaco Farmaco_armadietto? @relation(fields: [id_farmaco_armadietto], references: [id_farmaco_armadietto], onDelete: SetNull)
 
   assunzioni Registro_assunzioni[]
   assunzioni_passate Registro_assunzioni_passate[]
@@ -168,10 +171,10 @@ model Registro_assunzioni{
   id_evento                   String @id @default(uuid()) @db.Uuid
   id_terapia                  String @db.Uuid
   data_programmata            DateTime
-  orario_effettivo            DateTime
-  esito                       Boolean
+  orario_effettivo            DateTime?
+  esito                       Boolean?
 
-  terapia Piano_terapeutico @relation(fields: [id_terapia], references: [id_terapia])
+  terapia Piano_terapeutico @relation(fields: [id_terapia], references: [id_terapia], onDelete: SetNull)
 
   @@map("registro_assunzioni")
 }
@@ -183,7 +186,7 @@ model Registro_assunzioni_passate{
   orario_effettivo            DateTime
   esito                       Boolean
 
-  terapia Piano_terapeutico @relation(fields: [id_terapia], references: [id_terapia])
+  terapia Piano_terapeutico @relation(fields: [id_terapia], references: [id_terapia], onDelete: SetNull)
 
   @@map("registro_assunzioni_passate")
 }

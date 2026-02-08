@@ -1,5 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+// Assicurati che il percorso di importazione sia corretto in base a dove hai salvato il file
+import MedicationReminder from "@/components/modals/MedicationReminder"; 
+import ClientLayout from "@/components/layout/ClientLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -11,20 +14,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Ho tolto ": Metadata" dopo la costante
 export const metadata = {
-  title: "MediGuard", // Ho messo il nome del tuo progetto
+  title: "MediGuard",
   description: "Gestione Farmaci e Listini",
+  locale: "it",
 };
 
-// Ho tolto ": Readonly<{ children: React.ReactNode; }>"
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="it">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ClientLayout>
+            {/* Non serve più passare userId come prop */}
+            <MedicationReminder />
+            
+            {children}
+        </ClientLayout>
       </body>
     </html>
   );
