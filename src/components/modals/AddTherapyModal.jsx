@@ -118,6 +118,7 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
                     // Assicurati che le date siano stringhe YYYY-MM-DD
                     data_inizio: formData.startDate,
                     data_fine: formData.endDate || null,
+                    note: formData.note,
                     // Invia SEMPRE gli orari se non è "al bisogno"
                     orari: formData.alBisogno ? [] : formData.orari
                 };
@@ -154,6 +155,7 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
                 data_inizio: formData.startDate,
                 data_fine: formData.endDate,
                 terapia_attiva: true,
+                note: formData.note,
                 orari: formData.alBisogno ? [] : formData.orari
             };
 
@@ -236,17 +238,6 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
                         <input type="number" step="0.5" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
                             placeholder="Es. 1" value={formData.dosaggio} onChange={e => setFormData({ ...formData, dosaggio: e.target.value })} />
                     </div>
-                    <div className="flex items-center">
-                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="w-4 h-4 text-[#14b8a6] border-slate-300 rounded focus:ring-[#14b8a6]"
-                                checked={formData.alBisogno}
-                                onChange={e => setFormData({ ...formData, alBisogno: e.target.checked })}
-                            />
-                            Assunzione "Al Bisogno"
-                        </label>
-                    </div>
                 </div>
 
                 {!formData.alBisogno && (
@@ -269,7 +260,7 @@ export default function AddTherapyModal({ isOpen, onClose, onSuccess, userId, ca
                             ))}
                         </div>
                         {formData.orari.length === 0 && (
-                            <p className="text-xs text-amber-600 mt-1">Aggiungi almeno un orario o seleziona "Al Bisogno".</p>
+                            <p className="text-xs text-amber-600 mt-1">Aggiungi almeno un orario".</p>
                         )}
                     </div>
                 )}

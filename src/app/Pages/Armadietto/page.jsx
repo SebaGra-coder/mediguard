@@ -42,13 +42,24 @@ const getDaysUntilExpiry = (expiryDate) => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-const getMedicineStatus = (med) => {
+const getMedicineStatus = (med, totalQtyOverride = null) => {
   const days = getDaysUntilExpiry(med.data_scadenza);
-  const qtyPercent = (med.quantita_rimanente / (med.farmaco?.quantita_confezione || 100)) * 100;
+  
+  // Use total quantity if provided, otherwise fallback to item's quantity
+  const qtyToCheck = totalQtyOverride !== null ? totalQtyOverride : med.quantita_rimanente;
+  const maxQty = med.farmaco?.quantita_confezione || 100;
+  
+  // Calculate percentage based on total quantity vs single package size
+  // This logic implies: "Is my TOTAL supply less than 50% of a STANDARD package?"
+  const qtyPercent = (qtyToCheck / maxQty) * 100;
+
   if (med.quantita_rimanente <= 0) return "terminated";
   if (days <= 0) return "expired";
   if (days <= 30) return "expiring";
+  
+  // "Low" status is now based on the aggregate quantity
   if (qtyPercent < 50) return "low";
+  
   return "ok";
 };
 
@@ -83,19 +94,27 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
   const fetchData = useCallback(async (userId) => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/antonio?id_utente=" + userId);
+      const response = await fetch("/api/armadietto?id_utente=" + userId);
       const json = await response.json();
       const rawData = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
       
+      // Calculate total quantity per AIC
+      const quantityMap = {};
+      rawData.forEach(item => {
+        const aic = item.codice_aic;
+        if (!quantityMap[aic]) quantityMap[aic] = 0;
+        quantityMap[aic] += item.quantita_rimanente;
+      });
+
       const processedData = rawData.map(item => ({
         ...item,
-        computedStatus: getMedicineStatus(item)
+        computedStatus: getMedicineStatus(item, quantityMap[item.codice_aic])
       }));
 
       setMedicines(processedData);
       setStats({
         total: processedData.length,
-        low: processedData.filter(m => ['low', 'terminated'].includes(m.computedStatus)).length,
+        low: processedData.filter(m => ['low'].includes(m.computedStatus)).length, // terminated doesn't count as low stock warning, it's empty.
         expiring: processedData.filter(m => ['expiring', 'expired'].includes(m.computedStatus)).length
       });
     } catch (error) {
@@ -231,7 +250,6 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
 
                 return (
                   <div key={uniqueId} className="group relative bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all hover:border-teal-100">
-                    <Link href={`/Visualizza_scheda_farmaco?id=${medicine.codice_aic}`} className="absolute inset-0 z-0" />
                     <div className="relative z-10">
                       <div className="flex justify-between items-start mb-2">
                           <div className="flex gap-3 items-center">
@@ -306,6 +324,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
           onClose={() => setModalState({ type: null, data: null })}
           medicine={modalState.data}
           onSuccess={handleSuccess}
+          allMedicines={medicines}
       />
 
       <AddTherapyModal
@@ -318,7 +337,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
       />
 
       <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">
-          <p>© 2024 MediGuard. La tua salute, organizzata.</p>
+          <p>© 2026 MediGuard. La tua salute, organizzata.</p>
       </footer>
     </div>
   );

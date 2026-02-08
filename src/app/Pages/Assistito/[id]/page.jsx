@@ -160,7 +160,7 @@ export default function AssistitoDetail() {
           new Date(a.data_programmata) - new Date(b.data_programmata)
         );
 
-        const resArmadietto = await fetch(`/api/antonio?id_utente=${patientId}`);
+        const resArmadietto = await fetch(`/api/armadietto?id_utente=${patientId}`);
         const armadiettoData = await resArmadietto.json();
 
         setData({
@@ -550,7 +550,7 @@ export default function AssistitoDetail() {
       />
 
       <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">
-        <p>© 2024 MediGuard. La tua salute, organizzata.</p>
+        <p>© 2026 MediGuard. La tua salute, organizzata.</p>
       </footer>
     </div>
   );

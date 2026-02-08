@@ -5,9 +5,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma'; 
 
 /**
- * Funzione per gestire le richieste HTTP POST alla rotta /api/antonio
+ * Funzione per gestire le richieste HTTP POST alla rotta /api/armadietto
  * @param {Request} request - L'oggetto della richiesta in arrivo dal client
+ * 
+ 
  */
+
+"api/armadietto"
 export async function POST(request) {
   try {
     // Legge il corpo della richiesta (il JSON inviato dal client) 
@@ -135,6 +139,9 @@ export async function GET(request) {
         // Esegue una JOIN con la tabella 'farmaci' usando la relazione codice_aic
         // Questo permette di ottenere anche 'denominazione', 'ragione_sociale', ecc.
         farmaco: true, 
+        terapia: {
+          where: { terapia_attiva: true }
+        }
       },
     });
 
@@ -181,6 +188,48 @@ export async function DELETE(request) {
           quantita_rimanente: farmacoDaSpostare.quantita_rimanente,
         },
       });
+
+      // 2.1 Cerchiamo se esiste un'altra scatola dello stesso farmaco (stesso AIC, stesso utente)
+      //     Escludiamo ovviamente quella che stiamo eliminando.
+      //     Ordiniamo per data di scadenza (o creazione) per prendere la "migliore" alternativa (es. quella che scade prima).
+      const altroFarmaco = await tx.farmaco_armadietto.findFirst({
+        where: {
+          id_utente_proprietario: farmacoDaSpostare.id_utente_proprietario,
+          codice_aic: farmacoDaSpostare.codice_aic,
+          id_farmaco_armadietto: { not: idFarmacoArmadietto }
+        },
+        orderBy: {
+          data_scadenza: 'asc'
+        }
+      });
+
+      if (altroFarmaco) {
+        // SCENARIO A: Esiste un'altra scatola.
+        // Spostiamo TUTTE le terapie (attive e non) collegate al farmaco vecchio su quello nuovo.
+        // In questo modo la terapia NON si ferma e punta alla nuova disponibilità.
+        await tx.piano_terapeutico.updateMany({
+          where: {
+            id_farmaco_armadietto: idFarmacoArmadietto
+          },
+          data: {
+            id_farmaco_armadietto: altroFarmaco.id_farmaco_armadietto
+          }
+        });
+      } else {
+        // SCENARIO B: Non esistono altre scatole.
+        // Il comportamento rimane quello precedente: mettiamo in pausa le terapie attive.
+        // L'eliminazione del record (step 3) imposterà id_farmaco_armadietto a NULL (grazie a onDelete: SetNull nel DB),
+        // ma noi forziamo lo stato 'terapia_attiva' a false per indicare lo stop.
+        await tx.piano_terapeutico.updateMany({
+          where: { 
+            id_farmaco_armadietto: idFarmacoArmadietto,
+            terapia_attiva: true 
+          },
+          data: { 
+            terapia_attiva: false 
+          }
+        });
+      }
 
       // 3. Eliminiamo il record originale dalla tabella 'farmaco_armadietto'
       await tx.farmaco_armadietto.delete({

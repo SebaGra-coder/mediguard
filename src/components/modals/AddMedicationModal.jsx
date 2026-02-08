@@ -8,6 +8,7 @@ const Icons = {
     Search: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>,
     Pill: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" /><path d="m8.5 8.5 7 7" /></svg>,
     X: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>,
+    AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>,
 };
 
 // --- COMPONENTS ---
@@ -50,7 +51,7 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
     );
 };
 
-export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId }) {
+export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId, preSelectedMedication = null, userAllergies = [] }) {
     const [modalSearchTerm, setModalSearchTerm] = useState("");
     const [modalSearchResults, setModalSearchResults] = useState([]);
     const [isSearchingDrug, setIsSearchingDrug] = useState(false);
@@ -64,17 +65,23 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
     const [expiryMonth, setExpiryMonth] = useState("");
     const [expiryYear, setExpiryYear] = useState("");
 
-    // Reset form when opening
+    // Reset form when opening or preSelectedMedication changes
     useEffect(() => {
         if (isOpen) {
-            setFormData({ nome: "", principio: "", forma: "compresse", dosaggio: "", quantita: "", scadenza: "", aic: "", lotto: "", quantita_totale: 0 });
-            setExpiryDay("");
-            setExpiryMonth("");
-            setExpiryYear("");
-            setModalSearchTerm("");
-            setModalSearchResults([]);
+            if (preSelectedMedication) {
+                // Pre-fill with selected medication
+                handleSelectDrug(preSelectedMedication);
+            } else {
+                // Reset form
+                setFormData({ nome: "", principio: "", forma: "compresse", dosaggio: "", quantita: "", scadenza: "", aic: "", lotto: "", quantita_totale: 0 });
+                setExpiryDay("");
+                setExpiryMonth("");
+                setExpiryYear("");
+                setModalSearchTerm("");
+                setModalSearchResults([]);
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, preSelectedMedication]);
 
     // Update scadenza when parts change
     useEffect(() => {
@@ -90,6 +97,8 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
 
     // Debounce Search
     useEffect(() => {
+        if (preSelectedMedication) return; // Disable search if pre-selected
+
         const timer = setTimeout(async () => {
             if (modalSearchTerm.length > 2) {
                 setIsSearchingDrug(true);
@@ -108,7 +117,7 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [modalSearchTerm]);
+    }, [modalSearchTerm, preSelectedMedication]);
 
     const handleSelectDrug = (drug) => {
         setFormData(prev => ({
@@ -120,8 +129,13 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
             dosaggio: drug.dosaggio || "",
             aic: drug.codice_aic || "",
             quantita: drug.quantita_confezione ? String(drug.quantita_confezione) : "",
-            quantita_totale: drug.quantita_confezione || 0
+            quantita_totale: drug.quantita_confezione || 0,
+            scadenza: "", // Reset scadenza on new selection
+            lotto: ""
         }));
+        setExpiryDay("");
+        setExpiryMonth("");
+        setExpiryYear("");
         setModalSearchTerm("");
         setModalSearchResults([]);
     };
@@ -139,7 +153,7 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
                 lotto_produzione: formData.lotto
             };
 
-            const res = await fetch('/api/antonio', {
+            const res = await fetch('/api/armadietto', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -162,7 +176,7 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Nuovo Farmaco"
+            title={preSelectedMedication ? "Aggiungi all'Armadietto" : "Nuovo Farmaco"}
             footer={
                 <>
                     <Button variant="secondary" onClick={onClose}>Annulla</Button>
@@ -171,41 +185,65 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId 
             }
         >
             <div className="space-y-4">
-                <div className="relative">
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Cerca Farmaco da aggiungere</label>
+                {!preSelectedMedication && (
                     <div className="relative">
-                        <input
-                            type="text"
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
-                            placeholder="Digita nome o AIC..."
-                            value={modalSearchTerm}
-                            onChange={e => setModalSearchTerm(e.target.value)}
-                        />
-                        <Icons.Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                        {isSearchingDrug && <div className="absolute right-3 top-2.5 w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>}
-                    </div>
-
-                    {modalSearchResults.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-slate-100 max-h-48 overflow-y-auto">
-                            {modalSearchResults.map(farmaco => (
-                                <button
-                                    type="button"
-                                    key={farmaco.codice_aic}
-                                    onClick={(e) => { e.preventDefault(); handleSelectDrug(farmaco); }}
-                                    className="w-full text-left px-3 py-2 text-sm hover:bg-teal-50 hover:text-teal-800 transition-colors border-b border-slate-50 last:border-0"
-                                >
-                                    <div className="font-bold">{farmaco.denominazione} {farmaco.dosaggio}</div>
-                                    <div className="text-xs text-slate-500 flex justify-between">
-                                        <span>{farmaco.principio_attivo} - {farmaco.confezione}</span>
-                                        <span>AIC: {farmaco.codice_aic}</span>
-                                    </div>
-                                </button>
-                            ))}
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">Cerca Farmaco da aggiungere</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                                placeholder="Digita nome o AIC..."
+                                value={modalSearchTerm}
+                                onChange={e => setModalSearchTerm(e.target.value)}
+                            />
+                            <Icons.Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                            {isSearchingDrug && <div className="absolute right-3 top-2.5 w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>}
                         </div>
-                    )}
-                </div>
 
-                <div className="h-px bg-slate-100 my-2"></div>
+                        {modalSearchResults.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-slate-100 max-h-48 overflow-y-auto">
+                                {modalSearchResults.map(farmaco => (
+                                    <button
+                                        type="button"
+                                        key={farmaco.codice_aic}
+                                        onClick={(e) => { e.preventDefault(); handleSelectDrug(farmaco); }}
+                                        className="w-full text-left px-3 py-2 text-sm hover:bg-teal-50 hover:text-teal-800 transition-colors border-b border-slate-50 last:border-0"
+                                    >
+                                        <div className="font-bold">{farmaco.denominazione} {farmaco.dosaggio}</div>
+                                        <div className="text-xs text-slate-500 flex justify-between">
+                                            <span>{farmaco.principio_attivo} - {farmaco.confezione}</span>
+                                            <span>AIC: {farmaco.codice_aic}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                         <div className="h-px bg-slate-100 my-2"></div>
+                    </div>
+                )}
+               
+
+                 {/* Warning Allergie nel Modale */}
+                 {(() => {
+                    if (!formData.principio || userAllergies.length === 0) return null;
+                    const pa = formData.principio.toLowerCase();
+                    const conflict = userAllergies.find(allergy => pa.includes(allergy.toLowerCase()));
+                    
+                    if (conflict) {
+                      return (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-start gap-3 animate-pulse">
+                            <div className="text-red-500 mt-0.5"><Icons.AlertTriangle className="w-5 h-5"/></div>
+                            <div>
+                              <p className="font-bold text-red-700 text-sm">Attenzione: Possibile allergia</p>
+                              <p className="text-red-600 text-xs">
+                                Questo farmaco contiene <span className="font-bold capitalize">{conflict}</span>, a cui risulti allergico.
+                              </p>
+                            </div>
+                        </div>
+                      );
+                    }
+                    return null;
+               })()}
 
                 <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">Nome Commerciale</label>

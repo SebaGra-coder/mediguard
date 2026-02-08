@@ -73,10 +73,6 @@ export default function TherapyDetailsModal({ isOpen, onClose, therapy }) {
                         <p className="text-slate-500">Fine</p>
                         <p className="font-bold">{therapy.endDate ? new Date(therapy.endDate).toLocaleDateString() : "Continuativa"}</p>
                     </div>
-                    <div>
-                        <p className="text-slate-500">Note</p>
-                        <p className="font-bold">{therapy.note}</p>
-                    </div>
                 </div>
                 {therapy.note && (
                     <div className="bg-slate-50 p-3 rounded-lg text-sm">

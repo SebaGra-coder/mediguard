@@ -46,14 +46,14 @@ export async function POST(request) {
         iat: Math.floor(Date.now() / 1000) 
       }, 
       secret, 
-      { expiresIn: '1d' }
+      { expiresIn: '1h' }
     );
 
     // 6. Salva il nuovo token nel cookie
     cookieStore.set('session_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 3600, // 1 giorno
+      maxAge: 3600, // 1 ora
       path: '/',
       sameSite: 'lax', // Protezione base contro CSRF
     });

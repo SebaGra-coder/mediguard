@@ -56,6 +56,7 @@ export function useTherapies() {
                             return a.data_programmata.split('T')[1].slice(0, 5);
                         }))).sort(),
                     stato: t.terapia_attiva ? "attiva" : "sospesa",
+                    note: t.note || "",
                     originalData: t
                 }));
                 setTherapyPlans(mappedPlans);

@@ -91,6 +91,24 @@ export async function GET(req) {
                     }
                 }
             };
+        } else if (f === 'assistito') {
+            // Se richiesto il campo assistito (i miei caregiver), includiamo i dettagli del caregiver
+            selectFields[f] = {
+                select: {
+                    id_relazione: true,
+                    id_caregiver: true,
+                    caregiver: {
+                        select: {
+                            id_utente: true,
+                            nome: true,
+                            cognome: true,
+                            email: true
+                        }
+                    },
+                    permessi_armadietto: true,
+                    permessi_piano: true
+                }
+            };
         } else {
             selectFields[f] = true;
         }

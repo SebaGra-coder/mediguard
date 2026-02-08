@@ -260,6 +260,14 @@ export async function GET(request) {
       };
     }
 
+    // Filtro per note [cite: 13]
+    if (note) {
+      filtri.note = {
+        contains: note,
+        mode: 'insensitive',
+      };
+    }
+
 
 
     // Esegue la ricerca sul database con i filtri accumulati
@@ -322,6 +330,16 @@ export async function PUT(request) {
       return NextResponse.json({ success: false, error: "ID terapia mancante" }, { status: 400 });
     }
 
+    // 1. Fetch current therapy to handle state transitions and missing fields
+    const currentTherapy = await prisma.piano_terapeutico.findUnique({
+      where: { id_terapia },
+      select: { orari: true, solo_al_bisogno: true, terapia_attiva: true }
+    });
+
+    if (!currentTherapy) {
+        return NextResponse.json({ success: false, error: "Terapia non trovata" }, { status: 404 });
+    }
+
     // Costruisci l'oggetto dei dati da aggiornare
     const dataToUpdate = {};
 
@@ -348,17 +366,36 @@ export async function PUT(request) {
     // Aggiorna gli orari se forniti
     if (orari !== undefined) dataToUpdate.orari = orari;
 
-    // 1. Update the Therapy Plan
+    // 2. Update the Therapy Plan
     const updatedTerapia = await prisma.piano_terapeutico.update({
       where: { id_terapia: id_terapia },
       data: dataToUpdate,
     });
 
-    // 2. Logica di Rigenerazione/Aggiornamento del Calendario
-    if (Array.isArray(orari) && !updatedTerapia.solo_al_bisogno && updatedTerapia.terapia_attiva) {
-      const now = new Date();
-      const startOfToday = new Date(now);
-      startOfToday.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // 3. LOGICA DI PAUSA (Attiva -> Disattiva)
+    // Se la terapia viene disattivata, cancelliamo le assunzioni future NON ancora confermate
+    if (currentTherapy.terapia_attiva === true && updatedTerapia.terapia_attiva === false) {
+        await prisma.registro_assunzioni.deleteMany({
+            where: {
+                id_terapia: id_terapia,
+                data_programmata: { gte: startOfToday },
+                esito: null // Cancella solo quelle pendenti
+            }
+        });
+    }
+
+    // 4. Logica di Rigenerazione/Aggiornamento del Calendario (Inclusa Riattivazione)
+    // Determina i valori finali da usare (dal body o dal DB)
+    const finalOrari = orari !== undefined ? orari : currentTherapy.orari;
+    const finalSoloAlBisogno = solo_al_bisogno !== undefined ? Boolean(solo_al_bisogno) : currentTherapy.solo_al_bisogno;
+    
+    // Esegui se è attiva e non è al bisogno.
+    // Questo copre sia l'aggiornamento di orari, sia la riattivazione (False -> True)
+    if (Array.isArray(finalOrari) && !finalSoloAlBisogno && updatedTerapia.terapia_attiva) {
 
       // 1. Recupero assunzioni PENDING esistenti
       const existingPending = await prisma.registro_assunzioni.findMany({
@@ -389,7 +426,7 @@ export async function PUT(request) {
         const day = String(iterDate.getDate()).padStart(2, '0');
         const dateStr = `${year}-${month}-${day}`;
 
-        for (const ora of orari) {
+        for (const ora of finalOrari) {
           // Usiamo l'ora locale. Se vuoi mantenere lo standard UTC nel DB:
           const scheduledTime = new Date(`${dateStr}T${ora}:00`);
           desiredIntakes.push(scheduledTime);
@@ -404,10 +441,13 @@ export async function PUT(request) {
         for (let i = 0; i < maxIndex; i++) {
           if (i < existingPending.length && i < desiredIntakes.length) {
             // AGGIORNA senza eliminare
-            await tx.registro_assunzioni.update({
-              where: { id_evento: existingPending[i].id_evento },
-              data: { data_programmata: desiredIntakes[i] }
-            });
+            // Modifica solo se l'assunzione non è ancora stata confermata (esito === null)
+            if (existingPending[i].orario_effettivo === null) {
+              await tx.registro_assunzioni.update({
+                where: { id_evento: existingPending[i].id_evento },
+                data: { data_programmata: desiredIntakes[i] }
+              });
+            }
           } else if (i < desiredIntakes.length) {
             // CREA se mancano record
             await tx.registro_assunzioni.create({
@@ -419,9 +459,12 @@ export async function PUT(request) {
             });
           } else if (i < existingPending.length) {
             // ELIMINA solo se in eccesso
-            await tx.registro_assunzioni.delete({
-              where: { id_evento: existingPending[i].id_evento }
-            });
+            // Elimina solo se l'assunzione non è ancora stata confermata (esito === null)
+            if (existingPending[i].esito === null) {
+              await tx.registro_assunzioni.delete({
+                where: { id_evento: existingPending[i].id_evento }
+              });
+            }
           }
         }
       });

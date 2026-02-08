@@ -132,7 +132,7 @@ export default function ProfiloPage() {
                     />
                 )}
 
-                <div className="container mx-auto px-4 max-w-5xl">
+                <div className="container mx-auto px-4 max-w-7xl">
                     <div className="mb-8">
                         <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Il Mio Profilo</h1>
                         <p className="text-slate-500">Gestisci le tue informazioni e la sicurezza medica</p>
@@ -264,7 +264,7 @@ export default function ProfiloPage() {
             />
 
             <footer className="fixed bottom-0 left-0 right-0 border-t border-slate-200 py-8 text-center text-sm text-slate-400 bg-white">
-                <p>© 2024 MediGuard.</p>
+                <p>© 2026 MediGuard. La tua salute, organizzata.</p>
             </footer>
         </div>
     );

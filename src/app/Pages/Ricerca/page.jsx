@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import AddMedicationModal from "../../../components/modals/AddMedicationModal";
 
 // --- DEFINIZIONE COLORI ---
 const primaryColorClass = "text-[#14b8a6]";
@@ -26,35 +27,7 @@ const Icons = {
 };
 
 // --- COMPONENTI UI LOCALI (Style MediGuard) ---
-const Button = ({ children, onClick, variant = "primary", className = "", type = "button", disabled }) => {
-  const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed h-11 px-5";
-  const variants = {
-    primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-md hover:shadow-lg",
-    secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
-    danger: "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200",
-    ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
-  };
-  return <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
-};
 
-const Modal = ({ isOpen, onClose, title, children, footer }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-            <div className="bg-teal-50 p-1.5 rounded-lg text-[#14b8a6]"><Icons.Pill className="w-5 h-5"/></div>
-            {title}
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-full transition-colors"><Icons.X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-6 overflow-y-auto">{children}</div>
-        {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">{footer}</div>}
-      </div>
-    </div>
-  );
-};
 
 export default function Ricerca({ isAuthenticated: initialAuth = false }) {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
@@ -69,11 +42,6 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
   // Stati per il Modale
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMedication, setSelectedMedication] = useState(null);
-  const [formData, setFormData] = useState({
-    quantita: "",
-    scadenza: "",
-    lotto: ""
-  });
   
   // Stati per le allergie
   const [userAllergies, setUserAllergies] = useState([]);
@@ -170,49 +138,7 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
     }
     
     setSelectedMedication(medicine);
-    setFormData({
-      quantita: medicine.quantita_confezione ? String(medicine.quantita_confezione) : "1",
-      scadenza: "",
-      lotto: ""
-    });
     setIsModalOpen(true);
-  };
-
-  const handleModalSubmit = async () => {
-    if (!currentUser?.id_utente || !selectedMedication) return;
-
-    if (!formData.quantita || !formData.scadenza) {
-      alert("Per favore compila quantità e data di scadenza.");
-      return;
-    }
-
-    try {
-      const payload = {
-        id_utente_proprietario: currentUser.id_utente,
-        codice_aic: selectedMedication.codice_aic,
-        data_scadenza: formData.scadenza,
-        quantita_rimanente: formData.quantita,
-        lotto_produzione: formData.lotto
-      };
-
-      const res = await fetch('/api/antonio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const json = await res.json();
-
-      if (res.ok) {
-        setIsModalOpen(false);
-        alert("Farmaco aggiunto correttamente al tuo armadietto!");
-      } else {
-        alert(json.error || "Errore durante l'aggiunta del farmaco.");
-      }
-    } catch (err) {
-      console.error("Errore API:", err);
-      alert("Errore di connessione.");
-    }
   };
 
   if (isAuthChecking) {
@@ -352,15 +278,6 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
 
                   {/* Azioni Compatte */}
                   <div className="border-t border-slate-100 pt-3 mt-1 flex flex-wrap items-center gap-2">
-
-                    <button className={`flex items-center px-3 py-1.5 text-xs font-bold ${primaryColorClass} bg-white border ${borderPrimaryClass} rounded-full hover:${bgLightClass} transition-colors`}>
-                      <span className="mr-1.5 scale-75"><Icons.Info /></span> Scheda
-                    </button>
-
-                    <button className={`flex items-center px-3 py-1.5 text-xs font-bold ${primaryColorClass} bg-white border ${borderPrimaryClass} rounded-full hover:${bgLightClass} transition-colors`}>
-                      <span className="mr-1.5 scale-75"><Icons.FileText /></span> Foglietto
-                    </button>
-
                     <button 
                       onClick={() => handleAddToCabinet(medicine)}
                       className={`flex items-center px-4 py-1.5 text-xs font-bold text-white ${bgPrimaryClass} ${hoverBgPrimaryClass} rounded-lg transition-colors shadow-sm ml-auto w-full md:w-auto justify-center`}
@@ -442,90 +359,14 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
       </footer>
 
       {/* MODALE PER AGGIUNGERE FARMACO */}
-      <Modal 
+      <AddMedicationModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        title="Aggiungi all'Armadietto"
-        footer={
-          <>
-             <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Annulla</Button>
-             <Button onClick={handleModalSubmit}>Salva nell'Armadietto</Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-           {selectedMedication && (
-             <div className="bg-teal-50 p-4 rounded-lg mb-4 border border-teal-100">
-                <h4 className="font-bold text-teal-900">{selectedMedication.denominazione} {selectedMedication.dosaggio}</h4>
-                <p className="text-sm text-teal-700">{selectedMedication.principio_attivo}</p>
-                <p className="text-xs text-teal-600 mt-1">AIC: {selectedMedication.codice_aic}</p>
-             </div>
-           )}
-
-           {/* Warning Allergie nel Modale */}
-           {selectedMedication && (() => {
-                if (!selectedMedication.principio_attivo || userAllergies.length === 0) return null;
-                const pa = selectedMedication.principio_attivo.toLowerCase();
-                const conflict = userAllergies.find(allergy => pa.includes(allergy));
-                
-                if (conflict) {
-                  return (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-start gap-3 animate-pulse">
-                        <div className="text-red-500 mt-0.5"><Icons.AlertTriangle /></div>
-                        <div>
-                          <p className="font-bold text-red-700 text-sm">Attenzione: Possibile allergia</p>
-                          <p className="text-red-600 text-xs">
-                            Questo farmaco contiene <span className="font-bold capitalize">{conflict}</span>, a cui risulti allergico.
-                          </p>
-                        </div>
-                    </div>
-                  );
-                }
-                return null;
-           })()}
-
-           <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Quantità Rimanente *</label>
-                <input 
-                    type="number" 
-                    step="0.5"
-                    max={selectedMedication?.quantita_confezione}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                    value={formData.quantita} 
-                    onChange={e => {
-                      const val = e.target.value;
-                      const max = selectedMedication?.quantita_confezione;
-                      if (!max || val === "" || Number(val) <= Number(max)) {
-                        setFormData({...formData, quantita: val});
-                      }
-                    }} 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Scadenza *</label>
-                <input 
-                    type="date" 
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                    value={formData.scadenza} 
-                    onChange={e => setFormData({...formData, scadenza: e.target.value})} 
-                />
-              </div>
-           </div>
-           
-           <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Lotto di produzione</label>
-              <input 
-                  type="text" 
-                  placeholder="Opzionale"
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
-                  value={formData.lotto} 
-                  onChange={e => setFormData({...formData, lotto: e.target.value})} 
-              />
-           </div>
-        </div>
-      </Modal>
+        userId={currentUser?.id_utente}
+        preSelectedMedication={selectedMedication}
+        userAllergies={userAllergies}
+        onSuccess={(msg) => alert(msg)}
+      />
 
       {/* Animazione custom */}
       <style jsx>{`

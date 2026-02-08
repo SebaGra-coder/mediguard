@@ -1,4 +1,10 @@
 export async function subscribeUserToPush() {
+    // Controllo preliminare per connessioni non sicure (es. IP locale su mobile)
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      alert("Le notifiche push richiedono una connessione sicura (HTTPS). Se stai testando da mobile su rete locale, usa il Port Forwarding o un tunnel sicuro (es. ngrok).");
+      return false;
+    }
+
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       alert("Il tuo browser non supporta le notifiche push.");
       return false;

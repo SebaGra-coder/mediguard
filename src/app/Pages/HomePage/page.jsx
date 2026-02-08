@@ -118,7 +118,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
             const userId = authData.user.id_utente;
 
             // 2. Fetch inventory data using dynamic userId
-            const inventoryResponse = await fetch(`/api/antonio?id_utente=${userId}`);
+            const inventoryResponse = await fetch(`/api/armadietto?id_utente=${userId}`);
             const inventoryJson = await inventoryResponse.json();
             const rawInventoryData = Array.isArray(inventoryJson.data) ? inventoryJson.data : (Array.isArray(inventoryJson) ? inventoryJson : []);
 
@@ -526,7 +526,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
 
             {/* Footer Semplificato */}
             <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-400 bg-white">
-                <p>© 2024 MediGuard.</p>
+                <p>© 2026 MediGuard. La tua salute, organizzata.</p>
             </footer>
         </div>
     );

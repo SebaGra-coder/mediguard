@@ -146,6 +146,33 @@ export async function POST(request) {
  */
 export async function GET(request) {
   try {
+    // Aggiorna automaticamente a false le assunzioni non confermate dopo 3 ore
+    const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+
+    // 1. Trova le assunzioni scadute che sono ancora 'null'
+    const assunzioniScadute = await prisma.registro_assunzioni.findMany({
+      where: {
+        esito: null,
+        data_programmata: {
+          lt: threeHoursAgo
+        }
+      },
+      include: {
+        terapia: true
+      }
+    });
+
+    // 2. Aggiorna a false e riprogramma in coda
+    for (const assunzione of assunzioniScadute) {
+      // Imposta esito a false
+      await prisma.registro_assunzioni.update({
+        where: { id_evento: assunzione.id_evento },
+        data: { esito: false }
+      });
+
+      await riprogrammaInCoda(assunzione.id_terapia, assunzione.terapia.orari);
+    }
+
     const { searchParams } = new URL(request.url);
 
     const id_utente = searchParams.get('id_utente');
@@ -255,14 +282,41 @@ export async function PUT(request) {
     if (Boolean(esito) === true && currentAssunzione.esito !== true) {
       const farmaco = currentAssunzione.terapia.farmaco;
       const dose = currentAssunzione.terapia.dose_singola;
+      let boxToDecrementId = farmaco.id_farmaco_armadietto;
 
+      // 1. Controlliamo se la scatola collegata ha abbastanza dose
       if (farmaco.quantita_rimanente < dose) {
-        return NextResponse.json({
-          success: false,
-          error: "Quantità insufficiente nell'armadietto. Il farmaco è terminato."
-        }, { status: 400 });
+        // 2. Se non basta, cerchiamo ALTRE scatole dello stesso farmaco (stesso AIC, stesso utente)
+        // che abbiano quantità sufficiente e non siano scadute (opzionale, ma meglio)
+        const otherBoxes = await prisma.farmaco_armadietto.findMany({
+          where: {
+            id_utente_proprietario: farmaco.id_utente_proprietario,
+            codice_aic: farmaco.codice_aic,
+            quantita_rimanente: { gte: dose }, // Cerchiamo scatole con abbastanza farmaco
+            // Escludiamo la scatola corrente che sappiamo essere vuota/insufficiente
+            id_farmaco_armadietto: { not: farmaco.id_farmaco_armadietto } 
+          },
+          orderBy: {
+            data_scadenza: 'asc' // Prendiamo quella che scade prima (FEFO logic)
+          }
+        });
+
+        if (otherBoxes.length > 0) {
+          // Trovata una scatola alternativa! Usiamo questa.
+          boxToDecrementId = otherBoxes[0].id_farmaco_armadietto;
+        } else {
+          // Nessuna scatola alternativa trovata -> ERRORE BLOCCANTE
+          return NextResponse.json({
+            success: false,
+            error: "Quantità insufficiente nell'armadietto (tutte le scatole). Il farmaco è terminato."
+          }, { status: 400 });
+        }
       }
+      
+      // Memorizziamo l'ID della scatola da scalare per usarlo dopo l'update del registro
+      request.boxToDecrementId = boxToDecrementId; 
     }
+
 
     const dataToUpdate = {};
     if (esito !== undefined) dataToUpdate.esito = Boolean(esito);
@@ -275,8 +329,11 @@ export async function PUT(request) {
 
     // Se stiamo confermando l'assunzione (esito passa a true) e prima non lo era, scala la quantità
     if (currentAssunzione.esito !== true && Boolean(esito) === true) {
+       // Usiamo l'ID identificato prima (o quello originale o quello alternativo)
+       const targetBoxId = request.boxToDecrementId || currentAssunzione.terapia.id_farmaco_armadietto;
+       
       await prisma.farmaco_armadietto.update({
-        where: { id_farmaco_armadietto: currentAssunzione.terapia.id_farmaco_armadietto },
+        where: { id_farmaco_armadietto: targetBoxId },
         data: {
           quantita_rimanente: {
             decrement: currentAssunzione.terapia.dose_singola
@@ -300,6 +357,68 @@ export async function PUT(request) {
       success: false,
       error: 'Errore interno durante l\'aggiornamento'
     }, { status: 500 });
+  }
+}
+
+/**
+ * Funzione helper per riprogrammare un'assunzione in coda al piano terapeutico
+ */
+async function riprogrammaInCoda(id_terapia, orari) {
+  // 1. Troviamo l'ultima assunzione pianificata per questa terapia
+  const lastAssunzione = await prisma.registro_assunzioni.findFirst({
+    where: { id_terapia: id_terapia },
+    orderBy: { data_programmata: 'desc' }
+  });
+
+  // Procediamo solo se abbiamo una schedulazione valida e degli orari definiti
+  if (lastAssunzione && Array.isArray(orari) && orari.length > 0) {
+    // Ordiniamo gli orari per sicurezza (es. ["08:00", "20:00"])
+    const sortedOrari = [...orari].sort();
+
+    const lastDate = new Date(lastAssunzione.data_programmata);
+    const lastH = lastDate.getUTCHours();
+    const lastM = lastDate.getUTCMinutes();
+    const lastTimeMins = lastH * 60 + lastM;
+
+    let nextTimeStr = null;
+    let addDay = false;
+
+    // Cerchiamo il prossimo orario disponibile nello stesso giorno dell'ultima assunzione
+    for (const o of sortedOrari) {
+      const [h, m] = o.split(':').map(Number);
+      const timeMins = h * 60 + m;
+      if (timeMins > lastTimeMins) {
+        nextTimeStr = o;
+        break;
+      }
+    }
+
+    // Se non troviamo un orario successivo nello stesso giorno, prendiamo il primo del giorno dopo
+    if (!nextTimeStr) {
+      nextTimeStr = sortedOrari[0];
+      addDay = true;
+    }
+
+    // Calcoliamo la data della nuova assunzione
+    const nextDate = new Date(lastDate);
+    if (addDay) {
+      nextDate.setDate(nextDate.getDate() + 1);
+    }
+
+    // Costruiamo la data ISO stringa (YYYY-MM-DD)
+    const datePart = nextDate.toISOString().split('T')[0];
+    // Costruiamo il timestamp completo UTC
+    const newDataProgrammata = new Date(`${datePart}T${nextTimeStr}:00Z`);
+
+    // Creiamo la nuova assunzione in coda
+    await prisma.registro_assunzioni.create({
+      data: {
+        id_terapia: id_terapia,
+        data_programmata: newDataProgrammata,
+        esito: null, // Pending
+        orario_effettivo: null
+      }
+    });
   }
 }
 

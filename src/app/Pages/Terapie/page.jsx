@@ -5,7 +5,7 @@ import Link from "next/link";
 import { GuestOverlay } from "@/components/GuestOverlay";
 import AddTherapyModal from "@/components/modals/AddTherapyModal";
 import TherapyDetailsModal from "@/components/modals/TherapyDetailsModal";
-import DeleteTherapyModal from "@/components/modals/DeleteTherapyModal";
+
 import QuickAssumptionModal from "@/components/modals/QuickAssumptionModal";
 import { useTherapies } from "@/hooks/useTherapies";
 import { useToast } from "@/hooks/useToast";
@@ -22,7 +22,7 @@ const Icons = {
     Pill: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" /><path d="m8.5 8.5 7 7" /></svg>,
     Eye: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>,
     Edit: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>,
-    Trash2: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>,
+
     Play: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>,
     Pause: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>,
     AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>,
@@ -142,7 +142,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
     const fetchCabinet = async (userId) => {
         try {
-            const res = await fetch(`/api/antonio?id_utente=${userId}`);
+            const res = await fetch(`/api/armadietto?id_utente=${userId}`);
             const data = await res.json();
             if (data.data) {
                 setCabinetMedicines(data.data);
@@ -179,15 +179,28 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                             
                             if (assunzioneDate >= startOfDay && assunzioneDate <= endOfDay) {
                                 // CORREZIONE LOGICA STATO:
-                                // 1. Se assunzione.esito è true -> "taken"
-                                // 2. Se non è preso ed è oggi -> "pending" (così appare il tasto Conferma)
+                                const nowTime = new Date().getTime();
+                                const scheduledTime = assunzioneDate.getTime();
+                                const LATE_THRESHOLD_MS = 60 * 60 * 1000; // 1 ora di tolleranza
+
                                 let currentStatus = "pending";
+                                let isTakenLate = false;
+
                                 if (assunzione.esito) {
                                     currentStatus = "taken";
-                                } else if (assunzioneDate.getTime() > new Date().getTime() + (1000 * 60 * 60)) {
-                                    // Opzionale: se mancano più di 60 minuti, lo segna come "upcoming"
-                                    // Se vuoi poter confermare SEMPRE quelli di oggi, lascia solo "pending"
-                                    currentStatus = "upcoming";
+                                    // Se assunto dopo 1 ora dall'orario programmato
+                                    if (assunzione.orario_effettivo) {
+                                        const takenTime = new Date(assunzione.orario_effettivo).getTime();
+                                        if (takenTime > scheduledTime + LATE_THRESHOLD_MS) {
+                                            isTakenLate = true;
+                                        }
+                                    }
+                                } else {
+                                    if (nowTime > scheduledTime + LATE_THRESHOLD_MS) {
+                                        currentStatus = "late"; // In ritardo
+                                    } else if (scheduledTime > nowTime + LATE_THRESHOLD_MS) {
+                                        currentStatus = "upcoming";
+                                    }
                                 }
     
                                 dailyIntakes.push({
@@ -197,6 +210,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                     medicine: terapia.farmaco?.farmaco?.denominazione || "Farmaco",
                                     dosage: terapia.dose_singola + " " + (terapia.farmaco?.farmaco?.unita_misura || ""),
                                     status: currentStatus,
+                                    isTakenLate: isTakenLate,
                                     takenAt: assunzione.orario_effettivo ? new Date(assunzione.orario_effettivo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'}) : null
                                 });
                             }
@@ -252,6 +266,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
             if (res.ok) {
                 fetchTherapies(userData.id_utente);
+                fetchDailySchedule(userData.id_utente, selectedDate);
                 showToast(`Terapia ${newStatus ? 'attivata' : 'sospesa'}`, 'success');
             } else {
                 showToast("Errore aggiornamento stato", "error");
@@ -325,21 +340,27 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
         const farmaco = therapy.farmaco;
         const now = new Date();
 
-        // 1. Scadenza
+        // 1. Scadenza (Controlla la scadenza della scatola attualmente in uso)
         if (farmaco.data_scadenza) {
             const expiry = new Date(farmaco.data_scadenza);
             const daysToExpiry = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
             
             if (daysToExpiry < 0) {
-                warnings.push({ type: 'destructive', icon: Icons.AlertTriangle, text: "Farmaco scaduto!" });
+                warnings.push({ type: 'destructive', icon: Icons.AlertTriangle, text: "Farmaco in uso scaduto!" });
             } else if (daysToExpiry <= 30) {
-                warnings.push({ type: 'warning', icon: Icons.Clock, text: `Scade tra ${daysToExpiry} giorni` });
+                warnings.push({ type: 'warning', icon: Icons.Clock, text: `Scatola in uso scade tra ${daysToExpiry} giorni` });
             }
         }
 
-        // 2. Scorte e Predizione
+        // 2. Scorte e Predizione (Basato sul TOTALE delle scorte con stesso AIC)
         if (!therapy.solo_al_bisogno && therapy.terapia_attiva && therapy.orari && therapy.orari.length > 0) {
-            const stock = farmaco.quantita_rimanente || 0;
+            
+            // Calcola lo stock totale sommando tutte le scatole con lo stesso AIC
+            const targetAIC = farmaco.codice_aic;
+            const totalStock = cabinetMedicines
+                .filter(med => med.codice_aic === targetAIC)
+                .reduce((sum, med) => sum + med.quantita_rimanente, 0);
+
             const dailyDose = parseFloat(therapy.dose_singola) * therapy.orari.length;
             
             let totalNeeded = 0;
@@ -360,14 +381,14 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 }
             }
 
-            const daysCovered = dailyDose > 0 ? Math.floor(stock / dailyDose) : 0;
+            const daysCovered = dailyDose > 0 ? Math.floor(totalStock / dailyDose) : 0;
 
             if (isFinite) {
-                if (stock < totalNeeded) {
+                if (totalStock < totalNeeded) {
                     warnings.push({ 
                         type: 'warning', 
                         icon: Icons.AlertTriangle, 
-                        text: stock === 0 ? 'Farmaco terminato' :`Scorta insufficiente. Hai ${stock}, servono ${totalNeeded}. Copri solo ${daysCovered} giorni.` 
+                        text: totalStock === 0 ? 'Scorta terminata (tutte le scatole)' :`Scorta totale insufficiente. Hai ${totalStock}, servono ${totalNeeded}. Copri solo ${daysCovered} giorni.` 
                     });
                 }
             } else if (!isEnded) {
@@ -375,13 +396,19 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                      warnings.push({ 
                         type: 'warning', 
                         icon: Icons.AlertTriangle, 
-                        text: `Scorta bassa: copre solo ${daysCovered} giorni.` 
+                        text: `Scorta totale bassa: copre solo ${daysCovered} giorni.` 
                     });
                 }
             }
         } else if (therapy.solo_al_bisogno) {
-             if ((farmaco.quantita_rimanente || 0) < 5) {
-                 warnings.push({ type: 'warning', icon: Icons.AlertTriangle, text: `Scorta bassa (${farmaco.quantita_rimanente} rimasti)` });
+             // Anche per "al bisogno", controlliamo il totale
+             const targetAIC = farmaco.codice_aic;
+             const totalStock = cabinetMedicines
+                .filter(med => med.codice_aic === targetAIC)
+                .reduce((sum, med) => sum + med.quantita_rimanente, 0);
+
+             if (totalStock < 5) {
+                 warnings.push({ type: 'warning', icon: Icons.AlertTriangle, text: `Scorta totale bassa (${totalStock} rimasti)` });
              }
         }
 
@@ -468,7 +495,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                             <div className="space-y-4">
                                 <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Icons.Clock className="w-5 h-5 text-slate-400" /> Programma di oggi</h2>
                                 {todaySchedule.map((item) => {
-                                    const isCurrent = item.status === "pending";
+                                    const isCurrent = item.status === "pending" || item.status === "late";
                                     const isTaken = item.status === "taken";
 
                                     return (
@@ -488,16 +515,23 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
                                                     {/* Azioni / Status */}
                                                     <div>
-                                                        {item.status === 'pending' ? (
-                                                            <div className="flex gap-2">
-                                                                <Button size="sm" onClick={() => handleConfirmIntake(item.id)} className="bg-[#2dd4bf] hover:bg-[#0d9488] text-white">
+                                                        {isCurrent ? (
+                                                            <div className="flex flex-col gap-1 items-end">
+                                                                {item.status === 'late' && (
+                                                                    <span className="text-xs text-rose-600 font-bold flex items-center gap-1">
+                                                                        <Icons.AlertTriangle className="w-3 h-3" /> In ritardo
+                                                                    </span>
+                                                                )}
+                                                                <Button size="sm" onClick={() => handleConfirmIntake(item.id)} className={`${item.status === 'late' ? 'bg-rose-500 hover:bg-rose-600' : 'bg-[#2dd4bf] hover:bg-[#0d9488]'} text-white`}>
                                                                     <Icons.Check className="w-4 h-4 mr-1" /> Conferma
                                                                 </Button>
                                                             </div>
                                                         ) : (
-                                                            <Badge variant={isTaken ? "success" : "default"} className="flex items-center gap-1 px-3 py-1">
+                                                            <Badge variant={isTaken ? (item.isTakenLate ? "warning" : "success") : "default"} className="flex items-center gap-1 px-3 py-1">
                                                                 {isTaken ? <Icons.Check className="w-3 h-3" /> : <Icons.Clock className="w-3 h-3" />}
-                                                                {isTaken ? `Assunto alle ${item.takenAt}` : "Programmato"}
+                                                                {isTaken 
+                                                                    ? (item.isTakenLate ? `Assunto in ritardo alle ${item.takenAt}` : `Assunto alle ${item.takenAt}`)
+                                                                    : "Programmato"}
                                                             </Badge>
                                                         )}
                                                     </div>
@@ -578,7 +612,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                                             {plan.stato === 'attiva' ? <Icons.Pause className="w-4 h-4 text-amber-500" /> : <Icons.Play className="w-4 h-4 text-emerald-500" />}
                                         </Button>
                                         <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'edit', data: plan })} title="Modifica"><Icons.Edit className="w-4 h-4" /></Button>
-                                        <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'delete', data: plan })} className="text-rose-400 hover:text-rose-600 hover:bg-rose-50"><Icons.Trash2 className="w-4 h-4" /></Button>
+
                                     </div>
                                 </Card>
                             ))}
@@ -603,12 +637,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 therapy={modalState.data}
             />
 
-            <DeleteTherapyModal
-                isOpen={modalState.type === 'delete'}
-                onClose={() => setModalState({ type: null, data: null })}
-                therapy={modalState.data}
-                onSuccess={handleSuccess}
-            />
+
 
             <QuickAssumptionModal
                 isOpen={modalState.type === 'quick-add'}
@@ -620,7 +649,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
             />
 
             <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">
-                <p>© 2024 MediGuard. La tua salute, organizzata.</p>
+                <p>© 2026 MediGuard. La tua salute, organizzata.</p>
             </footer>
         </div>
     );

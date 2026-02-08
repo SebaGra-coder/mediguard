@@ -177,7 +177,7 @@ export function Navbar({ isAuthenticated: initialAuth = false, onLogout }) {
               ) : userRole === "Nessuno" ? (
                 <Link href="/Pages/CollegaCaregiver" className={getLinkClass("CollegaCaregiver")}>
                   <Icons.Users />
-                  Collega Caregiver
+                  Caregiver
                 </Link>
               ) : (
                 <Link href="/Pages/Caregiver" className={getLinkClass("Caregiver")}>
