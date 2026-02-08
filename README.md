@@ -1,221 +1,105 @@
-````markdown
 # 🏥 MediGuard
 
 Piattaforma per la gestione dell'inventario farmaceutico domestico con supporto IoT.
 
 ## 🚀 Prerequisiti
 
-Prima di iniziare, assicurati di avere installato sul tuo computer:
+Per avviare il progetto su qualsiasi computer, assicurati di avere installati:
 
-1.  **Node.js** (versione 18 o superiore) - [Scarica qui](https://nodejs.org/)
+1.  **Node.js** (v18 o superiore) - [Scarica qui](https://nodejs.org/)
 2.  **Git** - [Scarica qui](https://git-scm.com/)
-3.  **Docker Desktop** (necessario per il Database) - [Scarica qui](https://www.docker.com/products/docker-desktop/)
-4.  **VS Code** (consigliato)
+3.  **Docker Desktop** (Necessario per il database locale) - [Scarica qui](https://www.docker.com/products/docker-desktop/)
 
 ---
 
-## 🛠️ Installazione (Solo la prima volta)
+## 🛠️ Installazione e Setup Iniziale
 
-Esegui questi passaggi nell'ordine esatto:
+Esegui questi comandi nel terminale, passo dopo passo.
 
 ### 1. Clona il Repository
-Apri il terminale nella cartella dove vuoi salvare il progetto:
 ```bash
-git clone [https://github.com/TUO_NOME_UTENTE/mediguard.git](https://github.com/TUO_NOME_UTENTE/mediguard.git)
+git clone <https://github.com/SebaGra-coder/mediguard.git>
 cd mediguard
-````
+```
 
-### 2\. Installa le dipendenze
-
-Scarica le librerie di Next.js, React, ecc.
-
+### 2. Installa le dipendenze
+Scarica tutte le librerie necessarie (Next.js, React, Prisma, ecc.) tramite npm:
 ```bash
 npm install
 ```
 
-### 3\. Configura le variabili d'ambiente (.env)
-
-Il file `.env` non è su GitHub per sicurezza.
-
-1.  Crea un file chiamato `.env` nella cartella principale del progetto.
-2.  Incollaci dentro le chiavi condivise nel gruppo (o chiedi al Team Lead).
-
-*Esempio di contenuto .env:*
+### 3. Configura l'Ambiente (.env)
+Crea un file chiamato `.env` nella root del progetto (accanto a `package.json`) e incollaci dentro la seguente configurazione.
+**Nota:** Chiedi al team le chiavi reali per `JWT_SECRET` e VAPID, oppure generane di nuove per test locale.
 
 ```env
-# URL per connettersi al DB Docker locale
-DATABASE_URL="postgresql://myuser:mypassword@localhost:5432/mediguard"
+# --- DATABASE ---
+# Connessione al DB Postgres gestito da Docker
+# NOTA: Deve corrispondere alle credenziali in docker-compose.yml
+DATABASE_URL="postgresql://myuser:mypassword@localhost:5432/mediguard_db"
 
-# URL per Auth (in locale)
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="segreto-temporaneo-sviluppo"
+# --- SICUREZZA & AUTH ---
+# Una stringa casuale lunga per firmare i token di login
+JWT_SECRET="super-segreto-random-string-123!"
+
+# --- NOTIFICHE PUSH (WebPush) ---
+# Generabili con il comando: npx web-push generate-vapid-keys
+VAPID_SUBJECT="mailto:tuo-email@example.com"
+NEXT_PUBLIC_VAPID_PUBLIC_KEY="incolla_qui_la_tua_chiave_pubblica"
+VAPID_PRIVATE_KEY="incolla_qui_la_tua_chiave_privata"
 ```
 
-### 4\. Avvia il Database (via Docker)
-
-Non serve avviare tutta l'app con Docker, ci serve solo il Database acceso:
-
+### 4. Avvia il Database (Docker)
+Avvia il container Postgres in background:
 ```bash
 docker-compose up -d postgres
 ```
+> *Verifica che Docker Desktop sia aperto se il comando fallisce.*
 
-*(Assicurati che Docker Desktop sia aperto\!)*
-
-### 5\. Sincronizza il Database (Prisma)
-
-Crea le tabelle nel tuo database locale vuoto:
-
+### 5. Inizializza il Database
+Crea le tabelle e popola il database con i dati iniziali (farmaci, ecc.):
 ```bash
+# Crea lo schema delle tabelle
 npx prisma db push
+
+# (Opzionale) Carica i dati di prova/iniziali se presenti nel seed
+node prisma/seed.js
 ```
 
------
+---
 
-## ▶️ Avvio Sviluppo (Ogni giorno)
+## ▶️ Avvio del Progetto
 
-Ogni volta che vuoi lavorare, esegui:
+Una volta completato il setup iniziale, per lavorare ogni giorno ti basta fare:
 
-1.  Assicurati che il container del DB sia acceso: `docker-compose up -d postgres`
-2.  Avvia l'app Next.js:
-
-<!-- end list -->
-
-```bash
-npm run dev
-```
-
-3.  Apri il browser su: [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)
-
------
-
-## 🔄 Workflow di Sviluppo (Guida Git)
-
-[Image of git feature branch workflow diagram]
-
-Segui **sempre** questi passaggi per evitare conflitti e non rompere il progetto agli altri.
-
-### 1\. Iniziare una nuova task (Start)
-
-Prima di scrivere codice, scarica gli aggiornamenti degli altri e crea il tuo spazio di lavoro.
-
-```bash
-# 1. Spostati sul ramo principale
-git checkout main
-
-# 2. Scarica gli aggiornamenti dal cloud
-git pull
-
-# 3. Crea il tuo ramo (es. feature/login-page)
-git checkout -b feature/nome-tua-funzionalita
-```
-
-### 2\. Salvare il lavoro (Save)
-
-Hai modificato dei file? Salviamoli nella "scatola" (Commit).
-
-```bash
-# 1. Controlla cosa hai modificato (Rosso = non aggiunto, Verde = aggiunto)
-git status
-
-# 2. Aggiungi tutti i file modificati al carrello
-git add .
-
-# 3. Chiudi il pacco con un messaggio chiaro
-git commit -m "Descrizione breve di cosa ho fatto"
-```
-
-### 3\. Inviare su GitHub (Push)
-
-Manda il tuo ramo nel cloud.
-
-```bash
-# La prima volta che invii un nuovo ramo:
-git push -u origin feature/nome-tua-funzionalita
-
-# Le volte successive basta:
-git push
-```
-
-### 4. Unire il lavoro (Pull Request)
-> **❓ Cos'è una Pull Request (PR)?**
-> È una "Sala d'Attesa" per il tuo codice. Invece di buttare le modifiche direttamente nel progetto finale, chiedi al team di controllarle.
-> 1. **Tu** proponi la modifica (la PR).
-> 2. **I colleghi** leggono il codice per cercare errori (Review).
-> 3. **Solo se approvato**, il codice viene incollato nel progetto principale (Merge).
-
-**Come si fa:**
-1.  Vai sulla pagina GitHub del progetto dopo aver fatto il push.
-2.  Vedrai un banner giallo "Compare & pull request". Cliccalo.
-3.  Scrivi un titolo chiaro (es. "Creata pagina Login") e clicca **Create Pull Request**.
-4.  Avvisa il team: *"Ragazzi ho aperto la PR, mi date un'occhiata?"*.
-5.  Quando ricevi l'approvazione, clicca il tasto verde **Merge**.
-
-
-----
-## 🔍 Come testare una Pull Request (PR)
-
-Se un collega ha aperto una PR e vuoi **provare le modifiche sul tuo PC** (vedere la grafica, cliccare i bottoni) prima di approvarle:
-
-1.  **Scarica i rami aggiornati:**
+1.  Assicurati che il DB sia acceso (se hai riavviato il PC):
     ```bash
-    git fetch
+    docker-compose up -d postgres
     ```
-2.  **Entra nel ramo del collega:**
+2.  Avvia il server di sviluppo:
     ```bash
-    git checkout feature/nome-del-ramo-collega
+    npm run dev
     ```
-3.  **Aggiorna l'ambiente (Fondamentale!):**
-    Il collega potrebbe aver aggiunto librerie o cambiato il DB. Se non fai questo, l'app si rompe.
-    ```bash
-    npm install
-    npx prisma db push
-    ```
-4.  **Prova l'app:**
-    Avvia `npm run dev` e testa le nuove funzioni su [http://localhost:3000](http://localhost:3000).
-5.  **Torna indietro:**
-    Quando hai finito il test, spegni il server e torna sul ramo principale:
-    ```bash
-    git checkout main
-    ```
+3.  Apri il browser su: [http://localhost:3000](http://localhost:3000)
 
-## 🆘 Risoluzione Problemi Comuni
+---
 
-### Errore: "Author identity unknown"
+## 🔧 Comandi Utili
 
-Se Git ti dice che non sa chi sei quando fai il commit:
+| Comando | Descrizione |
+| :--- | :--- |
+| `npx prisma studio` | Apre un pannello web per vedere e modificare i dati nel DB manualmente. |
+| `npx prisma db push` | Aggiorna il DB se hai modificato il file `schema.prisma`. |
+| `docker-compose down` | Spegne il database (i dati rimangono salvati nel volume Docker). |
 
-```bash
-git config --global user.name "Tuo Nome"
-git config --global user.email "tua@email.com"
-```
+## 🆘 Risoluzione Problemi
 
-### Errore: "Updates were rejected because the remote contains work..."
+**Errore connessione DB (`P1001`):**
+*   Controlla che Docker sia acceso.
+*   Controlla che `DATABASE_URL` nel `.env` usi la porta `5432` e il nome database `mediguard_db`.
 
-Significa che qualcuno ha modificato il file prima di te.
+**Errore Login:**
+*   Verifica di aver impostato `JWT_SECRET` nel `.env`.
 
-1.  Fai `git pull` per scaricare le loro modifiche.
-2.  Se ci sono conflitti, apri i file in VS Code, risolvili (scegli quale codice tenere).
-3.  Fai `git add .`, `git commit` e poi `git push`.
-
------
-
-## ⚠️ Regole del Team
-
-  * **Database:** Se modifichi `prisma/schema.prisma`, avvisa tutti\! Gli altri dovranno fare `git pull` e `npx prisma db push`.
-  * **Cartelle:**
-      * Backend: `app/api/...`
-      * Frontend: `app/(pages)/...`
-  * **Main:** Vietato fare `push` direttamente su `main`. Si passa sempre dalle Pull Request.
-
------
-
-## 🧪 Comandi Utili
-
-  * **Vedere il DB con interfaccia grafica:**
-    ```bash
-    npx prisma studio
-    ```
-  * **Resettare il DB (Cancella tutto\!):**
-    ```bash
-    npx prisma migrate reset
-    ```
+**Notifiche non funzionano:**
+*   Assicurati di aver generato e inserito le chiavi VAPID nel `.env`.
