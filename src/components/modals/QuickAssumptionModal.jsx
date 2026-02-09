@@ -3,14 +3,11 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useToast } from "@/hooks/useToast";
+import styles from "./ModalStyles.module.css";
 
 const Button = ({ children, onClick, variant = "primary", className = "", disabled }) => {
-    const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed h-11 px-5";
-    const variants = {
-        primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-md hover:shadow-lg",
-        secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
-    };
-    return <button onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
+    const variantClass = variant === "primary" ? styles.btnPrimary : styles.btnSecondary;
+    return <button onClick={onClick} disabled={disabled} className={`${styles.btn} ${variantClass} ${className}`}>{children}</button>;
 };
 
 const Modal = ({ isOpen, onClose, title, children, footer }) => {
@@ -26,16 +23,16 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white text-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="font-bold text-lg text-slate-800">{title}</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-full transition-colors">
+        <div className={styles.overlay}>
+            <div className={styles.container}>
+                <div className={styles.header}>
+                    <h3 className={styles.title}>{title}</h3>
+                    <button onClick={onClose} className={styles.closeBtn}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>
                     </button>
                 </div>
-                <div className="p-6 overflow-y-auto">{children}</div>
-                {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">{footer}</div>}
+                <div className={styles.content}>{children}</div>
+                {footer && <div className={styles.footer}>{footer}</div>}
             </div>
         </div>,
         document.body
@@ -146,21 +143,21 @@ export default function QuickAssumptionModal({ isOpen, onClose, userId, cabinetM
             }
         >
             <ToastComponent />
-            <div className="space-y-5">
-                <div className="bg-teal-50 p-4 rounded-xl border border-teal-100 flex gap-3">
-                    <div className="bg-white p-2 rounded-full shadow-sm text-[#14b8a6]">
+            <div className={styles.spaceY4}>
+                <div className={styles.bannerTeal}>
+                    <div className={styles.bannerTealIconWrapper}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
                     </div>
                     <div>
-                        <p className="text-sm text-teal-800 font-bold">Farmaco al bisogno</p>
-                        <p className="text-xs text-teal-600">Registra un&apos;assunzione fuori dal piano terapeutico ordinario.</p>
+                        <p className={styles.bannerTealTitle}>Farmaco al bisogno</p>
+                        <p className={styles.bannerTealText}>Registra un&apos;assunzione fuori dal piano terapeutico ordinario.</p>
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Quale farmaco hai preso?</label>
+                    <label className={styles.label}>Quale farmaco hai preso?</label>
                     <select
-                        className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6] bg-white"
+                        className={styles.select}
                         value={quickAddData.id_farmaco_armadietto}
                         onChange={e => {
                             const selectedId = e.target.value;
@@ -179,27 +176,27 @@ export default function QuickAssumptionModal({ isOpen, onClose, userId, cabinetM
                             </option>
                         ))}
                     </select>
-                    <p className="text-xs text-slate-400 mt-1">Vengono mostrati solo i farmaci presenti nel tuo armadietto.</p>
+                    <p className={styles.textXs} style={{ color: '#94a3b8', marginTop: '0.25rem' }}>Vengono mostrati solo i farmaci presenti nel tuo armadietto.</p>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">A che ora?</label>
-                    <div className="relative">
+                    <label className={styles.label}>A che ora?</label>
+                    <div className={styles.relative}>
                         <input
                             type="time"
-                            className="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                            className={styles.input}
                             value={quickAddData.time}
                             onChange={e => setQuickAddData({ ...quickAddData, time: e.target.value })}
                         />
-                         <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-3 w-5 h-5 text-slate-400 pointer-events-none" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                         <svg xmlns="http://www.w3.org/2000/svg" className={styles.searchIcon} style={{ left: 'auto', right: '0.75rem' }} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Note (Opzionale)</label>
+                    <label className={styles.label}>Note (Opzionale)</label>
                     <textarea
                         rows={2}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                        className={styles.input}
                         placeholder="Motivo (es. mal di testa, febbre...)"
                         value={quickAddData.note}
                         onChange={e => setQuickAddData({ ...quickAddData, note: e.target.value })}

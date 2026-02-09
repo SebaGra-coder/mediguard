@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { GuestOverlay } from "@/components/GuestOverlay";
+import styles from './Caregiver.module.css';
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -23,75 +24,77 @@ const Icons = {
 
 // --- COMPONENTI UI RIUTILIZZABILI ---
 const Card = ({ children, className = "", variant = "default", onClick, style }) => {
-    let baseStyles = "bg-white rounded-xl border border-slate-200 shadow-sm";
-    if (variant === "elevated") baseStyles += " shadow-md";
-    if (variant === "interactive") baseStyles += " cursor-pointer hover:border-[#14b8a6]/50 transition-all hover:shadow-md";
+    const classList = [styles.card];
+    if (variant === "elevated") classList.push(styles.cardElevated);
+    if (variant === "interactive") classList.push(styles.cardInteractive);
+    if (className) classList.push(className);
     
     return (
-        <div className={`${baseStyles} ${className}`} onClick={onClick} style={style}>
+        <div className={classList.join(' ')} onClick={onClick} style={style}>
             {children}
         </div>
     );
 };
 
-const CardHeader = ({ children, className = "" }) => <div className={`p-6 pb-0 ${className}`}>{children}</div>;
-const CardContent = ({ children, className = "" }) => <div className={`p-6 ${className}`}>{children}</div>;
-const CardTitle = ({ children, className = "" }) => <h3 className={`text-lg font-semibold leading-none tracking-tight ${className}`}>{children}</h3>;
+const CardHeader = ({ children, className = "" }) => <div className={`${styles.cardHeader} ${className}`}>{children}</div>;
+const CardContent = ({ children, className = "" }) => <div className={`${styles.cardContent} ${className}`}>{children}</div>;
+const CardTitle = ({ children, className = "" }) => <h3 className={`${styles.cardTitle} ${className}`}>{children}</h3>;
 
 const Button = ({ children, onClick, variant = "primary", size = "md", className = "", asChild }) => {
-  const base = "inline-flex items-center justify-center rounded-lg font-medium transition-all focus:outline-none";
-  const variants = {
-    primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-sm hover:shadow-md",
-    ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
-    default: "bg-[#14b8a6] text-white hover:bg-[#0d9488]",
-    outline: "border border-slate-200 bg-white hover:bg-slate-100 text-slate-900",
-  };
-  const sizes = {
-    sm: "h-8 px-3 text-xs",
-    md: "h-10 px-4 text-sm",
-  };
+  const classList = [styles.button];
+  
+  if (variant === "primary") classList.push(styles.btnPrimary);
+  else if (variant === "ghost") classList.push(styles.btnGhost);
+  else if (variant === "default") classList.push(styles.btnDefault);
+  else if (variant === "outline") classList.push(styles.btnOutline);
+  
+  if (size === "sm") classList.push(styles.btnSm);
+  else if (size === "md") classList.push(styles.btnMd);
+
+  if (className) classList.push(className);
+
+  const finalClassName = classList.join(' ');
   
   if (asChild) {
-    return <span className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>{children}</span>;
+    return <span className={finalClassName}>{children}</span>;
   }
   
-  return <button onClick={onClick} className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>{children}</button>;
+  return <button onClick={onClick} className={finalClassName}>{children}</button>;
 };
 
 const Badge = ({ children, variant = "default" }) => {
-  const styles = {
-    destructive: "bg-rose-100 text-rose-600",
-    default: "bg-slate-100 text-slate-700",
-    secondary: "bg-slate-100 text-slate-500",
-  };
-  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${styles[variant]}`}>{children}</span>;
+  const classList = [styles.badge];
+  if (variant === 'destructive') classList.push(styles.badgeDestructive);
+  else classList.push(styles.badgeDefault);
+
+  return <span className={classList.join(' ')}>{children}</span>;
 };
 
-const Avatar = ({ children, className = "" }) => <div className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}>{children}</div>;
-const AvatarFallback = ({ children, className = "" }) => <div className={`flex h-full w-full items-center justify-center rounded-full bg-slate-100 ${className}`}>{children}</div>;
+const Avatar = ({ children, className = "" }) => <div className={`${styles.avatar} ${className}`}>{children}</div>;
+const AvatarFallback = ({ children, className = "" }) => <div className={`${styles.avatarFallback} ${className}`}>{children}</div>;
 
 // --- VISTA ASSISTITO (My Caregivers) ---
 function AssistedView({ caregivers }) {
   const handleEmailCaregiver = (email, e) => {
     e.preventDefault();
     e.stopPropagation();
-    window.location.href = `mailto:${email}`;
+    window.location.assign(`mailto:${email}`);
   };
 
   return (
-    <div className="container mx-auto px-4 max-w-7xl">
+    <div className={styles.container}>
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-        <div>
-            <h1 className="text-3xl font-bold mb-2 text-slate-800">I Miei Caregiver</h1>
-            <p className="text-slate-500">
+        <div className={styles.header}>
+        <div className={styles.titleGroup}>
+            <h1 className={styles.title}>I Miei Caregiver</h1>
+            <p className={styles.subtitle}>
             Le persone che ti assistono e monitorano le tue terapie
             </p>
         </div>
         <Link href="/Pages/CollegaCaregiver" passHref>
             <Button variant="default" asChild>
-                <span className="cursor-pointer">
-                    <Icons.Plus className="w-4 h-4 mr-2" />
+                <span style={{ cursor: 'pointer' }}>
+                    <Icons.Plus className={`${styles.iconSm} ${styles.mr2}`} />
                     Collega caregiver
                 </span>
             </Button>
@@ -99,69 +102,68 @@ function AssistedView({ caregivers }) {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid sm:grid-cols-2 gap-4 mb-8">
+        <div className={styles.statsGrid}>
         <Card variant="elevated">
-            <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center">
-                <Icons.Users className="w-6 h-6 text-[#14b8a6]" />
+            <CardContent className={styles.statCardContent}>
+            <div className={`${styles.statIconBox} ${styles.avatarFallbackTeal}`}>
+                <Icons.Users className={styles.iconMd} />
             </div>
             <div>
-                <p className="text-2xl font-bold text-slate-800">{caregivers.length}</p>
-                <p className="text-sm text-slate-500">Caregiver</p>
+                <p className={`${styles.title} ${styles.textSlate800}`} style={{fontSize: '1.5rem', marginBottom: '0'}}>{caregivers.length}</p>
+                <p className={`${styles.textSm} ${styles.textSlate500}`}>Caregiver</p>
             </div>
             </CardContent>
         </Card>
         <Card variant="elevated">
-            <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center">
-                <Icons.Calendar className="w-6 h-6 text-[#14b8a6]" />
+            <CardContent className={styles.statCardContent}>
+            <div className={`${styles.statIconBox} ${styles.avatarFallbackTeal}`}>
+                <Icons.Calendar className={styles.iconMd} />
             </div>
             <div>
-                <p className="text-2xl font-bold text-slate-800">
+                <p className={`${styles.title} ${styles.textSlate800}`} style={{fontSize: '1.5rem', marginBottom: '0'}}>
                 {new Date().toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
                 </p>
-                <p className="text-sm text-slate-500">Oggi</p>
+                <p className={`${styles.textSm} ${styles.textSlate500}`}>Oggi</p>
             </div>
             </CardContent>
         </Card>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className={styles.mainGrid}>
         {/* Caregivers List */}
-        <div className="lg:col-span-2 space-y-4">
-            <h2 className="font-bold text-lg text-slate-800">I tuoi caregiver</h2>
+        <div className={styles.leftColumn}>
+            <h2 className={styles.sectionTitle}>I tuoi caregiver</h2>
             
             {caregivers.map((caregiver, index) => (
             <Card 
                 key={caregiver.id}
-                className="animate-fade-in"
                 style={{ animationDelay: `${index * 0.1}s` }}
             >
-                <CardContent className="p-5">
-                <div className="flex items-start gap-4">
-                    <div className="relative">
-                    <Avatar className="w-14 h-14">
-                        <AvatarFallback className="bg-teal-50 text-[#14b8a6] font-bold">
+                <CardContent>
+                <div className={styles.patientCardContent} style={{paddingLeft: 0}}>
+                    <div style={{position: 'relative'}}>
+                    <Avatar className={styles.avatarLg}>
+                        <AvatarFallback className={styles.avatarFallbackTeal}>
                         {caregiver.avatar}
                         </AvatarFallback>
                     </Avatar>
                     </div>
 
-                    <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-bold text-lg text-slate-800">{caregiver.name}</h3>
+                    <div className={styles.patientInfo}>
+                    <div className={styles.patientHeader}>
+                        <h3 className={`${styles.sectionTitle} ${styles.textSlate800}`}>{caregiver.name}</h3>
                     </div>
-                    <p className="text-sm text-slate-500 mb-4">
+                    <p className={`${styles.textSm} ${styles.textSlate500}`} style={{marginBottom: '1rem'}}>
                         {caregiver.relationship} • {caregiver.email}
                     </p>
 
-                    <div className="flex items-center justify-end">
+                    <div style={{display: 'flex', justifyContent: 'flex-end'}}>
                         <Button 
                         variant="outline" 
                         size="sm"
                         onClick={(e) => handleEmailCaregiver(caregiver.email, e)}
                         >
-                        <Icons.Mail className="w-4 h-4 mr-2" />
+                        <Icons.Mail className={`${styles.iconSm} ${styles.mr2}`} />
                         Contatta
                         </Button>
                     </div>
@@ -171,18 +173,18 @@ function AssistedView({ caregivers }) {
             </Card>
             ))}
 
-            <Card variant="default" className="border-dashed border-2 bg-slate-50/50">
-            <CardContent className="p-8 text-center">
-                <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                <Icons.Plus className="w-7 h-7 text-slate-400" />
+            <Card variant="default" style={{borderStyle: 'dashed', backgroundColor: '#f8fafc'}}>
+            <CardContent style={{textAlign: 'center', padding: '2rem'}}>
+                <div className={`${styles.avatarLg} ${styles.flexCenter}`} style={{backgroundColor: '#f1f5f9', margin: '0 auto 1rem auto'}}>
+                <Icons.Plus className={styles.iconMd} style={{color: '#94a3b8'}} />
                 </div>
-                <h3 className="font-bold mb-2 text-slate-800">Collega un nuovo caregiver</h3>
-                <p className="text-sm text-slate-500 mb-4 max-w-sm mx-auto">
+                <h3 className={`${styles.fontBold} ${styles.textSlate800}`} style={{marginBottom: '0.5rem'}}>Collega un nuovo caregiver</h3>
+                <p className={`${styles.textSm} ${styles.textSlate500}`} style={{marginBottom: '1rem', maxWidth: '24rem', margin: '0 auto 1rem auto'}}>
                 Inserisci il codice ricevuto dal tuo caregiver per collegarlo al tuo profilo
                 </p>
                 <Link href="/Pages/CollegaCaregiver" passHref>
                     <Button variant="outline" asChild>
-                        <span className="cursor-pointer">Inserisci codice</span>
+                        <span style={{ cursor: 'pointer' }}>Inserisci codice</span>
                     </Button>
                 </Link>
             </CardContent>
@@ -190,23 +192,23 @@ function AssistedView({ caregivers }) {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className={styles.rightColumn}>
             <Card variant="elevated">
             <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2 text-slate-800">
-                <Icons.Shield className="w-5 h-5 text-[#14b8a6]" />
+                <CardTitle>
+                <Icons.Shield className={styles.iconMd} style={{color: '#14b8a6'}} />
                 Informazioni
                 </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <p className="text-sm text-slate-500">
-                I tuoi caregiver possono visualizzare le tue terapie, l'inventario farmaci e ricevere notifiche quando non confermi un'assunzione.
+            <CardContent>
+                <p className={`${styles.textSm} ${styles.textSlate500}`} style={{marginBottom: '1rem'}}>
+                I tuoi caregiver possono visualizzare le tue terapie, l&apos;inventario farmaci e ricevere notifiche quando non confermi un&apos;assunzione.
                 </p>
-                <div className="p-4 bg-slate-50 rounded-lg">
-                <p className="text-sm font-medium mb-2 text-slate-700">Cosa possono vedere:</p>
-                <ul className="text-sm text-slate-500 space-y-1">
+                <div style={{padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem'}}>
+                <p className={`${styles.textSm} ${styles.fontMedium} ${styles.textSlate700}`} style={{marginBottom: '0.5rem'}}>Cosa possono vedere:</p>
+                <ul className={`${styles.textSm} ${styles.textSlate500}`} style={{listStyle: 'none'}}>
                     <li>• Le tue terapie attive</li>
-                    <li>• L'inventario dei farmaci</li>
+                    <li>• L&apos;inventario dei farmaci</li>
                     <li>• Le assunzioni confermate</li>
                     <li>• Le scorte in esaurimento</li>
                 </ul>
@@ -226,110 +228,110 @@ function CaregiverView({ patients, recentAlerts }) {
     const lowStockCount = patients.reduce((sum, p) => sum + p.lowStock, 0);
 
     return (
-        <div className="container mx-auto px-4 max-w-7xl">
+        <div className={styles.container}>
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
-            <div>
-                <h1 className="text-3xl font-bold mb-2 text-slate-800 tracking-tight">Dashboard Caregiver</h1>
-                <p className="text-slate-500">Monitora e gestisci le terapie dei tuoi assistiti</p>
+            <div className={styles.header}>
+            <div className={styles.titleGroup}>
+                <h1 className={styles.title}>Dashboard Caregiver</h1>
+                <p className={styles.subtitle}>Monitora e gestisci le terapie dei tuoi assistiti</p>
             </div>
-            <Link href="CollegaCaregiver" className="inline-flex items-center justify-center h-11 px-6 rounded-lg font-bold text-sm bg-[#14b8a6] text-white shadow-md hover:bg-[#0d9488] hover:shadow-lg transition-all">
-                <Icons.Plus className="w-5 h-5 mr-2" /> Collega paziente
+            <Link href="CollegaCaregiver" className={`${styles.button} ${styles.btnPrimary} ${styles.btnMd}`}>
+                <Icons.Plus className={`${styles.iconMd} ${styles.mr2}`} /> Collega paziente
             </Link>
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatCard icon={<Icons.Users className="w-6 h-6 text-[#14b8a6]" />} bg="bg-teal-50" value={patients.length} label="Pazienti" />
-            <StatCard icon={<Icons.Heart className="w-6 h-6 text-emerald-500" />} bg="bg-emerald-50" value={`${avgAdherence}%`} label="Aderenza media" />
-            <StatCard icon={<Icons.AlertTriangle className="w-6 h-6 text-rose-500" />} bg="bg-rose-50" value={totalAlerts} label="Alert attivi" />
-            <StatCard icon={<Icons.Bell className="w-6 h-6 text-amber-500" />} bg="bg-amber-50" value={lowStockCount} label="Scorte basse" />
+            <div className={styles.statsGrid}>
+            <StatCard icon={<Icons.Users className={styles.iconMd} style={{color: '#14b8a6'}} />} bgClass={styles.avatarFallbackTeal} value={patients.length} label="Pazienti" />
+            <StatCard icon={<Icons.Heart className={styles.iconMd} style={{color: '#10b981'}} />} bgStyle={{backgroundColor: '#ecfdf5'}} value={`${avgAdherence}%`} label="Aderenza media" />
+            <StatCard icon={<Icons.AlertTriangle className={styles.iconMd} style={{color: '#f43f5e'}} />} bgStyle={{backgroundColor: '#fff1f2'}} value={totalAlerts} label="Alert attivi" />
+            <StatCard icon={<Icons.Bell className={styles.iconMd} style={{color: '#f59e0b'}} />} bgStyle={{backgroundColor: '#fffbeb'}} value={lowStockCount} label="Scorte basse" />
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className={styles.mainGrid}>
 
             {/* --- LISTA PAZIENTI (Colonna Sinistra) --- */}
-            <div className="lg:col-span-2 space-y-4">
-                <h2 className="font-bold text-lg text-slate-800">I tuoi assistiti</h2>
+            <div className={styles.leftColumn}>
+                <h2 className={styles.sectionTitle}>I tuoi assistiti</h2>
 
                 {patients.map((patient) => (
-                <Link key={patient.id} href={`/Pages/Assistito/${patient.id}`} className="block group cursor-pointer">
-                    <Card className="p-5 hover:border-[#14b8a6]/50 transition-all hover:shadow-md relative overflow-hidden">
+                <Link key={patient.id} href={`/Pages/Assistito/${patient.id}`} style={{display: 'block', textDecoration: 'none'}}>
+                    <Card className={styles.cardInteractive} style={{padding: 0}}>
                     {/* Status Bar Left */}
-                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${patient.status === 'ok' ? 'bg-emerald-500' : patient.status === 'warning' ? 'bg-amber-500' : 'bg-rose-500'}`} />
+                    <div className={`${styles.patientStatusBar} ${patient.status === 'ok' ? styles.bgEmerald500 : patient.status === 'warning' ? styles.bgAmber500 : styles.bgRose500}`} />
 
-                    <div className="flex items-start gap-4 pl-2">
+                    <CardContent className={styles.patientCardContent}>
                         {/* Avatar */}
-                        <div className="relative">
-                        <div className="w-14 h-14 rounded-full bg-teal-50 flex items-center justify-center text-[#14b8a6] font-bold text-xl border-2 border-white shadow-sm">
+                        <div style={{position: 'relative'}}>
+                        <div className={`${styles.avatarLg} ${styles.flexCenter} ${styles.avatarFallbackTeal}`} style={{border: '2px solid white', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)', fontSize: '1.25rem'}}>
                             {patient.initials}
                         </div>
-                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${patient.status === 'ok' ? 'bg-emerald-500' : patient.status === 'warning' ? 'bg-amber-500' : 'bg-rose-500'}`} />
+                        <div className={`${styles.statusDot} ${patient.status === 'ok' ? styles.bgEmerald500 : patient.status === 'warning' ? styles.bgAmber500 : styles.bgRose500}`} />
                         </div>
 
-                        <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-bold text-lg text-slate-800 group-hover:text-[#14b8a6] transition-colors">{patient.name}</h3>
+                        <div className={styles.patientInfo}>
+                        <div className={styles.patientHeader}>
+                            <h3 className={`${styles.sectionTitle} ${styles.textSlate800}`}>{patient.name}</h3>
                             {(patient.alerts + patient.lowStock) > 0 && <Badge variant="destructive">{patient.alerts + patient.lowStock} alert</Badge>}
                         </div>
-                        <p className="text-sm text-slate-500 mb-4">{patient.relationship} • Ultima attività: {patient.lastActivity}</p>
+                        <p className={`${styles.textSm} ${styles.textSlate500}`} style={{marginBottom: '1rem'}}>{patient.relationship} • Ultima attività: {patient.lastActivity}</p>
 
-                        <div className="grid sm:grid-cols-3 gap-6">
+                        <div className={styles.progressGrid}>
                             {/* Progress Oggi */}
                             <div>
-                            <div className="flex justify-between text-xs mb-1.5 font-medium text-slate-500">
+                            <div className={`${styles.textXs} ${styles.fontMedium}`} style={{display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', color: '#64748b'}}>
                                 <span>Oggi</span>
-                                <span className={patient.status === 'ok' ? 'text-emerald-600' : patient.status === 'warning' ? 'text-amber-600' : 'text-rose-600'}>{patient.adherenceToday}%</span>
+                                <span className={patient.status === 'ok' ? styles.bgEmerald500 : patient.status === 'warning' ? styles.bgAmber500 : styles.bgRose500} style={{backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent', backgroundColor: patient.status === 'ok' ? '#059669' : patient.status === 'warning' ? '#d97706' : '#e11d48'}}>{patient.adherenceToday}%</span>
                             </div>
-                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full ${patient.status === 'ok' ? 'bg-emerald-500' : patient.status === 'warning' ? 'bg-amber-500' : 'bg-rose-500'}`} style={{ width: `${patient.adherenceToday}%` }} />
+                            <div className={styles.progressBarContainer}>
+                                <div className={`${styles.progressBarFill} ${patient.status === 'ok' ? styles.bgEmerald500 : patient.status === 'warning' ? styles.bgAmber500 : styles.bgRose500}`} style={{ width: `${patient.adherenceToday}%` }} />
                             </div>
                             </div>
 
                             {/* Progress Settimana */}
                             <div>
-                            <div className="flex justify-between text-xs mb-1.5 font-medium text-slate-500">
+                            <div className={`${styles.textXs} ${styles.fontMedium}`} style={{display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem', color: '#64748b'}}>
                                 <span>Settimana</span>
-                                <span className="text-slate-700">{patient.adherenceWeek}%</span>
+                                <span className={styles.textSlate700}>{patient.adherenceWeek}%</span>
                             </div>
-                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full rounded-full bg-[#14b8a6]" style={{ width: `${patient.adherenceWeek}%` }} />
+                            <div className={styles.progressBarContainer}>
+                                <div className={styles.progressBarFill} style={{ width: `${patient.adherenceWeek}%`, backgroundColor: '#14b8a6' }} />
                             </div>
                             </div>
 
                             {/* Next Dose Info */}
-                            <div className="flex items-center gap-2 text-sm font-medium">
-                            <Icons.Clock className={`w-4 h-4 ${patient.nextDose === "In ritardo" ? "text-rose-500" : "text-slate-400"}`} />
-                            <span className={patient.nextDose === "In ritardo" ? "text-rose-600" : "text-slate-600"}>
+                            <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 500}}>
+                            <Icons.Clock className={styles.iconSm} style={{color: patient.nextDose === "In ritardo" ? '#f43f5e' : '#94a3b8'}} />
+                            <span style={{color: patient.nextDose === "In ritardo" ? '#e11d48' : '#475569'}}>
                                 {patient.nextDose}
                             </span>
                             </div>
                         </div>
                         </div>
 
-                        <div className="self-center">
-                        <Icons.ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-[#14b8a6]" />
+                        <div style={{alignSelf: 'center'}}>
+                        <Icons.ChevronRight className={`${styles.iconMd} ${styles.textSlate500}`} />
                         </div>
-                    </div>
+                    </CardContent>
                     </Card>
                 </Link>
                 ))}
             </div>
 
             {/* --- SIDEBAR (Colonna Destra) --- */}
-            <div className="space-y-6">
+            <div className={styles.rightColumn}>
 
                 {/* Alert Recenti */}
                 <div>
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-bold text-lg text-slate-800">Alert Recenti</h2>
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem'}}>
+                    <h2 className={styles.sectionTitle}>Alert Recenti</h2>
                 </div>
-                <div className="space-y-3">
+                <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
                     {recentAlerts.map((alert) => (
-                    <Card key={alert.id} className={`p-4 border-l-4 ${alert.type === 'critical' ? 'border-l-rose-500' : alert.type === 'warning' ? 'border-l-amber-500' : 'border-l-[#14b8a6]'}`}>
-                        <p className="font-bold text-sm text-slate-800 mb-1">{alert.patient}</p>
-                        <p className="text-sm text-slate-600 mb-2">{alert.message}</p>
-                        <p className="text-xs text-slate-400">{alert.time}</p>
+                    <Card key={alert.id} className={`${styles.alertCard} ${alert.type === 'critical' ? styles.borderLCritical : alert.type === 'warning' ? styles.borderLWarning : styles.borderLInfo}`}>
+                        <p className={`${styles.fontBold} ${styles.textSm} ${styles.textSlate800}`} style={{marginBottom: '0.25rem'}}>{alert.patient}</p>
+                        <p className={`${styles.textSm} ${styles.textSlate600}`} style={{marginBottom: '0.5rem'}}>{alert.message}</p>
+                        <p className={`${styles.textXs} ${styles.textSlate500}`}>{alert.time}</p>
                     </Card>
                     ))}
                 </div>
@@ -485,8 +487,8 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
 
   if (isAuthChecking) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+      <div className={styles.loadingContainer}>
+        <div className={styles.loader}></div>
       </div>
     );
   }
@@ -510,24 +512,26 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
   const showToggle = patients.length > 0 && caregivers.length > 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-16 pt-10">
+    <div className={styles.pageContainer}>
         
         {/* Switcher dei ruoli (solo se necessario) */}
         {showToggle && (
-            <div className="container mx-auto px-4 max-w-7xl mb-6">
-                <div className="bg-white p-1 rounded-lg border border-slate-200 inline-flex shadow-sm">
+            <div className={styles.container}>
+                <div className={styles.switchContainer}>
+                <div className={styles.switch}>
                     <button 
                         onClick={() => setViewMode('caregiver')}
-                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${viewMode === 'caregiver' ? 'bg-[#14b8a6] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
+                        className={`${styles.switchBtn} ${viewMode === 'caregiver' ? styles.switchBtnActive : ''}`}
                     >
                         Sono un Caregiver
                     </button>
                     <button 
                         onClick={() => setViewMode('assisted')}
-                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${viewMode === 'assisted' ? 'bg-[#14b8a6] text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
+                        className={`${styles.switchBtn} ${viewMode === 'assisted' ? styles.switchBtnActive : ''}`}
                     >
                         Sono Assistito
                     </button>
+                </div>
                 </div>
             </div>
         )}
@@ -538,7 +542,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
             <CaregiverView patients={patients} recentAlerts={recentAlerts} />
         )}
 
-        <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white mt-12">
+        <footer className={styles.footer}>
             <p>© 2026 MediGuard. La tua salute, organizzata.</p>
         </footer>
     </div>
@@ -546,14 +550,20 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
 }
 
 // --- HELPER COMPONENTS ---
-function StatCard({ icon, bg, value, label }) {
+function StatCard({ icon, bgClass, bgStyle, value, label }) {
+    // combine bgClass and bgStyle logic 
+    const iconContainerClass = `${styles.statIconBox} ${bgClass || ''}`;
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center shrink-0`}>{icon}</div>
-      <div>
-        <p className="text-2xl font-bold text-slate-800 leading-none mb-1">{value}</p>
-        <p className="text-sm text-slate-500 font-medium">{label}</p>
-      </div>
+    <div className={`${styles.card} ${styles.cardElevated}`}>
+        <CardContent className={styles.statCardContent}>
+        <div className={iconContainerClass} style={bgStyle}>
+            {icon}
+        </div>
+        <div>
+            <p className={`${styles.title} ${styles.textSlate800}`} style={{fontSize: '1.5rem', marginBottom: '0'}}>{value}</p>
+            <p className={`${styles.textSm} ${styles.textSlate500} ${styles.fontMedium}`}>{label}</p>
+        </div>
+        </CardContent>
     </div>
   );
 }

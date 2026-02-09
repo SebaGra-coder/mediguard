@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
+import styles from './Profilo.module.css';
 import { GuestOverlay } from "@/components/GuestOverlay";
 import AddAllergyModal from "@/components/modals/AddAllergyModal";
 import { useToast } from "@/hooks/useToast";
@@ -113,13 +114,13 @@ export default function ProfiloPage() {
         if (message) showToast(message, "success");
     };
 
-    if (isLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#14b8a6]"></div></div>;
+    if (isLoading) return <div className={styles.loaderContainer}><div className={styles.spinner}></div></div>;
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+        <div className={styles.pageContainer}>
             <ToastComponent />
 
-            <main className="pt-10 pb-16 relative">
+            <main className={styles.main}>
                 {!isAuthenticated && (
                     <GuestOverlay
                         title="Gestisci il Tuo Profilo"
@@ -132,77 +133,77 @@ export default function ProfiloPage() {
                     />
                 )}
 
-                <div className="container mx-auto px-4 max-w-7xl">
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Il Mio Profilo</h1>
-                        <p className="text-slate-500">Gestisci le tue informazioni e la sicurezza medica</p>
+                <div className={styles.contentWrapper}>
+                    <div className={styles.header}>
+                        <h1 className={styles.title}>Il Mio Profilo</h1>
+                        <p className={styles.subtitle}>Gestisci le tue informazioni e la sicurezza medica</p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className={styles.gridContainer}>
 
                         {/* SEZIONE INFO PERSONALI */}
-                        <div className="lg:col-span-2 space-y-6">
-                            <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
-                                    <div className="flex items-center gap-2 font-bold text-slate-800">
-                                        <div className="text-[#14b8a6]"><Icons.User /></div>
+                        <div className={styles.personalInfoColumn}>
+                            <section className={styles.card}>
+                                <div className={styles.cardHeader}>
+                                    <div className={styles.cardTitle}>
+                                        <div className={styles.iconTeal}><Icons.User /></div>
                                         Informazioni Personali
                                     </div>
                                     <button
                                         onClick={() => isEditing ? handleUpdateProfile() : setIsEditing(true)}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${isEditing ? 'bg-[#14b8a6] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                        className={`${styles.actionButton} ${isEditing ? styles.saveButton : styles.editButton}`}
                                     >
                                         {isEditing ? <><Icons.Save /> Salva</> : <><Icons.Edit /> Modifica</>}
                                     </button>
                                 </div>
 
-                                <div className="p-6 space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nome</label>
+                                <div className={styles.cardBody}>
+                                    <div className={styles.inputGroup}>
+                                        <div className={styles.inputField}>
+                                            <label className={styles.label}>Nome</label>
                                             <input
                                                 disabled={!isEditing}
-                                                className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#14b8a6]/20 outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                                                className={styles.input}
                                                 value={formUser.nome}
                                                 onChange={(e) => setFormUser({ ...formUser, nome: e.target.value })}
                                             />
                                         </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cognome</label>
+                                        <div className={styles.inputField}>
+                                            <label className={styles.label}>Cognome</label>
                                             <input
                                                 disabled={!isEditing}
-                                                className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#14b8a6]/20 outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                                                className={styles.input}
                                                 value={formUser.cognome}
                                                 onChange={(e) => setFormUser({ ...formUser, cognome: e.target.value })}
                                             />
                                         </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</label>
+                                    <div className={styles.inputField}>
+                                        <label className={styles.label}>Email</label>
                                         <input
                                             disabled={!isEditing}
-                                            className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#14b8a6]/20 outline-none disabled:bg-slate-50"
+                                            className={styles.input}
                                             value={formUser.email}
                                             onChange={(e) => setFormUser({ ...formUser, email: e.target.value })}
                                         />
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Data di Nascita</label>
+                                    <div className={styles.inputField}>
+                                        <label className={styles.label}>Data di Nascita</label>
                                         <input
                                             type="date"
                                             disabled={!isEditing}
-                                            className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#14b8a6]/20 outline-none disabled:bg-slate-50"
+                                            className={styles.input}
                                             value={formUser.data_nascita}
                                             onChange={(e) => setFormUser({ ...formUser, data_nascita: e.target.value })}
                                         />
                                     </div>
                                     {isEditing && (
-                                        <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nuova Password</label>
+                                        <div className={`${styles.inputField} ${styles.animationFadeIn}`}>
+                                            <label className={styles.label}>Nuova Password</label>
                                             <input
                                                 type="password"
                                                 placeholder="Lascia vuoto per mantenere la password attuale"
-                                                className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#14b8a6]/20 outline-none"
+                                                className={styles.input}
                                                 value={formUser.password || ''}
                                                 onChange={(e) => setFormUser({ ...formUser, password: e.target.value })}
                                             />
@@ -213,39 +214,39 @@ export default function ProfiloPage() {
                         </div>
 
                         {/* SEZIONE ALLERGIE */}
-                        <div className="space-y-6">
-                            <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-rose-50/30">
-                                    <div className="flex items-center gap-2 font-bold text-rose-600">
+                        <div className={styles.allergiesColumn}>
+                            <section className={styles.card}>
+                                <div className={styles.allergyHeader}>
+                                    <div className={styles.allergyTitle}>
                                         <Icons.AlertTriangle /> Allergie
                                     </div>
                                     <button
                                         onClick={() => setShowAllergyModal(true)}
-                                        className="p-1.5 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-colors"
+                                        className={styles.addButton}
                                     >
                                         <Icons.Plus />
                                     </button>
                                 </div>
-                                <div className="p-4 space-y-3">
+                                <div className={styles.allergyList}>
                                     {allergie.length > 0 ? (
                                         allergie.map((al) => (
-                                            <div key={al.id_allergia} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 group">
+                                            <div key={al.id_allergia} className={styles.allergyItem}>
                                                 <div>
-                                                    <p className="font-bold text-slate-700 text-sm">{al.allergene.sostanza_allergene}</p>
-                                                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${al.gravita_reazione > 2 ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}>
+                                                    <p className={styles.allergyName}>{al.allergene.sostanza_allergene}</p>
+                                                    <span className={`${styles.badge} ${al.gravita_reazione > 2 ? styles.badgeHigh : styles.badgeMedium}`}>
                                                         Livello {al.gravita_reazione}
                                                     </span>
                                                 </div>
                                                 <button
                                                     onClick={() => handleDeleteAllergy(al.id_allergia)}
-                                                    className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-rose-500 transition-all"
+                                                    className={styles.deleteButton}
                                                 >
                                                     <Icons.X />
                                                 </button>
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="text-center py-6 text-slate-400 text-sm">Nessuna allergia registrata</p>
+                                        <p className={styles.emptyState}>Nessuna allergia registrata</p>
                                     )}
                                 </div>
                             </section>
@@ -263,7 +264,7 @@ export default function ProfiloPage() {
                 availableAllergens={availableAllergens}
             />
 
-            <footer className="fixed bottom-0 left-0 right-0 border-t border-slate-200 py-8 text-center text-sm text-slate-400 bg-white">
+            <footer className={styles.footer}>
                 <p>© 2026 MediGuard. La tua salute, organizzata.</p>
             </footer>
         </div>

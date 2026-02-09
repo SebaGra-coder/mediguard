@@ -9,6 +9,7 @@ import TherapyDetailsModal from "@/components/modals/TherapyDetailsModal";
 import QuickAssumptionModal from "@/components/modals/QuickAssumptionModal";
 import { useTherapies } from "@/hooks/useTherapies";
 import { useToast } from "@/hooks/useToast";
+import styles from './Terapie.module.css';
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -31,41 +32,39 @@ const Icons = {
 
 // --- COMPONENTI UI RIUTILIZZABILI (Style MediGuard) ---
 const Card = ({ children, className = "" }) => (
-    <div className={`bg-white rounded-xl border border-slate-200 shadow-sm ${className}`}>{children}</div>
+    <div className={`${styles.card} ${className}`}>{children}</div>
 );
 
 const Button = ({ children, onClick, variant = "primary", size = "md", className = "", type = "button", disabled }) => {
-    const base = "inline-flex items-center justify-center rounded-lg font-medium transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
-
     const variants = {
-        primary: "bg-[#2dd4bf] text-white hover:bg-[#0d9488] shadow-sm hover:shadow-md",
-        secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
-        ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
-        destructive: "bg-rose-50 text-rose-600 hover:bg-rose-100",
-        outline: "border border-slate-200 text-slate-600 hover:bg-slate-50"
+        primary: styles.btnPrimary,
+        secondary: styles.btnSecondary,
+        ghost: styles.btnGhost,
+        destructive: styles.btnDestructive,
+        outline: styles.btnOutline
     };
 
     const sizes = {
-        sm: "h-8 px-3 text-xs",
-        md: "h-10 px-4 text-sm",
-        icon: "h-9 w-9 p-0",
+        sm: styles.btnSm,
+        md: styles.btnMd,
+        icon: styles.btnIcon,
     };
 
     return (
-        <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>
+        <button type={type} onClick={onClick} disabled={disabled} className={`${styles.btn} ${variants[variant]} ${sizes[size]} ${className}`}>
             {children}
         </button>
     );
 };
 
 const Badge = ({ children, variant = "default", className = "" }) => {
-    const styles = {
-        default: "bg-slate-100 text-slate-700",
-        success: "bg-teal-50 text-[#2dd4bf]",
-        warning: "bg-amber-50 text-amber-600",
-        destructive: "bg-rose-50 text-rose-600",
+    const variants = {
+        default: styles.badgeDefault,
+        success: styles.badgeSuccess,
+        warning: styles.badgeWarning,
+        destructive: styles.badgeDestructive,
     };
-    return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border border-transparent ${styles[variant]} ${className}`}>{children}</span>;
+    return <span className={`${styles.badge} ${variants[variant]} ${className}`}>{children}</span>;
 };
 
 // --- LOGICA PRINCIPALE ---
@@ -313,25 +312,6 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
         }
     };
 
-    const handleTestNotifications = async () => {
-        try {
-            showToast("Verifica notifiche in corso...", "info");
-            const res = await fetch('/api/terapia/check-now?force=true');
-            const data = await res.json();
-            
-            if (data.success) {
-                if (data.notifiche_processate > 0) {
-                    showToast(`Simulate ${data.notifiche_processate} notifiche! Controlla la console del server.`, "success");
-                } else {
-                    showToast("Nessuna terapia programmata per quest'ora esatta.", "warning");
-                }
-            }
-        } catch (error) {
-            console.error("Errore test notifiche", error);
-            showToast("Errore durante il test", "error");
-        }
-    };
-
     const getTherapyWarnings = (therapyId) => {
         const therapy = rawTherapies.find(t => t.id_terapia === therapyId);
         if (!therapy || !therapy.farmaco) return [];
@@ -417,14 +397,14 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
 
     if (isAuthChecking) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2dd4bf]"></div>
+            <div className={styles.loadingContainer}>
+                <div className={styles.spinner}></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+        <div className={styles.pageContainer}>
             <ToastComponent />
 
             {!isUserAuthenticated && (
@@ -440,95 +420,92 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 />
             )}
 
-            <main className="pt-10 pb-16">
-                <div className="container mx-auto px-4 max-w-7xl">
+            <main className={styles.main}>
+                <div className={styles.contentWrapper}>
 
                     {/* HEADER PAGINA */}
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+                    <div className={styles.pageHeader}>
                         <div>
-                            <h1 className="text-3xl font-bold mb-2 text-slate-800 tracking-tight">Le Mie Terapie</h1>
-                            <p className="text-slate-500">Gestisci i tuoi piani terapeutici e monitora le assunzioni.</p>
+                            <h1 className={styles.headerTitle}>Le Mie Terapie</h1>
+                            <p className={styles.headerSubtitle}>Gestisci i tuoi piani terapeutici e monitora le assunzioni.</p>
                         </div>
-                        <div className="flex gap-3">
-                            <Button onClick={handleTestNotifications} variant="secondary" className="h-11 px-4 shadow-sm">
-                                <Icons.Bell className="w-5 h-5 mr-2" /> Test Notifiche
-                            </Button>
-                            <Button onClick={() => setModalState({ type: 'add', data: null })} className="h-11 px-6 shadow-md hover:shadow-lg">
-                                <Icons.Plus className="w-5 h-5 mr-2" /> Nuova Terapia
+                        <div className={styles.headerButtons}>
+                            <Button onClick={() => setModalState({ type: 'add', data: null })} className="shadow-md">
+                                <Icons.Plus className={`${styles.iconSmall} ${styles.marginRightSmall}`} /> Nuova Terapia
                             </Button>
                         </div>
                     </div>
 
-                    <div className="grid lg:grid-cols-3 gap-8">
+                    <div className={styles.gridLayout}>
 
                         {/* --- COLONNA SINISTRA: PROGRAMMA GIORNALIERO --- */}
-                        <div className="lg:col-span-2 space-y-6">
+                        <div className={styles.leftColumn}>
 
                             {/* Navigazione Data */}
-                            <Card className="p-4 flex items-center justify-between">
-                                <Button variant="ghost" size="icon" onClick={handlePrevDay}><Icons.ChevronLeft className="w-5 h-5" /></Button>
-                                <div className="text-center">
-                                    <p className="text-sm text-slate-500 font-medium tracking-wide">{selectedDate.toLocaleDateString("it-IT", { weekday: "long" })}</p>
-                                    <p className="text-xl font-bold text-slate-800">{selectedDate.toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</p>
+                            <Card className={styles.dateNavCard}>
+                                <Button variant="ghost" size="icon" onClick={handlePrevDay}><Icons.ChevronLeft className={styles.iconMedium} /></Button>
+                                <div className={styles.dateDisplay}>
+                                    <p className={styles.dateWeekday}>{selectedDate.toLocaleDateString("it-IT", { weekday: "long" })}</p>
+                                    <p className={styles.dateFull}>{selectedDate.toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</p>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={handleNextDay}><Icons.ChevronRight className="w-5 h-5" /></Button>
+                                <Button variant="ghost" size="icon" onClick={handleNextDay}><Icons.ChevronRight className={styles.iconMedium} /></Button>
                             </Card>
 
                             {/* Progress Bar Aderenza */}
-                            <Card className="p-6 bg-white from-[#2dd4bf] to-teal-600 text-white border-none shadow-lg">
-                                <div className="flex justify-between items-end mb-4">
+                            <Card className={styles.adherenceCard}>
+                                <div className={styles.adherenceHeader}>
                                     <div>
-                                        <p className="text-slate-500 font-medium mb-1">Aderenza giornaliera</p>
-                                        <p className="text-slate-800 text-3xl font-bold">{adherencePercentage}%</p>
+                                        <p className={styles.adherenceLabel}>Aderenza giornaliera</p>
+                                        <p className={styles.adherenceValue}>{adherencePercentage}%</p>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-[#006629] text-sm">Assunzioni completate</p>
-                                        <p className="text-l text-slate-800 font-normal">{takenCount} <span className="text-slate-800 text-l font-bold">/ {todaySchedule.length}</span></p>
+                                    <div className={styles.adherenceStats}>
+                                        <p className={styles.adherenceStatsLabel}>Assunzioni completate</p>
+                                        <p className={styles.adherenceStatsValue}>{takenCount} <span className={styles.adherenceStatsValueTotal}>/ {todaySchedule.length}</span></p>
                                     </div>
                                 </div>
-                                <div className="h-2 w-full bg-black/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-[#2dd4bf] rounded-full transition-all duration-700" style={{ width: `${adherencePercentage}%` }} />
+                                <div className={styles.progressBarBg}>
+                                    <div className={styles.progressBarFill} style={{ width: `${adherencePercentage}%` }} />
                                 </div>
                             </Card>
 
                             {/* Lista Oraria */}
-                            <div className="space-y-4">
-                                <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Icons.Clock className="w-5 h-5 text-slate-400" /> Programma di oggi</h2>
+                            <div className={styles.scheduleList}>
+                                <h2 className={styles.scheduleTitle}><Icons.Clock className={`${styles.iconMedium} ${styles.textSlate400}`} /> Programma di oggi</h2>
                                 {todaySchedule.map((item) => {
                                     const isCurrent = item.status === "pending" || item.status === "late";
                                     const isTaken = item.status === "taken";
 
                                     return (
-                                        <Card key={item.id} className={`p-0 overflow-hidden transition-all ${isCurrent ? "ring-2 ring-[#2dd4bf] ring-offset-2" : "opacity-70 hover:opacity-100"}`}>
-                                            <div className="flex">
+                                        <Card key={item.id} className={`${styles.scheduleCard} ${isCurrent ? styles.scheduleCardCurrent : ""} ${isTaken ? styles.scheduleCardPast : ""}`}>
+                                            <div className={styles.scheduleCardInner}>
                                                 {/* Fascia Oraria Laterale */}
-                                                <div className={`w-20 flex flex-col items-center justify-center border-r border-slate-100 ${isTaken ? "bg-teal-50" : "bg-slate-50"}`}>
-                                                    <span className="font-bold text-lg text-slate-700">{item.time}</span>
+                                                <div className={`${styles.timeColumn} ${isTaken ? styles.timeColumnTaken : styles.timeColumnDefault}`}>
+                                                    <span className={styles.timeText}>{item.time}</span>
                                                 </div>
 
                                                 {/* Contenuto Card */}
-                                                <div className="flex-1 p-4 flex items-center justify-between gap-4">
+                                                <div className={styles.cardContent}>
                                                     <div>
-                                                        <p className={`font-bold text-lg ${isTaken ? "text-slate-500 line-through decoration-slate-300" : "text-slate-800"}`}>{item.medicine}</p>
-                                                        <p className="text-sm text-slate-500">{item.dosage}</p>
+                                                        <p className={`${styles.medicineName} ${isTaken ? styles.medicineNameTaken : ""}`}>{item.medicine}</p>
+                                                        <p className={styles.medicineDosage}>{item.dosage}</p>
                                                     </div>
 
                                                     {/* Azioni / Status */}
                                                     <div>
                                                         {isCurrent ? (
-                                                            <div className="flex flex-col gap-1 items-end">
+                                                            <div className={styles.statusAction}>
                                                                 {item.status === 'late' && (
-                                                                    <span className="text-xs text-rose-600 font-bold flex items-center gap-1">
-                                                                        <Icons.AlertTriangle className="w-3 h-3" /> In ritardo
+                                                                    <span className={styles.lateLabel}>
+                                                                        <Icons.AlertTriangle className={styles.warningIcon} /> In ritardo
                                                                     </span>
                                                                 )}
-                                                                <Button size="sm" onClick={() => handleConfirmIntake(item.id)} className={`${item.status === 'late' ? 'bg-rose-500 hover:bg-rose-600' : 'bg-[#2dd4bf] hover:bg-[#0d9488]'} text-white`}>
-                                                                    <Icons.Check className="w-4 h-4 mr-1" /> Conferma
+                                                                <Button size="sm" onClick={() => handleConfirmIntake(item.id)} className={item.status === 'late' ? styles.btnConfirmLate : styles.btnConfirm}>
+                                                                    <Icons.Check className={`${styles.iconSmall} ${styles.marginRightSmall}`} /> Conferma
                                                                 </Button>
                                                             </div>
                                                         ) : (
-                                                            <Badge variant={isTaken ? (item.isTakenLate ? "warning" : "success") : "default"} className="flex items-center gap-1 px-3 py-1">
-                                                                {isTaken ? <Icons.Check className="w-3 h-3" /> : <Icons.Clock className="w-3 h-3" />}
+                                                            <Badge variant={isTaken ? (item.isTakenLate ? "warning" : "success") : "default"} className="flex items-center gap-1">
+                                                                {isTaken ? <Icons.Check className={styles.warningIcon} /> : <Icons.Clock className={styles.warningIcon} />}
                                                                 {isTaken 
                                                                     ? (item.isTakenLate ? `Assunto in ritardo alle ${item.takenAt}` : `Assunto alle ${item.takenAt}`)
                                                                     : "Programmato"}
@@ -544,74 +521,74 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                         </div>
 
                         {/* --- COLONNA DESTRA: TERAPIE ATTIVE --- */}
-                        <div className="space-y-6">
-                            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center bg-white hover:bg-slate-50/50 transition-colors">
-                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3 text-slate-400">
-                                    <Icons.Plus className="w-6 h-6" />
+                        <div className={styles.rightColumn}>
+                            <div className={styles.quickAddBox}>
+                                <div className={styles.quickAddIconWrapper}>
+                                    <Icons.Plus className={styles.iconLarge} />
                                 </div>
-                                <h3 className="font-bold text-slate-800 mb-1">Registra assunzione</h3>
-                                <p className="text-sm text-slate-500 mb-4">Per farmaci &quot;al bisogno&quot;</p>
+                                <h3 className={styles.quickAddTitle}>Registra assunzione</h3>
+                                <p className={styles.quickAddSubtitle}>Per farmaci &quot;al bisogno&quot;</p>
 
                                 <Button
                                     variant="outline"
-                                    className="bg-[#2dd4bfcc] text-white hover:bg-teal-50 hover:text-[#0d9488]"
+                                    className={styles.btnQuickAdd}
                                     onClick={() => setModalState({ type: 'quick-add', data: null })}
                                 >
                                     Registra ora
                                 </Button>
                             </div>
 
-                            <div className="flex items-center justify-between">
-                                <h2 className="font-bold text-lg text-slate-800">Terapie Attive</h2>
+                            <div className={styles.activeTherapiesHeader}>
+                                <h2 className={styles.activeTherapiesTitle}>Terapie Attive</h2>
                                 <Badge variant="default">{therapyPlans.filter(t => t.stato === 'attiva').length} in corso</Badge>
                             </div>
 
                             {therapyPlans.map((plan) => (
-                                <Card key={plan.id} className="p-5 hover:shadow-md transition-shadow group">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#2dd4bf] flex items-center justify-center">
-                                                <Icons.Pill className="w-5 h-5" />
+                                <Card key={plan.id} className={styles.activeTherapyCard}>
+                                    <div className={styles.therapyHeader}>
+                                        <div className={styles.therapyHeaderContent}>
+                                            <div className={styles.therapyIcon}>
+                                                <Icons.Pill className={styles.iconMedium} />
                                             </div>
-                                            <div>
-                                                <h3 className="font-bold text-slate-800 leading-tight">{plan.medicine}</h3>
-                                                <p className="text-xs text-slate-500 mt-1">{plan.frequency}</p>
+                                            <div className={styles.therapyInfo}>
+                                                <h3 className={styles.therapyName}>{plan.medicine}</h3>
+                                                <p className={styles.therapyFrequency}>{plan.frequency}</p>
                                             </div>
                                         </div>
                                         <Badge variant={plan.stato === 'attiva' ? 'success' : 'default'}>{plan.stato}</Badge>
                                     </div>
 
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500">Aderenza</span>
-                                            <span className="font-bold text-slate-700">{plan.adherence}%</span>
+                                    <div className={styles.adherenceSection}>
+                                        <div className={styles.adherenceInfo}>
+                                            <span className={styles.textSlate400}>Aderenza</span>
+                                            <span className={styles.textSlate700Bold}>{plan.adherence}%</span>
                                         </div>
-                                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                            <div className={`h-full rounded-full ${plan.adherence > 80 ? 'bg-[#2dd4bf]' : 'bg-amber-400'}`} style={{ width: `${plan.adherence}%` }} />
+                                        <div className={styles.adherenceBarContainer}>
+                                            <div className={`${styles.adherenceBar} ${plan.adherence > 80 ? styles.adherenceHigh : styles.adherenceMedium}`} style={{ width: `${plan.adherence}%` }} />
                                         </div>
-                                        <div className="flex justify-between text-xs pt-1">
-                                            <span className="text-slate-400">Durata: <span className="text-slate-600 font-medium">{plan.duration}</span></span>
-                                            {plan.daysLeft && <span className="text-amber-600 font-bold">{plan.daysLeft} gg rimasti</span>}
+                                        <div className={styles.durationInfo}>
+                                            <span className={styles.textSlate400}>Durata: <span className={styles.textSlate600Medium}>{plan.duration}</span></span>
+                                            {plan.daysLeft && <span className={styles.daysLeft}>{plan.daysLeft} gg rimasti</span>}
                                         </div>
                                     </div>
 
                                     {/* Warnings Section */}
-                                    <div className="mt-3 space-y-2">
+                                    <div className={styles.warningsContainer}>
                                         {getTherapyWarnings(plan.id).map((warn, idx) => (
-                                            <div key={idx} className={`flex items-start gap-2 text-xs p-2 rounded-lg ${warn.type === 'destructive' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>
-                                                <warn.icon className="w-4 h-4 shrink-0" />
+                                            <div key={idx} className={`${styles.warningItem} ${warn.type === 'destructive' ? styles.warningDestructive : styles.warningWarning}`}>
+                                                <warn.icon className={styles.warningIcon} />
                                                 <span>{warn.text}</span>
                                             </div>
                                         ))}
                                     </div>
 
-                                    {/* Pulsanti Azione (Visibili on Hover su Desktop) */}
-                                    <div className="flex justify-end gap-1 mt-5 border-t border-slate-50">
-                                        <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'view', data: plan })} title="Dettagli"><Icons.Eye className="w-4 h-4" /></Button>
+                                    {/* Pulsanti Azione */}
+                                    <div className={styles.cardFooter}>
+                                        <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'view', data: plan })} title="Dettagli"><Icons.Eye className={styles.iconSmall} /></Button>
                                         <Button variant="ghost" size="icon" onClick={() => handleToggleStatus(plan.id)} title={plan.stato === 'attiva' ? "Sospendi" : "Attiva"}>
-                                            {plan.stato === 'attiva' ? <Icons.Pause className="w-4 h-4 text-amber-500" /> : <Icons.Play className="w-4 h-4 text-emerald-500" />}
+                                            {plan.stato === 'attiva' ? <Icons.Pause className={`${styles.iconSmall} ${styles.iconAmber}`} /> : <Icons.Play className={`${styles.iconSmall} ${styles.iconEmerald}`} />}
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'edit', data: plan })} title="Modifica"><Icons.Edit className="w-4 h-4" /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => setModalState({ type: 'edit', data: plan })} title="Modifica"><Icons.Edit className={styles.iconSmall} /></Button>
 
                                     </div>
                                 </Card>
@@ -648,7 +625,7 @@ export default function Terapie({ isAuthenticated: initialAuth = false }) {
                 therapyPlans={therapyPlans}
             />
 
-            <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">
+            <footer className={styles.footer}>
                 <p>© 2026 MediGuard. La tua salute, organizzata.</p>
             </footer>
         </div>

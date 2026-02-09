@@ -14,6 +14,7 @@ import DeleteTherapyModal from "@/components/modals/DeleteTherapyModal";
 import AddAllergyModal from "@/components/modals/AddAllergyModal";
 
 import { useTherapies } from "@/hooks/useTherapies";
+import styles from './AssistitoDetails.module.css';
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -35,30 +36,30 @@ const Icons = {
 
 // --- COMPONENTI UI LOCALI ---
 const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-xl border border-slate-200 shadow-sm ${className}`}>{children}</div>
+  <div className={`${styles.card} ${className}`}>{children}</div>
 );
 
 const Button = ({ children, onClick, variant = "primary", className = "" }) => {
   const variants = {
-    primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-md",
-    secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
-    ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+    primary: styles.btnPrimary,
+    secondary: styles.btnSecondary,
+    ghost: styles.btnGhost,
   };
   return (
-    <button onClick={onClick} className={`inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all h-11 px-6 ${variants[variant]} ${className}`}>
+    <button onClick={onClick} className={`${styles.button} ${variants[variant]} ${className}`}>
       {children}
     </button>
   );
 };
 
 const Badge = ({ children, variant = "default" }) => {
-  const styles = {
-    success: "bg-teal-50 text-[#14b8a6] border-teal-100",
-    warning: "bg-amber-50 text-amber-600 border-amber-100",
-    destructive: "bg-rose-50 text-rose-600 border-rose-100",
-    default: "bg-slate-100 text-slate-600 border-slate-200"
+  const badgeStyles = {
+    success: styles.badgeSuccess,
+    warning: styles.badgeWarning,
+    destructive: styles.badgeDestructive,
+    default: styles.badgeDefault
   };
-  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${styles[variant]}`}>{children}</span>;
+  return <span className={`${styles.badge} ${badgeStyles[variant]}`}>{children}</span>;
 };
 
 export default function AssistitoDetail() {
@@ -199,8 +200,8 @@ export default function AssistitoDetail() {
 
   if (isAuthChecking || data.loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
       </div>
     );
   }
@@ -225,7 +226,7 @@ export default function AssistitoDetail() {
             type: 'critical',
             title: 'Assunzione Mancata',
             message: `L'assunzione di ${ass.terapia?.farmaco?.farmaco?.denominazione} delle ${dataProgrammata.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})} è saltata.`,
-            icon: <Icons.AlertTriangle className="text-rose-500" />
+            icon: <Icons.AlertTriangle className={styles.textRose} />
           });
         } else if (differenzaMinuti > 15) { // Tra 15 min e 2 ore
           alerts.push({
@@ -233,7 +234,7 @@ export default function AssistitoDetail() {
             type: 'warning',
             title: 'Ritardo Assunzione',
             message: `${info.nome} è in ritardo con ${ass.terapia?.farmaco?.farmaco?.denominazione} (prevista per le ${dataProgrammata.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})}).`,
-            icon: <Icons.Clock className="text-amber-500" />
+            icon: <Icons.Clock className={styles.textAmber} />
           });
         }
       }
@@ -248,7 +249,7 @@ export default function AssistitoDetail() {
           type: 'critical',
           title: item.quantita_rimanente === 0 ? 'Scorta Esaurita' : 'Scorta in Esaurimento',
           message: item.quantita_rimanente === 0 ? `Il farmaco ${item.farmaco.denominazione} ${item.farmaco.dosaggio} è terminato.` : `Rimangono solo ${item.quantita_rimanente} ${item.farmaco.unita_misura} di ${item.farmaco.denominazione} ${item.farmaco.dosaggio}`,
-          icon: <Icons.Package className="text-rose-500" />
+          icon: <Icons.Package className={styles.textRose} />
         });
       }
 
@@ -265,7 +266,7 @@ export default function AssistitoDetail() {
             type: 'critical',
             title: 'Farmaco Scaduto',
             message: `Il farmaco ${item.farmaco.denominazione} ${item.farmaco.dosaggio} è scaduto il ${dataScadenza.toLocaleDateString()}.`,
-            icon: <Icons.AlertTriangle className="text-rose-600" />
+            icon: <Icons.AlertTriangle className={styles.textRose} />
           });
         } else if (diffGiorni <= 7) {
           // In scadenza nei prossimi 7 giorni
@@ -274,7 +275,7 @@ export default function AssistitoDetail() {
             type: 'warning',
             title: 'Farmaco in Scadenza',
             message: `Il farmaco ${item.farmaco.denominazione} scade tra ${Math.ceil(diffGiorni)} giorni.`,
-            icon: <Icons.Clock className="text-amber-500" />
+            icon: <Icons.Clock className={styles.textAmber} />
           });
         }
       }
@@ -286,7 +287,7 @@ export default function AssistitoDetail() {
   const activeAlerts = generateAlerts();
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className={styles.pageContainer}>
       
 
       {!isUserAuthenticated && (
@@ -297,48 +298,48 @@ export default function AssistitoDetail() {
         />
       )}
 
-      <main className="pt-10 pb-16">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <Link href="/Pages/Caregiver" className="inline-flex items-center text-sm font-bold text-slate-500 hover:text-[#14b8a6] mb-6 transition-colors">
-            <Icons.ArrowLeft className="w-4 h-4 mr-2" /> Torna alla Dashboard Caregiver
+      <main className={styles.main}>
+        <div className={styles.container}>
+          <Link href="/Pages/Caregiver" className={styles.backLink}>
+            <Icons.ArrowLeft className={styles.backLinkIcon} /> Torna alla Dashboard Caregiver
           </Link>
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+          <div className={styles.header}>
             <div>
-              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">{info?.nome} {info?.cognome}</h1>
-              <p className="text-slate-500">Assistito • Ultima attività: {stats.lastActivity || "N/A"}</p>
+              <h1 className={styles.title}>{info?.nome} {info?.cognome}</h1>
+              <p className={styles.subtitle}>Assistito • Ultima attività: {stats.lastActivity || "N/A"}</p>
             </div>
-            <div className="flex gap-3">
-              <Button onClick={() => setModalState({ type: "add", data: null })} variant="primary"><Icons.Plus className="w-5 h-5 mr-2" /> Aggiungi Farmaco</Button>
+            <div className={styles.headerActions}>
+              <Button onClick={() => setModalState({ type: "add", data: null })} variant="primary"><Icons.Plus className={`${styles.iconSmall} ${styles.mr2}`} /> Aggiungi Farmaco</Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatCard icon={<Icons.Pill className="text-[#14b8a6]" />} bg="bg-teal-50" value={therapyPlans.length} label="Terapie Totali" />
-            <StatCard icon={<Icons.Clock className="text-blue-500" />} bg="bg-blue-50" value={therapyPlans.filter(t => t.stato === 'attiva').length} label="Terapie Attive" />
-            <StatCard icon={<Icons.CheckCircle className="text-emerald-500" />} bg="bg-emerald-50" value={`${assunzioniOggi.filter(a => a.esito).length}/${assunzioniOggi.length}`} label="Assunzioni Oggi" />
-            <StatCard icon={<Icons.AlertTriangle className="text-rose-500" />} bg="bg-rose-50" value={activeAlerts.length} label="Alert Attivi" />
+          <div className={styles.statsGrid}>
+            <StatCard icon={<Icons.Pill className={styles.textTeal} />} bg={styles.bgTeal50} value={therapyPlans.length} label="Terapie Totali" />
+            <StatCard icon={<Icons.Clock className={styles.textBlue} />} bg={styles.bgBlue50} value={therapyPlans.filter(t => t.stato === 'attiva').length} label="Terapie Attive" />
+            <StatCard icon={<Icons.CheckCircle className={styles.textEmerald} />} bg={styles.bgEmerald50} value={`${assunzioniOggi.filter(a => a.esito).length}/${assunzioniOggi.length}`} label="Assunzioni Oggi" />
+            <StatCard icon={<Icons.AlertTriangle className={styles.textRose} />} bg={styles.bgRose50} value={activeAlerts.length} label="Alert Attivi" />
           </div>
 
-          <div className="flex gap-2 mb-8 bg-slate-200/50 p-1.5 rounded-xl w-fit">
+          <div className={styles.tabsContainer}>
             {["panoramica", "armadietto", "terapie", "Profilo e Allergie"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === tab ? "bg-white text-[#14b8a6] shadow-md" : "text-slate-500 hover:text-slate-700 hover:bg-white/50"}`}
+                className={`${styles.tabButton} ${activeTab === tab ? styles.tabActive : styles.tabInactive}`}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
 
-          <div className="space-y-6">
+          <div className={styles.spaceY6}>
             {activeTab === "panoramica" && (
-              <div className="grid lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
+              <div className={styles.panoramicaGrid}>
+                <div className={styles.mainColumn}>
                   <Card className="p-6">
-                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Icons.Clock className="w-5 h-5 text-slate-400" /> Programma di Oggi</h3>
-                    <div className="space-y-4">
+                    <h3 className={styles.sectionTitle}><Icons.Clock className={styles.sectionTitleIcon} /> Programma di Oggi</h3>
+                    <div className={styles.spaceY4}>
                       {assunzioniOggi.length > 0 ? (
                         assunzioniOggi.map(assunzione => (
                           <DailyIntakeRow
@@ -350,15 +351,15 @@ export default function AssistitoDetail() {
                           />
                         ))
                       ) : (
-                        <p className="text-slate-500 text-center py-4">Nessuna assunzione prevista per oggi.</p>
+                        <p className={styles.emptyState}>Nessuna assunzione prevista per oggi.</p>
                       )}
                     </div>
                   </Card>
                 </div>
                 {/* Sezione Alert nella colonna di destra della Panoramica */}
-                <div className="space-y-6">
-                  <h3 className="font-bold text-slate-800 flex items-center gap-2 px-2">
-                    <Icons.AlertTriangle className="w-5 h-5 text-slate-400" />
+                <div className={styles.sideColumn}>
+                  <h3 className={styles.sectionTitle}>
+                    <Icons.AlertTriangle className={styles.sectionTitleIcon} />
                     Alert Attivi ({activeAlerts.length})
                   </h3>
 
@@ -366,23 +367,23 @@ export default function AssistitoDetail() {
                     activeAlerts.map((alert) => (
                       <Card
                         key={alert.id}
-                        className={`p-4 border-l-4 ${alert.type === 'critical' ? 'border-l-rose-500 bg-rose-50/30' : 'border-l-amber-500 bg-amber-50/30'}`}
+                        className={`p-4 ${alert.type === 'critical' ? styles.alertCritical : styles.alertWarning}`}
                       >
-                        <div className="flex gap-3">
-                          <div className="shrink-0 mt-0.5">{alert.icon}</div>
+                        <div className={styles.alertCardContent}>
+                          <div className={`${styles.shrink0} ${styles.mt05}`}>{alert.icon}</div>
                           <div>
-                            <p className={`font-bold text-sm ${alert.type === 'critical' ? 'text-rose-700' : 'text-amber-700'}`}>
+                            <p className={`${styles.alertTitle} ${alert.type === 'critical' ? styles.textCritical : styles.textWarning}`}>
                               {alert.title}
                             </p>
-                            <p className="text-xs text-slate-600 leading-relaxed mt-1">{alert.message}</p>
+                            <p className={styles.alertText}>{alert.message}</p>
                           </div>
                         </div>
                       </Card>
                     ))
                   ) : (
-                    <Card className="p-6 text-center border-dashed">
-                      <Icons.CheckCircle className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-                      <p className="text-sm text-slate-500 font-medium">Nessun alert critico rilevato</p>
+                    <Card className={styles.noAlerts}>
+                      <Icons.CheckCircle className={styles.noAlertsIcon} />
+                      <p className={styles.noAlertsText}>Nessun alert critico rilevato</p>
                     </Card>
                   )}
                 </div>
@@ -390,20 +391,20 @@ export default function AssistitoDetail() {
             )}
 
             {activeTab === "armadietto" && (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className={styles.armadiettoGrid}>
                 {armadietto.map(item => (
                   <Card key={item.id_farmaco_armadietto} className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-bold text-slate-800">{item.farmaco.denominazione} {item.farmaco.dosaggio}</h4>
+                    <div className={styles.cardHeader}>
+                      <h4 className={styles.cardTitle}>{item.farmaco.denominazione} {item.farmaco.dosaggio}</h4>
                       <Badge variant={((item.quantita_rimanente / (item.farmaco.quantita_confezione || 100)) * 100) < 50 ? "destructive" : "default"}>
                         {item.quantita_rimanente} rimasti
                       </Badge>
                     </div>
-                    <p className="text-xs text-slate-500 mb-4">{item.note || "Nessuna nota"}</p>
-                    <div className="flex justify-end gap-1 mt-5 border-t border-slate-50">
-                      <Button variant="ghost" className="p-2" onClick={() => setModalState({ type: 'view', data: item })} title="Dettagli"><Icons.Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" className="p-2" onClick={() => setModalState({ type: 'edit', data: item })} title="Modifica"><Icons.Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50" onClick={() => setModalState({ type: 'delete', data: item })}><Icons.Trash2 className="w-4 h-4" /></Button>
+                    <p className={styles.cardNote}>{item.note || "Nessuna nota"}</p>
+                    <div className={styles.cardActions}>
+                      <Button variant="ghost" className={styles.btnIcon} onClick={() => setModalState({ type: 'view', data: item })} title="Dettagli"><Icons.Eye className={styles.iconSmall} /></Button>
+                      <Button variant="ghost" className={styles.btnIcon} onClick={() => setModalState({ type: 'edit', data: item })} title="Modifica"><Icons.Edit className={styles.iconSmall} /></Button>
+                      <Button variant="ghost" className={`${styles.btnIcon} ${styles.btnGhostDanger}`} onClick={() => setModalState({ type: 'delete', data: item })}><Icons.Trash2 className={styles.iconSmall} /></Button>
                     </div>
                   </Card>
                 ))}
@@ -411,99 +412,101 @@ export default function AssistitoDetail() {
             )}
 
             {activeTab === "terapie" && (
-              <div className="space-y-4">
+              <div className={styles.terapieContainer}>
                 {/* Header Tab Terapie */}
-                <div className="flex justify-between items-center mb-2 px-1">
-                  <h3 className="font-bold text-slate-800">Piani Terapeutici Attivi</h3>
+                <div className={styles.terapieHeader}>
+                  <h3 className={styles.cardTitle}>Piani Terapeutici Attivi</h3>
                   <Button
                     onClick={() => setModalState({ type: 'add_th', data: null })}
                     variant="secondary"
                     className="h-9 px-3"
                   >
-                    <Icons.Plus className="w-4 h-4 mr-2" /> Nuova Terapia
+                    <Icons.Plus className={`${styles.iconSmall} ${styles.mr2}`} /> Nuova Terapia
                   </Button>
                 </div>
 
                 {therapyPlans.length > 0 ? therapyPlans.map(terapia => (
-                  <Card key={terapia.id} className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 w-full">
-                      <div className={`p-3 rounded-lg ${terapia.stato ? 'bg-teal-50' : 'bg-slate-100'}`}>
-                        <Icons.Pill className={terapia.stato ? 'text-[#14b8a6]' : 'text-slate-400'} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-bold text-slate-800">
-                            {terapia.medicine}
-                          </h4>
-                          <Badge variant={terapia.stato ? "success" : "default"}>
-                            {terapia.stato}
-                          </Badge>
+                  <Card key={terapia.id} className={`${styles.statCard} p-5`}>
+                     <div className={styles.terapieCardContent}>
+                      <div className={styles.terapieInfo}>
+                        <div className={`${styles.terapieIconBox} ${terapia.stato ? styles.terapieIconBoxActive : styles.terapieIconBoxInactive}`}>
+                          <Icons.Pill className={terapia.stato ? styles.textTeal : styles.textSlate400} />
                         </div>
-                        <p className="text-sm text-slate-500">
-                          {terapia.dosaggio} • Orari: {terapia.orari?.join(', ') || 'Al bisogno'}
-                        </p>
+                        <div className={styles.terapieDetails}>
+                          <div className={styles.terapieTitleRow}>
+                            <h4 className={styles.cardTitle}>
+                              {terapia.medicine}
+                            </h4>
+                            <Badge variant={terapia.stato ? "success" : "default"}>
+                              {terapia.stato}
+                            </Badge>
+                          </div>
+                          <p className={styles.terapieSubtext}>
+                            {terapia.dosaggio} • Orari: {terapia.orari?.join(', ') || 'Al bisogno'}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Azioni Terapia */}
-                    <div className="flex justify-end gap-1 mt-5 border-t border-slate-50">
-                      <Button variant="ghost" className="p-2" onClick={() => setModalState({ type: 'view_th', data: terapia })} title="Dettagli"><Icons.Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" className="p-2" onClick={() => setModalState({ type: 'edit_th', data: terapia })} title="Modifica"><Icons.Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50" onClick={() => setModalState({ type: 'delete_th', data: terapia })}><Icons.Trash2 className="w-4 h-4" /></Button>
+                      {/* Azioni Terapia */}
+                      <div className={styles.cardActions}>
+                        <Button variant="ghost" className={styles.btnIcon} onClick={() => setModalState({ type: 'view_th', data: terapia })} title="Dettagli"><Icons.Eye className={styles.iconSmall} /></Button>
+                        <Button variant="ghost" className={styles.btnIcon} onClick={() => setModalState({ type: 'edit_th', data: terapia })} title="Modifica"><Icons.Edit className={styles.iconSmall} /></Button>
+                        <Button variant="ghost" className={`${styles.btnIcon} ${styles.btnGhostDanger}`} onClick={() => setModalState({ type: 'delete_th', data: terapia })}><Icons.Trash2 className={styles.iconSmall} /></Button>
+                      </div>
                     </div>
                   </Card>
                 )) : (
-                  <Card className="p-12 text-center border-dashed">
-                    <Icons.Pill className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                    <p className="text-slate-500">Nessuna terapia configurata per questo assistito.</p>
+                  <Card className={styles.emptyStateCard}>
+                    <Icons.Pill className={`${styles.iconXLarge} ${styles.textSlate200} ${styles.mrAuto} ${styles.mlAuto} ${styles.mb4}`} style={{margin: '0 auto 1rem auto'}} />
+                    <p className={styles.emptyState}>Nessuna terapia configurata per questo assistito.</p>
                   </Card>
                 )}
               </div>
             )}
 
             {activeTab === "Profilo e Allergie" && (
-              <div className="grid lg:grid-cols-2 gap-8">
-                 <Card className="p-6 h-fit">
-                    <h3 className="font-bold text-lg mb-6 flex items-center gap-2 text-slate-800">
-                       <Icons.User className="w-5 h-5 text-[#14b8a6]" /> Dati Personali
+              <div className={styles.profiloGrid}>
+                 <Card className={`${styles.profiloCard} p-6`}>
+                    <h3 className={styles.sectionTitle}>
+                       <Icons.User className={`${styles.iconMedium} ${styles.textTeal}`} /> Dati Personali
                     </h3>
-                    <div className="space-y-4">
-                       <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nome Completo</p><p className="font-medium text-slate-800">{info?.nome} {info?.cognome}</p></div>
-                       <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</p><p className="font-medium text-slate-800">{info?.email}</p></div>
-                       <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Data di Nascita</p><p className="font-medium text-slate-800">{info?.data_nascita ? new Date(info.data_nascita).toLocaleDateString() : 'N/D'}</p></div>
+                    <div className={styles.spaceY4}>
+                       <div><p className={styles.label}>Nome Completo</p><p className={styles.value}>{info?.nome} {info?.cognome}</p></div>
+                       <div><p className={styles.label}>Email</p><p className={styles.value}>{info?.email}</p></div>
+                       <div><p className={styles.label}>Data di Nascita</p><p className={styles.value}>{info?.data_nascita ? new Date(info.data_nascita).toLocaleDateString() : 'N/D'}</p></div>
                     </div>
                  </Card>
 
                  <Card className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                       <h3 className="font-bold text-lg flex items-center gap-2 text-slate-800">
-                          <Icons.Shield className="w-5 h-5 text-rose-500" /> Allergie e Intolleranze
+                    <div className={styles.terapieHeader} style={{padding: 0}}>
+                       <h3 className={styles.sectionTitle}>
+                          <Icons.Shield className={`${styles.iconMedium} ${styles.textRose}`} /> Allergie e Intolleranze
                        </h3>
                        <Button onClick={() => setModalState({ type: 'add_allergy' })} variant="secondary" className="h-8 px-3 text-xs">
                           <Icons.Plus className="w-3 h-3 mr-1" /> Aggiungi
                        </Button>
                     </div>
                     
-                    <div className="space-y-3">
+                    <div className={styles.allergyList}>
                        {allergies.length > 0 ? allergies.map(a => (
-                          <div key={a.id_allergia} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <div key={a.id_allergia} className={styles.allergyItem}>
                              <div>
-                                <p className="font-bold text-slate-700">{a.allergene?.sostanza_allergene}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                   <span className="text-xs text-slate-500">Gravità:</span>
-                                   <div className="flex gap-0.5">
+                                <p className={styles.cardTitle}>{a.allergene?.sostanza_allergene}</p>
+                                <div className={`${styles.flex} ${styles.gap3} ${styles.mt05}`}>
+                                   <span className={styles.terapieSubtext} style={{fontSize: '0.75rem'}}>Gravità:</span>
+                                   <div className={styles.severityDots}>
                                       {[...Array(5)].map((_, i) => (
-                                         <div key={i} className={`w-2 h-2 rounded-full ${i < a.gravita_reazione ? 'bg-rose-500' : 'bg-slate-200'}`} />
+                                         <div key={i} className={`${styles.severityDot} ${i < a.gravita_reazione ? styles.severityDotActive : styles.severityDotInactive}`} />
                                       ))}
                                    </div>
                                 </div>
                              </div>
-                             <button onClick={() => handleDeleteAllergy(a.id_allergia)} className="p-2 text-slate-400 hover:text-rose-500 transition-colors">
-                                <Icons.Trash2 className="w-4 h-4" />
+                             <button onClick={() => handleDeleteAllergy(a.id_allergia)} className={styles.btnGhostDanger}>
+                                <Icons.Trash2 className={styles.iconSmall} />
                              </button>
                           </div>
                        )) : (
-                          <p className="text-slate-500 text-sm text-center py-4 italic">Nessuna allergia segnalata.</p>
+                          <p className={styles.emptyState}>Nessuna allergia segnalata.</p>
                        )}
                     </div>
                  </Card>
@@ -549,7 +552,7 @@ export default function AssistitoDetail() {
         availableAllergens={availableAllergens}
       />
 
-      <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">
+      <footer className={styles.footer}>
         <p>© 2026 MediGuard. La tua salute, organizzata.</p>
       </footer>
     </div>
@@ -559,13 +562,13 @@ export default function AssistitoDetail() {
 // --- HELPER COMPONENTS ---
 function StatCard({ icon, bg, value, label }) {
   return (
-    <Card className="p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-      <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
-        {require('react').cloneElement(icon, { className: "w-6 h-6" })}
+    <Card className={styles.statCard}>
+      <div className={`${styles.statIconBox} ${bg}`}>
+        {require('react').cloneElement(icon, { className: styles.iconMedium })}
       </div>
       <div>
-        <p className="text-2xl font-bold text-slate-800 leading-none mb-1">{value}</p>
-        <p className="text-sm text-slate-500 font-medium">{label}</p>
+        <p className={styles.statValue}>{value}</p>
+        <p className={styles.statLabel}>{label}</p>
       </div>
     </Card>
   );
@@ -573,14 +576,14 @@ function StatCard({ icon, bg, value, label }) {
 
 function DailyIntakeRow({ name, dose, time, status }) {
   return (
-    <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-10 flex items-center justify-center font-bold text-slate-700">
+    <div className={styles.dailyRow}>
+      <div className={styles.dailyInfo}>
+        <div className={styles.dailyTime}>
           {time}
         </div>
-        <div>
-          <p className="font-bold text-slate-800 leading-tight">{name}</p>
-          <p className="text-xs text-slate-500">{dose}</p>
+        <div className={styles.dailyDetails}>
+          <p className={styles.dailyName}>{name}</p>
+          <p className={styles.dailyDose}>{dose}</p>
         </div>
       </div>
       <Badge variant={status === 'confermata' ? 'success' : 'warning'}>

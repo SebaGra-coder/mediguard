@@ -1,0 +1,313 @@
+.pageContainer {
+  min-height: 100vh;
+  background-color: #F8FAFC;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #0f172a; /* text-slate-900 */
+}
+
+.toastPosition {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+/* Background Decorations */
+.bgDecorationContainer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.blob1 {
+  position: absolute;
+  top: -10rem;
+  right: -10rem;
+  width: 24rem; /* 96 */
+  height: 24rem;
+  background-color: rgba(20, 184, 166, 0.1); /* #14b8a6 / 10% */
+  border-radius: 9999px;
+  filter: blur(64px); /* blur-3xl ~ 64px */
+}
+
+.blob2 {
+  position: absolute;
+  bottom: 5rem;
+  left: -10rem;
+  width: 20rem; /* 80 */
+  height: 20rem;
+  background-color: rgba(20, 184, 166, 0.1);
+  border-radius: 9999px;
+  filter: blur(64px);
+}
+
+.contentWrapper {
+  width: 100%;
+  max-width: 28rem; /* max-w-md */
+  position: relative;
+  z-index: 10;
+}
+
+/* Back Link */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b; /* text-slate-500 */
+  margin-bottom: 2rem;
+  transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  font-size: 0.875rem; /* text-sm */
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: #1e293b; /* text-slate-800 */
+}
+
+/* Card */
+.card {
+  background-color: white;
+  border-radius: 1rem; /* rounded-2xl */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-xl */
+  border: 1px solid #f1f5f9; /* border-slate-100 */
+  overflow: hidden;
+  padding: 0;
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Card Header */
+.cardHeader {
+  text-align: center;
+  padding-top: 2rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.logoContainer {
+  margin-left: auto;
+  margin-right: auto;
+  width: 4rem; /* 16 */
+  height: 4rem;
+  border-radius: 1rem; /* rounded-2xl */
+  background-color: #14b8a6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 15px -3px rgba(20, 184, 166, 0.3); /* shadow-teal-500/30 */
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.title {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: #0f172a;
+}
+
+.subtitle {
+  color: #64748b; /* text-slate-500 */
+  font-size: 0.875rem; /* text-sm */
+}
+
+/* Card Content */
+.cardContent {
+  padding: 1.5rem;
+  padding-top: 1.5rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* space-y-4 */
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* space-y-2 */
+}
+
+.label {
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500;
+  line-height: 1;
+  color: #0f172a;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 0.75rem; /* 3 */
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8; /* text-slate-400 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.input {
+  display: flex;
+  height: 2.5rem; /* h-10 */
+  width: 100%;
+  border-radius: 0.375rem; /* rounded-md */
+  border: 1px solid #e2e8f0; /* border-slate-200 */
+  background-color: white;
+  padding: 0.5rem 0.75rem;
+  padding-left: 2.5rem; /* pl-10 */
+  font-size: 0.875rem; /* text-sm */
+  color: #0f172a;
+}
+
+.input::placeholder {
+  color: #94a3b8; /* text-slate-400 */
+}
+
+.input:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 2px #14b8a6, 0 0 0 4px white; /* ring-2 focusRing ring-offset-2 */
+}
+
+.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.passwordInput {
+  padding-right: 2.5rem; /* pr-10 */
+}
+
+.togglePasswordButton {
+  position: absolute;
+  right: 0.75rem; /* 3 */
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8; /* text-slate-400 */
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 150ms;
+}
+
+.togglePasswordButton:hover {
+  color: #475569; /* text-slate-600 */
+}
+
+/* Submit Button */
+.submitButton {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem; /* h-11 */
+  border-radius: 0.375rem; /* rounded-md */
+  padding-left: 2rem;
+  padding-right: 2rem;
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 700;
+  color: white;
+  transition: background-color 150ms;
+  background-color: #14b8a6; /* bgPrimary */
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+}
+
+.submitButton:hover {
+  background-color: #0d9488; /* bgPrimaryHover */
+}
+
+.submitButton:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.submitButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #14b8a6; /* Approx ring */
+}
+
+/* Spinner */
+.spinnerWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.spinner {
+  height: 1rem;
+  width: 1rem;
+  border-radius: 50%;
+  border: 2px solid white;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Footer */
+.footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.875rem; /* text-sm */
+}
+
+.footerText {
+  color: #64748b; /* text-slate-500 */
+}
+
+.switchButton {
+  font-weight: 700;
+  color: #14b8a6; /* primaryColor */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.25rem;
+}
+
+.switchButton:hover {
+  text-decoration: underline;
+}
+
+/* Suspense Fallback */
+.loadingScreen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.largeSpinner {
+  height: 3rem; /* 12 */
+  width: 3rem;
+  border-radius: 50%;
+  border-top: 2px solid #14b8a6;
+  border-bottom: 2px solid #14b8a6;
+  border-left: 2px solid transparent;
+  border-right: 2px solid transparent;
+  animation: spin 1s linear infinite;
+}

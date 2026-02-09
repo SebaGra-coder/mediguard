@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useToast } from "@/hooks/useToast";
+import styles from "./ModalStyles.module.css";
 
 // --- ICONE SVG ---
 const Icons = {
@@ -13,12 +14,8 @@ const Icons = {
 
 // --- COMPONENTS ---
 const Button = ({ children, onClick, variant = "primary", className = "", disabled }) => {
-    const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed h-11 px-5";
-    const variants = {
-        primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-md hover:shadow-lg",
-        secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
-    };
-    return <button onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
+    const variantClass = variant === "primary" ? styles.btnPrimary : styles.btnSecondary;
+    return <button onClick={onClick} disabled={disabled} className={`${styles.btn} ${variantClass} ${className}`}>{children}</button>;
 };
 
 const Modal = ({ isOpen, onClose, title, children, footer }) => {
@@ -34,17 +31,17 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white text-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                        <div className="bg-rose-50 p-1.5 rounded-lg text-rose-500"><Icons.Shield className="w-5 h-5"/></div>
+        <div className={styles.overlay}>
+            <div className={styles.container}>
+                <div className={styles.header}>
+                    <h3 className={styles.title}>
+                        <div className={`${styles.iconWrapper} ${styles.iconWrapperRose}`}><Icons.Shield className="w-5 h-5"/></div>
                         {title}
                     </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-full transition-colors"><Icons.X className="w-5 h-5" /></button>
+                    <button onClick={onClose} className={styles.closeBtn}><Icons.X className="w-5 h-5" /></button>
                 </div>
-                <div className="p-6 overflow-y-auto">{children}</div>
-                {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">{footer}</div>}
+                <div className={styles.content}>{children}</div>
+                {footer && <div className={styles.footer}>{footer}</div>}
             </div>
         </div>,
         document.body
@@ -117,13 +114,13 @@ export default function AddAllergyModal({ isOpen, onClose, onSuccess, userId, av
             }
         >
             <ToastComponent />
-            <div className="space-y-6">
+            <div className={styles.spaceY6}>
                 <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Cerca Allergene</label>
-                    <div className="relative">
+                    <label className={styles.label}>Cerca Allergene</label>
+                    <div className={styles.relative}>
                         <input 
                             type="text" 
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pl-9 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#14b8a6]" 
+                            className={`${styles.input} ${styles.inputWithIcon}`} 
                             placeholder="Cerca sostanza (es. Latte, Polline...)" 
                             value={selectedAllergen ? selectedAllergen.sostanza_allergene : searchTerm} 
                             onChange={e => {
@@ -131,10 +128,10 @@ export default function AddAllergyModal({ isOpen, onClose, onSuccess, userId, av
                                 setSelectedAllergen(null);
                             }}
                         />
-                        <Icons.Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                        <Icons.Search className={styles.searchIcon} />
                         
                         {searchTerm && !selectedAllergen && filteredAllergens.length > 0 && (
-                            <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-slate-100 max-h-48 overflow-y-auto">
+                            <div className={styles.searchResults}>
                                 {filteredAllergens.map(allergene => (
                                     <button 
                                         type="button"
@@ -143,7 +140,7 @@ export default function AddAllergyModal({ isOpen, onClose, onSuccess, userId, av
                                             setSelectedAllergen(allergene);
                                             setSearchTerm("");
                                         }}
-                                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-800 transition-colors border-b border-slate-50 last:border-0"
+                                        className={styles.searchResultItem}
                                     >
                                         {allergene.sostanza_allergene}
                                     </button>
@@ -151,7 +148,7 @@ export default function AddAllergyModal({ isOpen, onClose, onSuccess, userId, av
                             </div>
                         )}
                         {searchTerm && !selectedAllergen && filteredAllergens.length === 0 && (
-                             <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-slate-100 p-3 text-sm text-slate-500 text-center">
+                             <div className={styles.searchResults} style={{ padding: '0.75rem', textAlign: 'center', color: '#64748b' }}>
                                 Nessun risultato trovato.
                             </div>
                         )}
@@ -159,9 +156,9 @@ export default function AddAllergyModal({ isOpen, onClose, onSuccess, userId, av
                 </div>
 
                 <div>
-                    <div className="flex justify-between items-center mb-2">
-                         <label className="block text-sm font-semibold text-slate-700">Gravità della reazione</label>
-                         <span className="text-sm font-bold text-rose-500">Livello {severity}</span>
+                    <div className={styles.flexBetween} style={{ marginBottom: '0.5rem' }}>
+                         <label className={styles.label} style={{ marginBottom: 0 }}>Gravità della reazione</label>
+                         <span className={styles.fontBold} style={{ color: '#f43f5e' }}>Livello {severity}</span>
                     </div>
                     
                     <input 
@@ -171,9 +168,10 @@ export default function AddAllergyModal({ isOpen, onClose, onSuccess, userId, av
                         step="1" 
                         value={severity} 
                         onChange={(e) => setSeverity(parseInt(e.target.value))}
-                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                        className={styles.wFull}
+                        style={{ height: '0.5rem', backgroundColor: '#e2e8f0', borderRadius: '0.5rem', appearance: 'none', cursor: 'pointer', accentColor: '#f43f5e' }}
                     />
-                    <div className="flex justify-between text-xs text-slate-400 mt-1">
+                    <div className={styles.flexBetween} style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>
                         <span>Lieve</span>
                         <span>Moderata</span>
                         <span>Grave</span>

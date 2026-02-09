@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/useToast";
 import Link from "next/link";
+import styles from "./Autenticazione.module.css";
 
 function AuthContent({ onLogin }) {
   const searchParams = useSearchParams();
@@ -100,12 +101,6 @@ function AuthContent({ onLogin }) {
     }));
   };
 
-  // -- COLORS --
-  const primaryColor = "text-[#14b8a6]";
-  const bgPrimary = "bg-[#14b8a6]";
-  const bgPrimaryHover = "hover:bg-[#0d9488]";
-  const focusRing = "focus:ring-[#14b8a6]";
-
   // -- ICONS --
   const Icons = {
     ArrowLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
@@ -119,38 +114,38 @@ function AuthContent({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 relative overflow-hidden font-sans text-slate-900">
-      <ToastComponent className="absolute top-4 right-4" />
+    <div className={styles.pageContainer}>
+      <ToastComponent className={styles.toastPosition} />
       
       {/* Background decorations */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-[#14b8a6]/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 -left-40 w-80 h-80 bg-[#14b8a6]/10 rounded-full blur-3xl" />
+      <div className={styles.bgDecorationContainer}>
+        <div className={styles.blob1} />
+        <div className={styles.blob2} />
       </div>
 
-      <div className="w-full max-w-md relative z-10">
+      <div className={styles.contentWrapper}>
         {/* Back to home */}
         <Link 
           href="Ricerca"
-          className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-8 transition-colors font-medium text-sm"
+          className={styles.backLink}
         >
           <Icons.ArrowLeft />
           Torna alla home
         </Link>
 
         {/* Card Container */}
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden p-0 animate-scale-in">
+        <div className={styles.card}>
           
           {/* Card Header */}
-          <div className="text-center pt-8 px-6 pb-2">
+          <div className={styles.cardHeader}>
             {/* Logo */}
-            <div className={`mx-auto w-16 h-16 rounded-2xl ${bgPrimary} flex items-center justify-center shadow-lg shadow-teal-500/30 mb-4 text-white`}>
+            <div className={styles.logoContainer}>
               <Icons.Pill />
             </div>
-            <h2 className="text-2xl font-bold mb-1">
+            <h2 className={styles.title}>
               {isLogin ? "Bentornato" : "Crea il tuo account"}
             </h2>
-            <p className="text-slate-500 text-sm">
+            <p className={styles.subtitle}>
               {isLogin 
                 ? "Accedi per gestire i tuoi farmaci" 
                 : "Inizia a gestire i tuoi farmaci in modo intelligente"
@@ -159,17 +154,17 @@ function AuthContent({ onLogin }) {
           </div>
 
           {/* Card Content */}
-          <div className="p-6 pt-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <div className={styles.cardContent}>
+            <form onSubmit={handleSubmit} className={styles.form}>
               
               {!isLogin && (
                 <>
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <div className={styles.formGroup}>
+                    <label htmlFor="name" className={styles.label}>
                       Nome
                     </label>
-                    <div className="relative">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <div className={styles.inputWrapper}>
+                      <div className={styles.inputIcon}>
                         <Icons.User />
                       </div>
                       <input
@@ -177,19 +172,19 @@ function AuthContent({ onLogin }) {
                         name="name"
                         type="text"
                         placeholder="Mario"
-                        className={`flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 pl-10 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 ${focusRing} focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+                        className={styles.input}
                         value={formData.name}
                         onChange={handleChange}
                         required={!isLogin}
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="surname" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <div className={styles.formGroup}>
+                    <label htmlFor="surname" className={styles.label}>
                       Cognome
                     </label>
-                    <div className="relative">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <div className={styles.inputWrapper}>
+                      <div className={styles.inputIcon}>
                         <Icons.User />
                       </div>
                       <input
@@ -197,26 +192,26 @@ function AuthContent({ onLogin }) {
                         name="surname"
                         type="text"
                         placeholder="Rossi"
-                        className={`flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 pl-10 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 ${focusRing} focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+                        className={styles.input}
                         value={formData.surname}
                         onChange={handleChange}
                         required={!isLogin}
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="dob" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <div className={styles.formGroup}>
+                    <label htmlFor="dob" className={styles.label}>
                       Data di Nascita
                     </label>
-                    <div className="relative">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <div className={styles.inputWrapper}>
+                      <div className={styles.inputIcon}>
                         <Icons.Calendar />
                       </div>
                       <input
                         id="dob"
                         name="dob"
                         type="date"
-                        className={`flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 pl-10 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 ${focusRing} focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+                        className={styles.input}
                         value={formData.dob}
                         onChange={handleChange}
                         required={!isLogin}
@@ -226,12 +221,12 @@ function AuthContent({ onLogin }) {
                 </>
               )}
 
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <div className={styles.formGroup}>
+                <label htmlFor="email" className={styles.label}>
                   Email
                 </label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <div className={styles.inputWrapper}>
+                  <div className={styles.inputIcon}>
                     <Icons.Mail />
                   </div>
                   <input
@@ -239,7 +234,7 @@ function AuthContent({ onLogin }) {
                     name="email"
                     type="email"
                     placeholder="mario@esempio.it"
-                    className={`flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 pl-10 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 ${focusRing} focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+                    className={styles.input}
                     value={formData.email}
                     onChange={handleChange}
                     required
@@ -247,12 +242,12 @@ function AuthContent({ onLogin }) {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <div className={styles.formGroup}>
+                <label htmlFor="password" className={styles.label}>
                   Password
                 </label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <div className={styles.inputWrapper}>
+                  <div className={styles.inputIcon}>
                     <Icons.Lock />
                   </div>
                   <input
@@ -260,7 +255,7 @@ function AuthContent({ onLogin }) {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className={`flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 pl-10 pr-10 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 ${focusRing} focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+                    className={`${styles.input} ${styles.passwordInput}`}
                     value={formData.password}
                     onChange={handleChange}
                     required
@@ -269,7 +264,7 @@ function AuthContent({ onLogin }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    className={styles.togglePasswordButton}
                   >
                     {showPassword ? <Icons.EyeOff /> : <Icons.Eye />}
                   </button>
@@ -277,13 +272,13 @@ function AuthContent({ onLogin }) {
               </div>
 
               {!isLogin && (
-                <div className="space-y-2">
+                <div className={styles.formGroup}>
                   <label htmlFor="confirmPassword"
-                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                   className={styles.label}>
                     Conferma password
                   </label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <div className={styles.inputWrapper}>
+                    <div className={styles.inputIcon}>
                       <Icons.Lock />
                     </div>
                     <input
@@ -291,7 +286,7 @@ function AuthContent({ onLogin }) {
                       name="confirmPassword"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className={`flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 pl-10 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 ${focusRing} focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+                      className={styles.input}
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       required={!isLogin}
@@ -304,11 +299,11 @@ function AuthContent({ onLogin }) {
               <button 
                 type="submit" 
                 disabled={isLoading}
-                className={`w-full inline-flex items-center justify-center h-11 rounded-md px-8 text-sm font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 ${bgPrimary} ${bgPrimaryHover} shadow-md`}
+                className={styles.submitButton}
               >
                 {isLoading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span className={styles.spinnerWrapper}>
+                    <span className={styles.spinner} />
                     {isLogin ? "Accesso in corso..." : "Registrazione..."}
                   </span>
                 ) : (
@@ -317,14 +312,14 @@ function AuthContent({ onLogin }) {
               </button>
             </form>
 
-            <div className="mt-6 text-center text-sm">
-              <span className="text-slate-500">
+            <div className={styles.footer}>
+              <span className={styles.footerText}>
                 {isLogin ? "Non hai un account?" : "Hai già un account?"}
               </span>{" "}
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className={`font-bold ${primaryColor} hover:underline`}
+                className={styles.switchButton}
               >
                 {isLogin ? "Registrati" : "Accedi"}
               </button>
@@ -332,24 +327,13 @@ function AuthContent({ onLogin }) {
           </div>
         </div>
       </div>
-      
-      {/* Animation Style */}
-      <style jsx>{`
-        @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-scale-in {
-          animation: scaleIn 0.3s ease-out forwards;
-        }
-      `}</style>
     </div>
   );
 }
 
 export default function Auth(props) {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div></div>}>
+    <Suspense fallback={<div className={styles.loadingScreen}><div className={styles.largeSpinner}></div></div>}>
       <AuthContent {...props} />
     </Suspense>
   );
