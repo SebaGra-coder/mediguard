@@ -3,14 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AddMedicationModal from "../../../components/modals/AddMedicationModal";
-
-// --- DEFINIZIONE COLORI ---
-const primaryColorClass = "text-[#14b8a6]";
-const bgPrimaryClass = "bg-[#14b8a6]";
-const hoverBgPrimaryClass = "hover:bg-[#0d9488]"; // Una tonalità leggermente più scura per l'hover
-const bgLightClass = "bg-[#f0fdfa]";
-const borderPrimaryClass = "border-[#14b8a6]";
-const focusRingClass = "focus:ring-[#14b8a6]";
+import styles from "./Ricerca.module.css";
 
 // -- ICONE SVG INLINE --
 const Icons = {
@@ -25,9 +18,6 @@ const Icons = {
   ChevronDown: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>,
   X: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>,
 };
-
-// --- COMPONENTI UI LOCALI (Style MediGuard) ---
-
 
 export default function Ricerca({ isAuthenticated: initialAuth = false }) {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
@@ -143,62 +133,61 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
 
   if (isAuthChecking) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+      <div className={styles.loadingContainer}>
+        <div className={styles.pageSpinner}></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+    <div className={styles.pageContainer}>
       
-
-      <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-6xl">
+      <main className={styles.mainContent}>
+        <div className={styles.container}>
 
           {/* Header */}
-          <div className="text-center mb-12">
-            <span className="inline-block px-3 py-1 mb-4 text-xs font-medium text-slate-600 bg-slate-100 rounded-full">
+          <div className={styles.header}>
+            <span className={styles.headerBadge}>
               Accesso libero - Nessuna registrazione richiesta
             </span>
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
-              Database Farmaci <span className={primaryColorClass}>AIFA</span>
+            <h1 className={styles.title}>
+              Database Farmaci <span className={styles.highlightText}>AIFA</span>
             </h1>
-            <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
+            <p className={styles.subtitle}>
               Cerca informazioni dettagliate su qualsiasi farmaco autorizzato in Italia.
               Dati ufficiali verificati e sempre aggiornati.
             </p>
           </div>
 
           {/* Search Box */}
-          <div className="max-w-2xl mx-auto mb-12 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
-            <div className="p-6">
-              <form onSubmit={handleSearch} className="flex gap-3">
-                <div className="relative flex-1">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+          <div className={styles.searchContainer}>
+            <div className={styles.searchContent}>
+              <form onSubmit={handleSearch} className={styles.searchForm}>
+                <div className={styles.inputWrapper}>
+                  <div className={styles.searchIcon}>
                     <Icons.Search />
                   </div>
                   <input
                     placeholder="Cerca per nome farmaco, principio attivo o codice AIC..."
-                    className={`w-full h-14 pl-12 pr-4 text-base bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 ${focusRingClass} transition-all placeholder:text-slate-400`}
+                    className={styles.searchInput}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                   {loading && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                      <div className={`w-5 h-5 border-2 ${borderPrimaryClass} border-t-transparent rounded-full animate-spin`}></div>
+                    <div className={styles.loadingSpinnerWrapper}>
+                      <div className={styles.loadingSpinner}></div>
                     </div>
                   )}
                 </div>
                 <button
                   type="submit"
-                  className={`h-14 px-8 ${bgPrimaryClass} ${hoverBgPrimaryClass} text-white font-medium rounded-lg transition-colors flex items-center justify-center`}
+                  className={styles.searchButton}
                 >
                   Cerca
                 </button>
               </form>
-              <div className="flex items-center justify-center gap-4 mt-4 text-sm text-slate-400">
-                <button className="flex items-center gap-2 hover:text-slate-700 transition-colors">
+              <div className={styles.searchFooter}>
+                <button className={styles.scanButton}>
                   <Icons.Scan />
                   Scansiona barcode
                 </button>
@@ -210,37 +199,36 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
 
           {/* LISTA FARMACI */}
           {hasSearched && risultati.length > 0 ?(
-            <div className="space-y-4 max-w-4xl mx-auto">
+            <div className={styles.resultsContainer}>
               {risultati.slice(0, visibleCount).map((medicine, index) => (
                 <div
                   key={medicine.codice_aic || index}
-                  // Card più compatta
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-all duration-300"
-                  style={{ animation: `fadeIn 0.5s ease-out ${index * 0.1}s backwards` }}
+                  className={`${styles.card} ${styles.fadeInAnim}`}
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   {/* Contenuto Superiore */}
-                  <div className="flex flex-col md:flex-row gap-5 items-start">
+                  <div className={styles.cardContent}>
 
-                    <div className={`w-12 h-12 rounded-full ${bgLightClass} flex items-center justify-center shrink-0 ${primaryColorClass}`}>
+                    <div className={styles.cardIcon}>
                       <Icons.Pill />
                     </div>
 
-                    <div className="flex-1 w-full">
-                      <div className="flex justify-between items-start mb-1">
+                    <div className={styles.cardDetails}>
+                      <div className={styles.cardTitleRow}>
                         <div>
-                          <h3 className="font-bold text-lg text-slate-900 leading-tight">
+                          <h3 className={styles.cardTitle}>
                             {medicine.denominazione} {medicine.dosaggio}
                           </h3>
-                          <p className={`${primaryColorClass} font-medium text-sm`}>
+                          <p className={styles.cardSubtitle}>
                             {medicine.principio_attivo}
                           </p>
                         </div>
-                        <span className={`border ${borderPrimaryClass} ${primaryColorClass} bg-white px-3 py-0.5 rounded-full text-xs font-bold whitespace-nowrap hidden sm:inline-block`}>
+                        <span className={styles.measureBadge}>
                           {medicine.unita_misura}
                         </span>
                       </div>
 
-                      <p className="text-slate-500 text-sm mb-3 leading-snug line-clamp-2">
+                      <p className={styles.cardDescription}>
                         {medicine.descrizione}
                       </p>
 
@@ -252,12 +240,12 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
                         
                         if (conflict) {
                           return (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3 flex items-start gap-3 animate-pulse">
-                               <div className="text-red-500 mt-0.5"><Icons.AlertTriangle /></div>
+                            <div className={styles.warningBox}>
+                               <div className={styles.warningIcon}><Icons.AlertTriangle /></div>
                                <div>
-                                 <p className="font-bold text-red-700 text-sm">Attenzione: Possibile allergia</p>
-                                 <p className="text-red-600 text-xs">
-                                   Contiene <span className="font-bold capitalize">{conflict}</span>, presente nelle tue allergie.
+                                 <p className={styles.warningTitle}>Attenzione: Possibile allergia</p>
+                                 <p className={styles.warningText}>
+                                   Contiene <span className={styles.warningHighlight}>{conflict}</span>, presente nelle tue allergie.
                                  </p>
                                </div>
                             </div>
@@ -266,10 +254,10 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
                         return null;
                       })()}
 
-                      <div className="flex flex-wrap items-center gap-3 text-xs mb-4 text-slate-500">
-                        <span className="font-bold text-slate-700">{medicine.ragione_sociale}</span>
+                      <div className={styles.cardInfoRow}>
+                        <span className={styles.companyName}>{medicine.ragione_sociale}</span>
                         <span>• AIC: {medicine.codice_aic}</span>
-                        <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium">
+                        <span className={styles.categoryBadge}>
                           {medicine.category}
                         </span>
                       </div>
@@ -277,12 +265,12 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
                   </div>
 
                   {/* Azioni Compatte */}
-                  <div className="border-t border-slate-100 pt-3 mt-1 flex flex-wrap items-center gap-2">
+                  <div className={styles.cardActions}>
                     <button 
                       onClick={() => handleAddToCabinet(medicine)}
-                      className={`flex items-center px-4 py-1.5 text-xs font-bold text-white ${bgPrimaryClass} ${hoverBgPrimaryClass} rounded-lg transition-colors shadow-sm ml-auto w-full md:w-auto justify-center`}
+                      className={styles.addButton}
                     >
-                      <span className="mr-1.5 scale-90"><Icons.Plus /></span> Aggiungi al mio armadietto
+                      <span className={styles.buttonIcon}><Icons.Plus /></span> Aggiungi al mio armadietto
                     </button>
                   </div>
 
@@ -291,24 +279,24 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
 
               {/* Load More Button */}
               {visibleCount < risultati.length && (
-                <div className="text-center pt-6 pb-4">
+                <div className={styles.loadMoreContainer}>
                   <button
                     onClick={loadMore}
-                    className={`inline-flex items-center px-6 py-2 border border-slate-200 shadow-sm text-sm font-bold rounded-full text-slate-600 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 ${focusRingClass} transition-all`}
+                    className={styles.loadMoreButton}
                   >
                     Carica altri
-                    <span className="ml-2"><Icons.ChevronDown /></span>
+                    <span className={styles.loadMoreIcon}><Icons.ChevronDown /></span>
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
-              <div className="w-16 h-16 text-slate-300 mx-auto mb-4 flex items-center justify-center">
+            <div className={styles.noResults}>
+              <div className={styles.noResultsIcon}>
                 <Icons.Pill />
               </div>
-              <h3 className="font-bold text-lg mb-2 text-slate-900">Nessun risultato trovato</h3>
-              <p className="text-slate-500">
+              <h3 className={styles.cardTitle} style={{textAlign: 'center', marginBottom: '0.5rem'}}>Nessun risultato trovato</h3>
+              <p className={styles.subtitle} style={{textAlign: 'center', fontSize: '0.875rem'}}>
                 Prova con un altro termine di ricerca o verifica l'ortografia.
               </p>
             </div>
@@ -316,32 +304,32 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
 
           {/* Empty State - Before Search */}
           {!hasSearched && (
-            <div className="max-w-4xl mx-auto">
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className={`bg-white p-6 rounded-xl border border-slate-200 text-center hover:border-[#14b8a6] transition-colors`}>
-                  <div className={`w-12 h-12 rounded-xl ${bgLightClass} flex items-center justify-center mx-auto mb-4 ${primaryColorClass}`}>
+            <div className={styles.resultsContainer}>
+              <div className={styles.featuresGrid}>
+                <div className={`${styles.featureCard} ${styles.featureCardPrimary}`}>
+                  <div className={`${styles.featureIcon} ${styles.featureIconPrimary}`}>
                     <Icons.Pill />
                   </div>
-                  <h3 className="font-bold mb-2 text-slate-900">Database Ufficiale</h3>
-                  <p className="text-sm text-slate-500">
+                  <h3 className={styles.cardTitle} style={{marginBottom: '0.5rem', fontSize: '1rem'}}>Database Ufficiale</h3>
+                  <p className={styles.subtitle} style={{fontSize: '0.875rem'}}>
                     Dati provenienti direttamente dall'Agenzia Italiana del Farmaco
                   </p>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-slate-200 text-center hover:border-green-200 transition-colors">
-                  <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-4 text-green-600">
+                <div className={`${styles.featureCard} ${styles.featureCardGreen}`}>
+                  <div className={`${styles.featureIcon} ${styles.featureIconGreen}`}>
                     <Icons.FileText />
                   </div>
-                  <h3 className="font-bold mb-2 text-slate-900">Informazioni Complete</h3>
-                  <p className="text-sm text-slate-500">
+                  <h3 className={styles.cardTitle} style={{marginBottom: '0.5rem', fontSize: '1rem'}}>Informazioni Complete</h3>
+                  <p className={styles.subtitle} style={{fontSize: '0.875rem'}}>
                     Schede tecniche, foglietti illustrativi e controindicazioni
                   </p>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-slate-200 text-center hover:border-amber-200 transition-colors">
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-4 text-amber-600">
+                <div className={`${styles.featureCard} ${styles.featureCardAmber}`}>
+                  <div className={`${styles.featureIcon} ${styles.featureIconAmber}`}>
                     <Icons.AlertTriangle />
                   </div>
-                  <h3 className="font-bold mb-2 text-slate-900">Verifica Interazioni</h3>
-                  <p className="text-sm text-slate-500">
+                  <h3 className={styles.cardTitle} style={{marginBottom: '0.5rem', fontSize: '1rem'}}>Verifica Interazioni</h3>
+                  <p className={styles.subtitle} style={{fontSize: '0.875rem'}}>
                     Controlla le interazioni tra farmaci per la tua sicurezza
                   </p>
                 </div>
@@ -352,9 +340,11 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-8 mt-auto">
-        <div className="container mx-auto px-4 text-center text-slate-500 text-sm">
-          © {new Date().getFullYear()} MediGuard. Dati forniti da AIFA.
+      <footer className={styles.footer}>
+        <div className={styles.container}>
+          <div className={styles.footerContent}>
+            © {new Date().getFullYear()} MediGuard. Dati forniti da AIFA.
+          </div>
         </div>
       </footer>
 
@@ -367,14 +357,6 @@ export default function Ricerca({ isAuthenticated: initialAuth = false }) {
         userAllergies={userAllergies}
         onSuccess={(msg) => alert(msg)}
       />
-
-      {/* Animazione custom */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }

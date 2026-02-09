@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import AddMedicationModal from "@/components/modals/AddMedicationModal";
 import AddTherapyModal from "@/components/modals/AddTherapyModal";
+import styles from "./HomePage.module.css";
 
 // --- ICONE SVG INLINE ---
 const Icons = {
@@ -52,18 +53,18 @@ const Icons = {
 // --- UTILS PER STILI ---
 const getStatusStyles = (status) => {
     switch (status) {
-        case "taken": return { bg: "bg-emerald-100", text: "text-emerald-700", icon: <Icons.Check />, label: "Assunto" };
-        case "pending": return { bg: "bg-amber-100", text: "text-amber-700", icon: <Icons.Clock />, label: "Ora" };
-        default: return { bg: "bg-slate-100", text: "text-slate-500", icon: <Icons.Clock />, label: "Più tardi" };
+        case "taken": return { className: styles.statusTaken, icon: <Icons.Check />, label: "Assunto", rowClass: '' };
+        case "pending": return { className: styles.statusPending, icon: <Icons.Clock />, label: "Ora", rowClass: styles.scheduleItemPending };
+        default: return { className: styles.statusLater, icon: <Icons.Clock />, label: "Più tardi", rowClass: styles.scheduleItemDefault };
     }
 };
 
-const getPatientStatusColor = (status) => {
+const getPatientStatusClass = (status) => {
     switch (status) {
-        case "ok": return "bg-emerald-500";
-        case "warning": return "bg-amber-500";
-        case "alert": return "bg-rose-500";
-        default: return "bg-slate-300";
+        case "ok": return styles.statusOk;
+        case "warning": return styles.statusWarning;
+        case "alert": return styles.statusAlert;
+        default: return styles.statusDefault;
     }
 };
 
@@ -254,108 +255,112 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
 
     if (isAuthChecking) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+            <div className={styles.loadingPage}>
+                <div className={styles.spinnerWrapper}>
+                    <div className={styles.spinner}></div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+        <div className={styles.pageContainer}>
             {/* Navbar rimossa da qui e spostata nel layout */}
 
-            <main className="pt-10 pb-16">
-                <div className="container mx-auto px-4 max-w-7xl">
+            <main className={styles.mainContent}>
+                <div className={styles.container}>
 
                     {/* Header */}
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold mb-2 text-slate-800 tracking-tight">Dashboard</h1>
-                        <p className="text-slate-500">
+                    <div className={styles.headerSection}>
+                        <h1 className={styles.pageTitle}>Dashboard</h1>
+                        <p className={styles.pageSubtitle}>
                             Panoramica completa della tua gestione farmaceutica
                         </p>
                     </div>
 
                     {/* --- MAIN STATS (GRID) --- */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div className={styles.statsGrid}>
                         <StatCard
                             icon={<Icons.Package />}
+                            iconBg={styles.bgTeal50}
                             iconColor="text-[#14b8a6]"
-                            iconBg="bg-teal-50" // Corretto da bg-teal-50 a bg-teal-50
                             value={inventoryStats.total}
                             label="Farmaci Totali"
                         />
                         <StatCard
                             icon={<Icons.TrendingUp />}
+                            iconBg={styles.bgEmerald50}
                             iconColor="text-emerald-600"
-                            iconBg="bg-emerald-50"
                             value={`${adherenceToday}%`}
                             label="Aderenza Oggi"
                         />
                         <StatCard
                             icon={<Icons.AlertTriangle />}
+                            iconBg={styles.bgAmber50}
                             iconColor="text-amber-500"
-                            iconBg="bg-amber-50"
                             value={inventoryStats.low}
                             label="Scorte Basse"
                         />
                         <StatCard
                             icon={<Icons.Bell />}
+                            iconBg={styles.bgRose50}
                             iconColor="text-rose-500"
-                            iconBg="bg-rose-50"
                             value={totalAlerts}
                             label="Alert Attivi"
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className={styles.mainGrid}>
 
                         {/* --- TERAPIE DI OGGI (Colonna Grande) --- */}
-                        <div className="lg:col-span-2 space-y-6"> {/* Aggiunto lg:col-span-2 per occupare 2/3 della larghezza su schermi grandi */}
+                        <div className={styles.leftColumn}>
                             {isLoading ? (
-                                <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#14b8a6] mx-auto"></div>
-                                    <p className="mt-4 text-slate-500">Caricamento dati...</p>
+                                <div className={styles.cardLoading}>
+                                    <div className={styles.spinnerWrapper}>
+                                        <div className={styles.spinner}></div>
+                                    </div>
+                                    <p className={styles.pageSubtitle}>Caricamento dati...</p>
                                 </div>
                             ) : (
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className="text-[#14b8a6]"><Icons.Pill /></div>
-                                            <h2 className="font-bold text-lg text-slate-800">Terapie di Oggi</h2>
+                                <div className={styles.card}>
+                                    <div className={styles.cardHeader}>
+                                        <div className={styles.cardHeaderTitleGroup}>
+                                            <div className={styles.textTeal}><Icons.Pill /></div>
+                                            <h2 className={styles.cardTitle}>Terapie di Oggi</h2>
                                         </div>
-                                        <Link href="Terapie" className="text-sm font-medium text-slate-500 hover:text-[#14b8a6] flex items-center gap-1 transition-colors">
+                                        <Link href="Terapie" className={styles.cardLink}>
                                             Vedi tutto <Icons.ChevronRight />
                                         </Link>
                                     </div>
 
-                                    <div className="p-6">
+                                    <div className={styles.cardBody}>
                                         {/* Progress Bar Header */}
-                                        <div className="flex items-center justify-between mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div className={styles.progressSection}>
                                             <div>
-                                                <p className="text-s text-slate-500 font-semibold tracking-wide">Progressi</p>
-                                                <p className="text-l font-bold text-slate-800 mt-1">{takenCount}/{todaySchedule.length} assunzioni</p>
+                                                <p className={styles.progressLabel}>Progressi</p>
+                                                <p className={styles.progressValue}>{takenCount}/{todaySchedule.length} assunzioni</p>
                                             </div>
-                                            <div className="w-32">
-                                                <div className="h-2.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-[#14b8a6] rounded-full transition-all duration-500" style={{ width: `${adherenceToday}%` }} />
+                                            <div className={styles.progressBarWrapper}>
+                                                <div className={styles.progressBarTrack}>
+                                                    <div className={styles.progressBarFill} style={{ width: `${adherenceToday}%` }} />
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Lista Farmaci */}
-                                        <div className="space-y-3">
+                                        <div className={styles.scheduleList}>
                                             {todaySchedule.map((item) => {
                                                 const style = getStatusStyles(item.status);
                                                 return (
-                                                    <div key={item.id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${item.status === 'pending' ? 'border-amber-200 bg-amber-50/50' : 'border-slate-100 hover:border-slate-200'}`}>
-                                                        <span className="text-sm font-mono font-bold text-slate-500 w-12">{item.time}</span>
-                                                        <div className="flex-1">
-                                                            <p className={`font-semibold text-slate-800 ${item.status === 'taken' ? 'line-through opacity-50' : ''}`}>
-                                                                {item.medicine.toUpperCase()} - <span className="lowercase">{item.dose} {item.unit}</span>
+                                                    <div key={item.id} className={`${styles.scheduleItem} ${style.rowClass}`}>
+                                                        <span className={styles.scheduleTime}>{item.time}</span>
+                                                        <div className={styles.scheduleInfo}>
+                                                            <p className={`${styles.scheduleMedicine} ${item.status === 'taken' ? styles.scheduleTakenText : ''}`}>
+                                                                {item.medicine.toUpperCase()} - <span className={styles.scheduleDose}>{item.dose} {item.unit}</span>
                                                             </p>
                                                         </div>
-                                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${style.bg} ${style.text}`}>
-                                                            <div className="w-3 h-3">{style.icon}</div>
+                                                        <div className={`${styles.statusBadge} ${style.className}`}>
+                                                            <div style={{ width: 12, height: 12 }}>{style.icon}</div>
                                                             {style.label}
                                                         </div>
                                                     </div>
@@ -366,79 +371,79 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
                                 </div>
                             )}
 
-                            {/* Aggiunto un controllo isLoading anche per questa sezione */}
                             {/* --- CAREGIVER SECTION --- */}
                             {currentUser?.ruolo === 'Caregiver' && (
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className="text-[#14b8a6]"><Icons.Users /></div>
-                                            <h2 className="font-bold text-lg text-slate-800">I Tuoi Assistiti</h2>
+                                <div className={styles.card}>
+                                    <div className={styles.cardHeader}>
+                                        <div className={styles.cardHeaderTitleGroup}>
+                                            <div className={styles.textTeal}><Icons.Users /></div>
+                                            <h2 className={styles.cardTitle}>I Tuoi Assistiti</h2>
                                         </div>
-                                        <Link href="/Pages/Caregiver" className="text-sm font-medium text-slate-500 hover:text-[#14b8a6] flex items-center gap-1 transition-colors">
+                                        <Link href="/Pages/Caregiver" className={styles.cardLink}>
                                             Vedi tutto <Icons.ChevronRight />
                                         </Link>
                                     </div>
 
                                     {isLoading ? (
-                                        <div className="p-6 text-center text-slate-500">Caricamento assistiti...</div>
+                                        <div className={styles.cardEmpty}>Caricamento assistiti...</div>
                                     ) : patients.length > 0 ? (
-                                        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div className={styles.caregiverGrid}>
                                             {patients.map((patient) => (
-                                                <Link key={patient.id} href={`/Pages/Assistito/${patient.id}`} className="block group cursor-pointer">
-                                                    <div key={patient.id} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-[#14b8a6]/30 hover:shadow-md transition-all cursor-pointer group bg-white">
-                                                        <div className="relative">
-                                                            <div className="w-12 h-12 rounded-full bg-teal-50 text-[#14b8a6] font-bold flex items-center justify-center border-2 border-white shadow-sm">
-                                                                {patient.initials}
-                                                            </div>
-                                                            <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${getPatientStatusColor(patient.status)}`} />
+                                                <Link key={patient.id} href={`/Pages/Assistito/${patient.id}`} className={styles.patientCard}>
+                                                    <div className={styles.patientAvatarWrapper}>
+                                                        <div className={styles.patientAvatar}>
+                                                            {patient.initials}
                                                         </div>
-
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-semibold text-slate-800 truncate group-hover:text-[#14b8a6] transition-colors">{patient.name}</p>
-                                                            <div className="flex items-center gap-2 mt-1.5">
-                                                                <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                                                                    <div className={`h-full rounded-full ${patient.adherence > 80 ? 'bg-emerald-500' : patient.adherence > 50 ? 'bg-amber-400' : 'bg-rose-500'}`} style={{ width: `${patient.adherence}%` }} />
-                                                                </div>
-                                                                <span className="text-xs text-slate-400 font-medium">{patient.adherence}%</span>
-                                                            </div>
-                                                        </div>
-
-                                                        {patient.alerts > 0 && (
-                                                            <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold shrink-0">
-                                                                {patient.alerts}
-                                                            </div>
-                                                        )}
+                                                        <div className={`${styles.patientStatusIndicator} ${getPatientStatusClass(patient.status)}`} />
                                                     </div>
+
+                                                    <div className={styles.patientInfo}>
+                                                        <p className={styles.patientName}>{patient.name}</p>
+                                                        <div className={styles.adherenceRow}>
+                                                            <div className={styles.adherenceTrack}>
+                                                                <div
+                                                                    className={`${styles.adherenceBar} ${patient.adherence > 80 ? styles.adherenceGreen : patient.adherence > 50 ? styles.adherenceYellow : styles.adherenceRed}`}
+                                                                    style={{ width: `${patient.adherence}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className={styles.adherenceText}>{patient.adherence}%</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {patient.alerts > 0 && (
+                                                        <div className={styles.patientAlertBadge}>
+                                                            {patient.alerts}
+                                                        </div>
+                                                    )}
                                                 </Link>
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="p-6 text-center text-slate-500">Nessun assistito configurato.</div>
+                                        <div className={styles.cardEmpty}>Nessun assistito configurato.</div>
                                     )}
                                 </div>
                             )}
                         </div>
 
                         {/* --- COLONNA DESTRA (Alerts & Azioni) --- */}
-                        <div className="space-y-6">
+                        <div className={styles.rightColumn}>
 
                             {/* Card Alert Scorte */}
                             {isLoading ? (
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center text-slate-500">Caricamento scorte...</div>
+                                <div className={styles.cardEmpty}>Caricamento scorte...</div>
                             ) : lowStockMedicines.length > 0 ? (
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-amber-50/30">
-                                        <div className="flex items-center gap-2 text-amber-600 font-bold text-sm">
+                                <div className={styles.card}>
+                                    <div className={`${styles.cardHeader} ${styles.alertHeaderLow}`}>
+                                        <div className={styles.cardHeaderTitleGroup}>
                                             <Icons.AlertTriangle /> Scorte Basse
                                         </div>
-                                        <Link href="Armadietto" className="p-1 hover:bg-slate-100 rounded-md text-slate-400"><Icons.ChevronRight /></Link>
+                                        <Link href="Armadietto" className={styles.cardLink}><Icons.ChevronRight /></Link>
                                     </div>
-                                    <div className="p-2">
+                                    <div className={styles.alertList}>
                                         {lowStockMedicines.map((med) => (
-                                            <div key={med.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors">
-                                                <span className="text-sm font-medium text-slate-700">{med.name}</span>
-                                                <span className={med.quantity === 0 ? "px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold" : "px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold"}>
+                                            <div key={med.id} className={styles.alertItem}>
+                                                <span className={styles.alertName}>{med.name}</span>
+                                                <span className={`${styles.alertBadge} ${med.quantity === 0 ? styles.badgeTerminated : styles.badgeLow}`}>
                                                     {med.quantity === 0 ? 'Terminato' : med.quantity + "/" + med.total}
                                                 </span>
                                             </div>
@@ -446,25 +451,25 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center text-slate-500">Nessun farmaco con scorte basse.</div>
+                                <div className={styles.cardEmpty}>Nessun farmaco con scorte basse.</div>
                             )}
 
                             {/* Card Scadenze */}
                             {isLoading ? (
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center text-slate-500">Caricamento scadenze...</div>
+                                <div className={styles.cardEmpty}>Caricamento scadenze...</div>
                             ) : expiringMedicines.length > 0 ? (
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-rose-50/30">
-                                        <div className="flex items-center gap-2 text-rose-600 font-bold text-sm">
+                                <div className={styles.card}>
+                                    <div className={`${styles.cardHeader} ${styles.alertHeaderExpired}`}>
+                                        <div className={styles.cardHeaderTitleGroup}>
                                             <Icons.Calendar /> In Scadenza
                                         </div>
-                                        <Link href="Armadietto" className="p-1 hover:bg-slate-100 rounded-md text-slate-400"><Icons.ChevronRight /></Link>
+                                        <Link href="Armadietto" className={styles.cardLink}><Icons.ChevronRight /></Link>
                                     </div>
-                                    <div className="p-2">
+                                    <div className={styles.alertList}>
                                         {expiringMedicines.map((med) => (
-                                            <div key={med.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors">
-                                                <span className="text-sm font-medium text-slate-700">{med.name}</span>
-                                                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-bold">
+                                            <div key={med.id} className={styles.alertItem}>
+                                                <span className={styles.alertName}>{med.name}</span>
+                                                <span className={`${styles.alertBadge} ${styles.badgeExpired}`}>
                                                     {med.daysLeft <= 0 ? "Scaduto!" : `-${med.daysLeft} gg`}
                                                 </span>
                                             </div>
@@ -472,34 +477,31 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center text-slate-500">Nessun farmaco in scadenza.</div>
+                                <div className={styles.cardEmpty}>Nessun farmaco in scadenza.</div>
                             )}
 
-                            {/* Quick Actions MODIFICATE */}
-                            <div className="grid grid-cols-1 gap-3 pt-2">
+                            {/* Quick Actions */}
+                            <div className={styles.quickActionGrid}>
                                 <QuickAction
                                     onClick={() => setActiveModal('add-med')}
                                     icon={<Icons.Plus />}
                                     title="Aggiungi Farmaco"
                                     subtitle="Scansiona o inserisci"
-                                    color="text-[#14b8a6]"
-                                    bg="bg-teal-50"
+                                    customClass={styles.qaTeal}
                                 />
                                 <QuickAction
                                     onClick={() => setActiveModal('new-therapy')}
                                     icon={<Icons.Pill />}
                                     title="Nuova Terapia"
                                     subtitle="Pianifica assunzioni"
-                                    color="text-indigo-600"
-                                    bg="bg-indigo-50"
+                                    customClass={styles.qaIndigo}
                                 />
                                 <QuickAction
                                     href="Ricerca"
                                     icon={<Icons.Heart />}
                                     title="Cerca Farmaci"
                                     subtitle="Database AIFA"
-                                    color="text-rose-500"
-                                    bg="bg-rose-50"
+                                    customClass={styles.qaRose}
                                 />
                             </div>
 
@@ -525,7 +527,7 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
             />
 
             {/* Footer Semplificato */}
-            <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-400 bg-white">
+            <footer className={styles.footer}>
                 <p>© 2026 MediGuard. La tua salute, organizzata.</p>
             </footer>
         </div>
@@ -535,49 +537,63 @@ export default function Dashboard({ isAuthenticated: initialAuth = false }) {
 // --- COMPONENTI HELPER ---
 
 function StatCard({ icon, iconColor, iconBg, value, label }) {
+    // Note: iconColor is passed as a Tailwind class string in props (e.g. "text-emerald-600").
+    // Since we are moving to CSS modules, we should handle this.
+    // However, SVG icons use `stroke="currentColor"`, so applying a color class to the parent wrapper works if defined in global CSS or if we pass a style object.
+    // For simplicity, I'm assuming global utility classes for text colors might still exist or we should use inline styles if strict "no tailwind" is required.
+    // But better yet, let's use the passed class if it's a valid global class, OR map it.
+    // Given the constraints, I will leave the `className={iconColor}` if it's just text color, assuming standard CSS utilities might not be available.
+    // To be safe and compliant, I will apply the color via style object if it looks like a tailwind class, or just render it.
+    // Actually, simpler: I'll accept `iconColor` as a className but since we removed Tailwind, these won't work unless they are in globals.css.
+    // I will convert specific color classes to inline styles for the prototype to ensure it works without Tailwind.
+    
+    const getColor = (cls) => {
+        if (cls.includes('teal')) return '#14b8a6';
+        if (cls.includes('emerald')) return '#059669';
+        if (cls.includes('amber')) return '#d97706';
+        if (cls.includes('rose')) return '#e11d48';
+        if (cls.includes('indigo')) return '#4f46e5';
+        return 'currentColor';
+    };
+
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition-all">
-            <div className={`w-12 h-12 rounded-xl ${iconBg} ${iconColor} flex items-center justify-center shrink-0`}>
+        <div className={styles.statCard}>
+            <div className={`${styles.statIconWrapper} ${iconBg}`} style={{ color: getColor(iconColor) }}>
                 {icon}
             </div>
             <div>
-                <p className="text-2xl font-bold text-slate-800 leading-none mb-1">{value}</p>
-                <p className="text-sm text-slate-500 font-medium">{label}</p>
+                <p className={styles.statValue}>{value}</p>
+                <p className={styles.statLabel}>{label}</p>
             </div>
         </div>
     );
 }
 
 
-function QuickAction({ href, onClick, icon, title, subtitle, color, bg }) {
-    // Definiamo lo stile comune per entrambi i casi
-    const baseClass = "w-full flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition-all group text-left";
-
-    // Contenuto interno (Icona + Testi)
+function QuickAction({ href, onClick, icon, title, subtitle, customClass }) {
+    
     const content = (
         <>
-            <div className={`w-10 h-10 rounded-lg ${bg} ${color} flex items-center justify-center transition-transform group-hover:scale-110 shrink-0`}>
+            <div className={`${styles.quickActionIcon} ${customClass}`}>
                 {icon}
             </div>
             <div>
-                <p className="font-bold text-slate-800 text-sm group-hover:text-[#14b8a6] transition-colors">{title}</p>
-                <p className="text-xs text-slate-500">{subtitle}</p>
+                <p className={styles.quickActionTitle}>{title}</p>
+                <p className={styles.quickActionSubtitle}>{subtitle}</p>
             </div>
         </>
     );
 
-    // CASO 1: Se c'è un href, usa il componente Link
     if (href) {
         return (
-            <Link href={href} className={baseClass}>
+            <Link href={href} className={styles.quickAction}>
                 {content}
             </Link>
         );
     }
 
-    // CASO 2: Altrimenti usa il tag button (per i modali)
     return (
-        <button onClick={onClick} className={baseClass}>
+        <button onClick={onClick} className={styles.quickAction}>
             {content}
         </button>
     );

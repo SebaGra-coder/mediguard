@@ -8,6 +8,7 @@ import EditMedicationModal from "@/components/modals/EditMedicationModal";
 import DeleteMedicationModal from "@/components/modals/DeleteMedicationModal";
 import AddTherapyModal from "@/components/modals/AddTherapyModal";
 import { useToast } from "@/hooks/useToast";
+import styles from "./Armadietto.module.css";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -23,14 +24,8 @@ const Icons = {
 };
 
 const Button = ({ children, onClick, variant = "primary", className = "", type = "button", disabled }) => {
-  const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed h-11 px-5";
-  const variants = {
-    primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-md hover:shadow-lg",
-    secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
-    danger: "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200",
-    ghost: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
-  };
-  return <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
+  const variantClass = variant === "primary" ? styles.btnPrimary : styles.btnSecondary;
+  return <button type={type} onClick={onClick} disabled={disabled} className={`${styles.btn} ${variantClass} ${className}`}>{children}</button>;
 };
 
 // --- FUNZIONI HELPER ---
@@ -64,15 +59,15 @@ const getMedicineStatus = (med, totalQtyOverride = null) => {
 };
 
 const StatusBadge = ({ status }) => {
-  const styles = {
-    ok: "bg-teal-500 text-white",
-    low: "bg-yellow-500 text-white",
-    expiring: "bg-orange-500 text-white",
-    expired: "bg-red-500 text-white",
-    terminated: "bg-slate-500 text-white",
+  const statusClasses = {
+    ok: styles.badgeOk,
+    low: styles.badgeLow,
+    expiring: styles.badgeExpiring,
+    expired: styles.badgeExpired,
+    terminated: styles.badgeTerminated,
   };
   const labels = { ok: "Disponibile", low: "Scorta Bassa", expiring: "In Scadenza", expired: "Scaduto", terminated: "Terminato" };
-  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${styles[status] || styles.ok}`}>{labels[status] || "Sconosciuto"}</span>;
+  return <span className={`${styles.badge} ${statusClasses[status] || styles.badgeOk}`}>{labels[status] || "Sconosciuto"}</span>;
 };
 
 // --- COMPONENTE PRINCIPALE ---
@@ -172,14 +167,14 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
 
   if (isAuthChecking) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#14b8a6]"></div>
+      <div className={styles.loadingPage}>
+        <div className={styles.spinner}></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 relative font-sans text-slate-900">
+    <div className={styles.container}>
       
       <ToastComponent />
       {!isUserAuthenticated && (
@@ -195,36 +190,36 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
         />
       )}
 
-      <main className="pt-10 pb-16">
-        <div className="container mx-auto px-4 max-w-7xl">
+      <main className={styles.main}>
+        <div className={styles.contentWrapper}>
           
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
-            <div className="mb-4">
-              <h1 className="text-3xl font-bold mb-2 text-slate-800 tracking-tight">Il Mio Armadietto</h1>
-              <p className="text-slate-500">Gestisci le scorte, controlla le scadenze e organizza i tuoi farmaci.</p>
+          <div className={styles.header}>
+            <div className={styles.titleSection}>
+              <h1 className={styles.title}>Il Mio Armadietto</h1>
+              <p className={styles.subtitle}>Gestisci le scorte, controlla le scadenze e organizza i tuoi farmaci.</p>
             </div>
             
-            <div className="flex gap-3">
+            <div className={styles.actions}>
               <Button onClick={() => setModalState({ type: 'add', data: null })}>
-                <Icons.Plus className="w-5 h-5 mr-2" />
+                <Icons.Plus className={`${styles.iconMd} ${styles.mr2}`} />
                 Aggiungi Farmaco
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <StatCard icon={<Icons.Package className="w-7 h-7 text-[#14b8a6]" />} bg="bg-teal-50" value={stats.total} label="Farmaci Totali" />
-            <StatCard icon={<Icons.AlertTriangle className="w-7 h-7 text-amber-500" />} bg="bg-amber-50" value={stats.low} label="Scorte Basse" />
-            <StatCard icon={<Icons.Clock className="w-7 h-7 text-rose-500" />} bg="bg-rose-50" value={stats.expiring} label="In Scadenza / Scaduti" />
+          <div className={styles.statsGrid}>
+            <StatCard icon={<Icons.Package className={`${styles.iconLg} ${styles.textTeal}`} />} bgClass={styles.bgTeal50} value={stats.total} label="Farmaci Totali" />
+            <StatCard icon={<Icons.AlertTriangle className={`${styles.iconLg} ${styles.textAmber}`} />} bgClass={styles.bgAmber50} value={stats.low} label="Scorte Basse" />
+            <StatCard icon={<Icons.Clock className={`${styles.iconLg} ${styles.textRose}`} />} bgClass={styles.bgRose50} value={stats.expiring} label="In Scadenza / Scaduti" />
           </div>
 
-          <div className="relative mb-8 group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Icons.Search className="h-4 w-4 text-slate-400 group-focus-within:text-[#14b8a6] transition-colors" />
+          <div className={styles.searchContainer}>
+            <div className={styles.searchIconWrapper}>
+              <Icons.Search className={styles.searchIcon} />
             </div>
             <input
               type="text"
-              className="block w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#14b8a6] focus:border-transparent shadow-sm transition-all"
+              className={styles.searchInput}
               placeholder="Cerca per nome farmaco o principio attivo..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -232,61 +227,62 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
           </div>
 
           {isLoading ? (
-             <div className="text-center py-20">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#14b8a6] mx-auto"></div>
-                <p className="mt-4 text-slate-500">Caricamento armadietto...</p>
+             <div className={styles.loadingSection}>
+                <div className={styles.spinnerSmall}></div>
+                <p className={styles.loadingText}>Caricamento armadietto...</p>
              </div>
           ) : filteredMedicines.length > 0 ? (
-            <div className="space-y-6 max-w-8xl mx-auto">
+            <div className={styles.medicinesGrid}>
               {filteredMedicines.map((medicine, index) => {
                 const uniqueId = medicine.id_farmaco_armadietto || index;
                 const daysLeft = getDaysUntilExpiry(medicine.data_scadenza);
                 const maxQty = medicine.farmaco?.quantita_confezione || 100;
                 const currentQty = medicine.quantita_rimanente;
                 const percent = (currentQty / maxQty) * 100;
-                let barColor = "bg-green-500";
-                if (percent <= 20) barColor = "bg-red-500";
-                else if (percent <= 50) barColor = "bg-yellow-400";
+                
+                let barColorClass = styles.bgGreen500;
+                if (percent <= 20) barColorClass = styles.bgRed500;
+                else if (percent <= 50) barColorClass = styles.bgYellow400;
 
                 return (
-                  <div key={uniqueId} className="group relative bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all hover:border-teal-100">
-                    <div className="relative z-10">
-                      <div className="flex justify-between items-start mb-2">
-                          <div className="flex gap-3 items-center">
+                  <div key={uniqueId} className={styles.medicineCard}>
+                    <div className={styles.cardContent}>
+                      <div className={styles.cardHeader}>
+                          <div className={styles.cardInfo}>
                             <div>
-                                <h3 className="font-bold text-lg text-slate-800 leading-tight">{medicine.farmaco?.denominazione + " " + medicine.farmaco?.dosaggio || "Farmaco non disponibile"}</h3>
-                                <p className="text-xs text-slate-500 mt-0.5 font-medium">{medicine.farmaco?.forma || "Forma non specificata"}</p>
-                                {medicine.lotto_produzione && <p className="text-xs text-slate-400 mt-0.5">Lotto: {medicine.lotto_produzione}</p>}
+                                <h3 className={styles.medicineName}>{medicine.farmaco?.denominazione + " " + medicine.farmaco?.dosaggio || "Farmaco non disponibile"}</h3>
+                                <p className={styles.medicineForm}>{medicine.farmaco?.forma || "Forma non specificata"}</p>
+                                {medicine.lotto_produzione && <p className={styles.medicineBatch}>Lotto: {medicine.lotto_produzione}</p>}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className={styles.cardActions}>
                             <StatusBadge status={medicine.computedStatus} />
-                            <button className="p-1 hover:bg-slate-100 rounded-full text-slate-400 transition-colors z-20 relative" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenDropdownId(openDropdownId === uniqueId ? null : uniqueId); }}>
-                              <Icons.MoreVertical className="w-5 h-5" />
+                            <button className={styles.menuButton} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenDropdownId(openDropdownId === uniqueId ? null : uniqueId); }}>
+                              <Icons.MoreVertical className={styles.iconMd} />
                             </button>
                           </div>
                       </div>
-                      {medicine.farmaco?.principio_attivo && (<p className="text-slate-600 text-sm mb-4 line-clamp-1">{medicine.farmaco.principio_attivo}</p>)}
-                      <div className="grid grid-cols-2 gap-6 pt-4 border-t border-slate-50">
+                      {medicine.farmaco?.principio_attivo && (<p className={styles.principleActive}>{medicine.farmaco.principio_attivo}</p>)}
+                      <div className={styles.cardFooter}>
                         <div>
-                          <div className="flex justify-between text-xs mb-1.5 font-semibold text-slate-600"><span>Quantità</span><span>{currentQty} / {maxQty}</span></div>
-                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${percent}%` }} /></div>
+                          <div className={styles.progressLabel}><span>Quantità</span><span>{currentQty} / {maxQty}</span></div>
+                          <div className={styles.progressTrack}><div className={`${styles.progressBar} ${barColorClass}`} style={{ width: `${percent}%` }} /></div>
                         </div>
-                        <div className="flex flex-col justify-center">
-                           <div className="flex items-center gap-2 text-sm text-slate-600">
-                              <Icons.Calendar className={`w-4 h-4 ${daysLeft < 30 ? "text-rose-500" : "text-slate-400"}`} />
-                              <span className="font-medium">{new Date(medicine.data_scadenza).toLocaleDateString("it-IT")}</span>
+                        <div className={styles.expiryContainer}>
+                           <div className={styles.expiryDate}>
+                              <Icons.Calendar className={`${styles.iconSm} ${daysLeft < 30 ? styles.iconRose : styles.iconSlate}`} />
+                              <span className={styles.expiryText}>{new Date(medicine.data_scadenza).toLocaleDateString("it-IT")}</span>
                            </div>
-                           {daysLeft < 90 && (<span className={`text-xs mt-1 font-medium ${daysLeft < 30 ? "text-rose-600" : "text-amber-600"}`}>{daysLeft <= 0 ? "Scaduto!" : `Scade tra ${daysLeft} gg`}</span>)}
+                           {daysLeft < 90 && (<span className={`${styles.expiryWarning} ${daysLeft < 30 ? styles.textRose600 : styles.textAmber600}`}>{daysLeft <= 0 ? "Scaduto!" : `Scade tra ${daysLeft} gg`}</span>)}
                         </div>
                       </div>
                     </div>
                     {openDropdownId === uniqueId && (
-                      <div className="absolute right-3 top-12 w-44 bg-white rounded-lg shadow-lg border border-slate-100 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
-                          <button onClick={(e) => { e.preventDefault(); setModalState({ type: 'edit', data: medicine }); setOpenDropdownId(null); }} className="w-full flex items-center px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#14b8a6]"><Icons.Edit className="w-4 h-4 mr-2" /> Modifica</button>
-                          <button onClick={(e) => { e.preventDefault(); setModalState({ type: 'therapy', data: medicine }); setOpenDropdownId(null); }} className="w-full flex items-center px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#14b8a6]"><Icons.Calendar className="w-4 h-4 mr-2" /> Terapia</button>
-                          <div className="h-px bg-slate-100 my-1"></div>
-                          <button onClick={(e) => { e.preventDefault(); setModalState({ type: 'delete', data: medicine }); setOpenDropdownId(null); }} className="w-full flex items-center px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 font-medium"><Icons.Trash2 className="w-4 h-4 mr-2" /> Elimina</button>
+                      <div className={styles.dropdown}>
+                          <button onClick={(e) => { e.preventDefault(); setModalState({ type: 'edit', data: medicine }); setOpenDropdownId(null); }} className={styles.dropdownItem}><Icons.Edit className={`${styles.iconSm} ${styles.mr2}`} /> Modifica</button>
+                          <button onClick={(e) => { e.preventDefault(); setModalState({ type: 'therapy', data: medicine }); setOpenDropdownId(null); }} className={styles.dropdownItem}><Icons.Calendar className={`${styles.iconSm} ${styles.mr2}`} /> Terapia</button>
+                          <div className={styles.dropdownDivider}></div>
+                          <button onClick={(e) => { e.preventDefault(); setModalState({ type: 'delete', data: medicine }); setOpenDropdownId(null); }} className={styles.dropdownItemDelete}><Icons.Trash2 className={`${styles.iconSm} ${styles.mr2}`} /> Elimina</button>
                       </div>
                     )}
                   </div>
@@ -294,10 +290,10 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
               })}
             </div>
           ) : (
-            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
-              <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Package className="w-8 h-8 text-slate-300" /></div>
-              <h3 className="font-bold text-lg text-slate-800 mb-2">Nessun farmaco trovato</h3>
-              <p className="text-slate-500 max-w-xs mx-auto mb-5 text-sm">Non abbiamo trovato corrispondenze. Prova a cambiare i filtri o aggiungi un nuovo farmaco.</p>
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIconBox}><Icons.Package className={`${styles.iconXl} ${styles.textSlate300}`} /></div>
+              <h3 className={styles.emptyTitle}>Nessun farmaco trovato</h3>
+              <p className={styles.emptyDesc}>Non abbiamo trovato corrispondenze. Prova a cambiare i filtri o aggiungi un nuovo farmaco.</p>
               <Button onClick={() => setModalState({ type: 'add', data: null })}>Aggiungi il primo farmaco</Button>
             </div>
           )}
@@ -336,7 +332,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
           initialMedicineId={modalState.data?.id_farmaco_armadietto}
       />
 
-      <footer className="border-t border-slate-200 py-8 mt-auto text-center text-sm text-slate-400 bg-white">
+      <footer className={styles.footer}>
           <p>© 2026 MediGuard. La tua salute, organizzata.</p>
       </footer>
     </div>
@@ -344,15 +340,15 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
 }
 
 // Helper per le Stats Card
-function StatCard({ icon, bg, value, label }) {
+function StatCard({ icon, bgClass, value, label }) {
     return (
-        <div className="rounded-lg border border-slate-100 bg-white shadow-sm p-3 flex items-center gap-2 hover:shadow-md transition-shadow">
-            <div className={`w-10 h-10 rounded-md ${bg} flex items-center justify-center shrink-0`}>
+        <div className={styles.statCard}>
+            <div className={`${styles.statIconWrapper} ${bgClass}`}>
                 {icon}
             </div>
             <div>
-                <p className="text-xl font-bold text-slate-800 leading-none mb-0.5">{value}</p>
-                <p className="text-s font-medium text-slate-500">{label}</p>
+                <p className={styles.statValue}>{value}</p>
+                <p className={styles.statLabel}>{label}</p>
             </div>
         </div>
     )

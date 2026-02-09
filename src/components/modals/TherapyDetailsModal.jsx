@@ -2,16 +2,16 @@
 
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import styles from "./ModalStyles.module.css";
 
 // --- COMPONENTS ---
 const Badge = ({ children, variant = "default", className = "" }) => {
-    const styles = {
-        default: "bg-slate-100 text-slate-700",
-        success: "bg-teal-50 text-[#14b8a6]",
-        warning: "bg-amber-50 text-amber-600",
-        destructive: "bg-rose-50 text-rose-600",
-    };
-    return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border border-transparent ${styles[variant]} ${className}`}>{children}</span>;
+    let variantClass = styles.badgeDefault;
+    if (variant === "success") variantClass = styles.badgeSuccess;
+    if (variant === "warning") variantClass = styles.badgeWarning;
+    if (variant === "destructive") variantClass = styles.badgeDestructive;
+    
+    return <span className={`${styles.badge} ${variantClass} ${className}`}>{children}</span>;
 };
 
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -27,15 +27,15 @@ const Modal = ({ isOpen, onClose, title, children }) => {
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white text-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="font-bold text-lg text-slate-800">{title}</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-full transition-colors">
+        <div className={styles.overlay}>
+            <div className={styles.container}>
+                <div className={styles.header}>
+                    <h3 className={styles.title}>{title}</h3>
+                    <button onClick={onClose} className={styles.closeBtn}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>
                     </button>
                 </div>
-                <div className="p-6 overflow-y-auto">{children}</div>
+                <div className={styles.content}>{children}</div>
             </div>
         </div>,
         document.body
@@ -47,36 +47,36 @@ export default function TherapyDetailsModal({ isOpen, onClose, therapy }) {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={`Dettagli: ${therapy.medicine}`}>
-            <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className={styles.spaceY4}>
+                <div className={styles.grid2} style={{ fontSize: '0.875rem' }}>
                     <div>
-                        <p className="text-slate-500">Dosaggio</p>
-                        <p className="font-bold">{therapy.dosaggio}</p>
+                        <p className={styles.textSlate500}>Dosaggio</p>
+                        <p className={styles.fontBold}>{therapy.dosaggio}</p>
                     </div>
                     <div>
-                        <p className="text-slate-500">Stato</p>
+                        <p className={styles.textSlate500}>Stato</p>
                         <Badge variant={therapy.stato === 'attiva' ? 'success' : 'default'}>{therapy.stato}</Badge>
                     </div>
                     <div>
-                        <p className="text-slate-500">Frequenza</p>
-                        <p className="font-bold">{therapy.frequency}</p>
+                        <p className={styles.textSlate500}>Frequenza</p>
+                        <p className={styles.fontBold}>{therapy.frequency}</p>
                     </div>
                     <div>
-                        <p className="text-slate-500">Orari</p>
-                        <p className="font-bold">{therapy.orari?.join(", ")}</p>
+                        <p className={styles.textSlate500}>Orari</p>
+                        <p className={styles.fontBold}>{therapy.orari?.join(", ")}</p>
                     </div>
                     <div>
-                        <p className="text-slate-500">Inizio</p>
-                        <p className="font-bold">{new Date(therapy.startDate).toLocaleDateString()}</p>
+                        <p className={styles.textSlate500}>Inizio</p>
+                        <p className={styles.fontBold}>{new Date(therapy.startDate).toLocaleDateString()}</p>
                     </div>
                     <div>
-                        <p className="text-slate-500">Fine</p>
-                        <p className="font-bold">{therapy.endDate ? new Date(therapy.endDate).toLocaleDateString() : "Continuativa"}</p>
+                        <p className={styles.textSlate500}>Fine</p>
+                        <p className={styles.fontBold}>{therapy.endDate ? new Date(therapy.endDate).toLocaleDateString() : "Continuativa"}</p>
                     </div>
                 </div>
                 {therapy.note && (
-                    <div className="bg-slate-50 p-3 rounded-lg text-sm">
-                        <p className="text-slate-500 text-xs uppercase font-bold mb-1">Note</p>
+                    <div className={styles.infoBox} style={{ marginTop: '0.75rem', backgroundColor: '#f8fafc', borderColor: 'transparent' }}>
+                        <p className={styles.textSlate500} style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '0.25rem' }}>Note</p>
                         {therapy.note}
                     </div>
                 )}

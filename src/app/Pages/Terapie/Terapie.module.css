@@ -1,0 +1,689 @@
+.pageContainer {
+  min-height: 100vh;
+  background-color: #f8fafc; /* slate-50 */
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #0f172a; /* slate-900 */
+}
+
+.loadingContainer {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  border-top: 2px solid #2dd4bf;
+  border-bottom: 2px solid #2dd4bf;
+  border-left: 2px solid transparent;
+  border-right: 2px solid transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.main {
+  padding-top: 2.5rem; /* pt-10 */
+  padding-bottom: 4rem; /* pb-16 */
+}
+
+.contentWrapper {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 80rem; /* max-w-7xl */
+}
+
+/* Header Section */
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .pageHeader {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.headerTitle {
+  font-size: 1.875rem; /* text-3xl */
+  line-height: 2.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #1e293b; /* slate-800 */
+  letter-spacing: -0.025em;
+}
+
+.headerSubtitle {
+  color: #64748b; /* slate-500 */
+}
+
+.headerButtons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Grid Layout */
+.gridLayout {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .gridLayout {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .leftColumn {
+    grid-column: span 2 / span 2;
+  }
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Reusable Components */
+.card {
+  background-color: white;
+  border-radius: 0.75rem; /* rounded-xl */
+  border: 1px solid #e2e8f0; /* slate-200 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+}
+
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem; /* rounded-lg */
+  font-weight: 500;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background-color: #2dd4bf;
+  color: white;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btnPrimary:hover {
+  background-color: #0d9488;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.btnSecondary {
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  color: #334155; /* slate-700 */
+}
+
+.btnSecondary:hover {
+  background-color: #f8fafc; /* slate-50 */
+}
+
+.btnGhost {
+  color: #64748b; /* slate-500 */
+  background-color: transparent;
+}
+
+.btnGhost:hover {
+  background-color: #f1f5f9; /* slate-100 */
+  color: #0f172a; /* slate-900 */
+}
+
+.btnDestructive {
+  background-color: #fff1f2; /* rose-50 */
+  color: #e11d48; /* rose-600 */
+}
+
+.btnDestructive:hover {
+  background-color: #ffe4e6; /* rose-100 */
+}
+
+.btnOutline {
+  border: 1px solid #e2e8f0;
+  color: #475569; /* slate-600 */
+  background-color: transparent;
+}
+
+.btnOutline:hover {
+  background-color: #f8fafc;
+}
+
+.btnSm {
+  height: 2rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.btnMd {
+  height: 2.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-size: 0.875rem;
+}
+
+.btnIcon {
+  height: 2.25rem;
+  width: 2.25rem;
+  padding: 0;
+}
+
+/* Badge Styles */
+.badge {
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.badgeDefault {
+  background-color: #f1f5f9; /* slate-100 */
+  color: #334155; /* slate-700 */
+}
+
+.badgeSuccess {
+  background-color: #f0fdfa; /* teal-50 */
+  color: #2dd4bf;
+}
+
+.badgeWarning {
+  background-color: #fffbeb; /* amber-50 */
+  color: #d97706; /* amber-600 */
+}
+
+.badgeDestructive {
+  background-color: #fff1f2; /* rose-50 */
+  color: #e11d48; /* rose-600 */
+}
+
+/* Date Nav Card */
+.dateNavCard {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dateDisplay {
+  text-align: center;
+}
+
+.dateWeekday {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+}
+
+.dateFull {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Adherence Card */
+.adherenceCard {
+  padding: 1.5rem;
+  background-color: white; /* Fallback */
+  color: white;
+  border: none;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.adherenceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.adherenceLabel {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: rgba(0, 0, 0, 0.664);
+}
+
+.adherenceValue {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: black;
+}
+
+.adherenceStats {
+  text-align: right;
+}
+
+.adherenceStatsLabel {
+  font-size: 0.875rem;
+  color: #022c22; /* very dark teal/green */
+}
+
+.adherenceStatsValue {
+  font-size: 1.125rem;
+  color: #0f172a;
+  font-weight: 400;
+}
+
+.adherenceStatsValueTotal {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.progressBarBg {
+  height: 0.5rem;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: #2dd4bf; /* Or lighter since bg is dark? Adjusting to fit design */
+  border-radius: 9999px;
+  transition: width 0.7s;
+}
+
+/* Schedule List */
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scheduleTitle {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scheduleCard {
+  padding: 0;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.scheduleCardCurrent {
+  box-shadow: 0 0 0 2px #2dd4bf;
+  outline-offset: 2px;
+}
+
+.scheduleCardPast {
+  opacity: 0.7;
+}
+
+.scheduleCardPast:hover {
+  opacity: 1;
+}
+
+.scheduleCardInner {
+  display: flex;
+}
+
+.timeColumn {
+  width: 5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #f1f5f9;
+}
+
+.timeColumnTaken {
+  background-color: #f0fdfa; /* teal-50 */
+}
+
+.timeColumnDefault {
+  background-color: #f8fafc; /* slate-50 */
+}
+
+.timeText {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #334155;
+}
+
+.cardContent {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.medicineName {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #1e293b;
+}
+
+.medicineNameTaken {
+  color: #64748b;
+  text-decoration: line-through;
+  text-decoration-color: #cbd5e1;
+}
+
+.medicineDosage {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.statusAction {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-end;
+}
+
+.lateLabel {
+  font-size: 0.75rem;
+  color: #e11d48;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btnConfirm {
+    background-color: #2dd4bf;
+    color: white;
+}
+.btnConfirm:hover {
+    background-color: #0d9488;
+}
+
+.btnConfirmLate {
+    background-color: #f43f5e;
+    color: white;
+}
+.btnConfirmLate:hover {
+    background-color: #e11d48;
+}
+
+/* Quick Add Box */
+.quickAddBox {
+  border: 2px dashed #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-color: white;
+  transition: background-color 0.2s;
+}
+
+.quickAddBox:hover {
+  background-color: rgba(248, 250, 252, 0.5);
+}
+
+.quickAddIconWrapper {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  color: #94a3b8;
+}
+
+.quickAddTitle {
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.quickAddSubtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.btnQuickAdd {
+    background-color: rgba(45, 212, 191, 0.8);
+    color: white;
+}
+.btnQuickAdd:hover {
+    background-color: #f0fdfa;
+    color: #0d9488;
+}
+
+/* Active Therapies List */
+.activeTherapiesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.activeTherapiesTitle {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #1e293b;
+}
+
+.activeTherapyCard {
+  padding: 1.25rem;
+  transition: box-shadow 0.2s;
+}
+
+.activeTherapyCard:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.therapyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.therapyHeaderContent {
+    display: flex;
+    align-items: flex-start;
+}
+
+.therapyIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background-color: #f0fdfa;
+  color: #2dd4bf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.therapyInfo {
+    margin-left: 0.75rem;
+}
+
+.therapyName {
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.25;
+}
+
+.therapyFrequency {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.adherenceSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.adherenceInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.textSlate700Bold {
+    color: #334155;
+    font-weight: 700;
+}
+
+.textSlate600Medium {
+    color: #475569;
+    font-weight: 500;
+}
+
+.adherenceBarContainer {
+  height: 0.375rem;
+  width: 100%;
+  background-color: #f1f5f9;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.adherenceBar {
+  height: 100%;
+  border-radius: 9999px;
+}
+
+.adherenceHigh {
+  background-color: #2dd4bf;
+}
+
+.adherenceMedium {
+  background-color: #fbbf24;
+}
+
+.durationInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.daysLeft {
+  color: #d97706; /* amber-600 */
+  font-weight: 700;
+}
+
+.warningsContainer {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.warningItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.warningDestructive {
+  background-color: #fff1f2;
+  color: #be123c;
+}
+
+.warningWarning {
+  background-color: #fffbeb;
+  color: #b45309;
+}
+
+.warningIcon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem; /* added extra padding similar to border-t */
+  border-top: 1px solid #f8fafc;
+}
+
+/* Footer */
+.footer {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    margin-top: auto;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #94a3b8;
+    background-color: white;
+}
+
+.iconSmall {
+    width: 1rem; /* 4 * 0.25rem */
+    height: 1rem;
+}
+
+.iconMedium {
+    width: 1.25rem; /* 5 * 0.25rem */
+    height: 1.25rem;
+}
+
+.iconLarge {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.iconAmber {
+    color: #f59e0b;
+}
+
+.iconEmerald {
+    color: #10b981;
+}
+
+.marginRightSmall {
+    margin-right: 0.5rem;
+}
+
+.textSlate400 { color: #94a3b8; }

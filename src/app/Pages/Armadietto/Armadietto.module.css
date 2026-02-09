@@ -1,0 +1,567 @@
+.container {
+  min-height: 100vh;
+  background-color: #f8fafc; /* slate-50 */
+  position: relative;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #0f172a; /* slate-900 */
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  padding-top: 2.5rem;
+  padding-bottom: 4rem;
+  flex-grow: 1;
+}
+
+.contentWrapper {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 80rem; /* max-w-7xl */
+}
+
+/* --- Header --- */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.titleSection {
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: 1.875rem; /* text-3xl */
+  line-height: 2.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #1e293b; /* slate-800 */
+  letter-spacing: -0.025em;
+}
+
+.subtitle {
+  color: #64748b; /* slate-500 */
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* --- Stats Cards --- */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 640px) {
+  .statsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.statCard {
+  border-radius: 0.5rem;
+  border: 1px solid #f1f5f9; /* slate-100 */
+  background-color: white;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: box-shadow 0.3s ease;
+}
+
+.statCard:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.statIconWrapper {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Background colors for stats icons */
+.bgTeal50 { background-color: #f0fdfa; }
+.bgAmber50 { background-color: #fffbeb; }
+.bgRose50 { background-color: #fff1f2; }
+
+.statValue {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 700;
+  color: #1e293b; /* slate-800 */
+  line-height: 1;
+  margin-bottom: 0.125rem;
+}
+
+.statLabel {
+  font-size: 0.8rem; /* approximate for text-s/xs */
+  font-weight: 500;
+  color: #64748b; /* slate-500 */
+}
+
+/* --- Search --- */
+.searchContainer {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.searchIconWrapper {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  padding-left: 1rem;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.searchIcon {
+  height: 1rem;
+  width: 1rem;
+  color: #94a3b8; /* slate-400 */
+  transition: color 0.3s;
+}
+
+.searchContainer:focus-within .searchIcon {
+  color: #14b8a6;
+}
+
+.searchInput {
+  display: block;
+  width: 100%;
+  padding-left: 2.75rem;
+  padding-right: 1rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  border: 1px solid #e2e8f0; /* slate-200 */
+  border-radius: 0.75rem; /* rounded-xl */
+  line-height: 1.25rem;
+  background-color: white;
+  transition: all 0.3s;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: #94a3b8; /* slate-400 */
+}
+
+.searchInput:focus {
+  box-shadow: 0 0 0 2px #14b8a6;
+  border-color: transparent;
+}
+
+/* --- Medicines List --- */
+.medicinesGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 90rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.medicineCard {
+  position: relative;
+  background-color: white;
+  border-radius: 0.75rem; /* rounded-xl */
+  border: 1px solid #e2e8f0; /* slate-200 */
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+}
+
+.medicineCard:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-color: #ccfbf1; /* teal-100 */
+}
+
+.cardContent {
+  position: relative;
+  z-index: 10;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.cardInfo {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.medicineName {
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 700;
+  color: #1e293b; /* slate-800 */
+  line-height: 1.25;
+}
+
+.medicineForm {
+  font-size: 0.75rem; /* text-xs */
+  color: #64748b; /* slate-500 */
+  margin-top: 0.125rem;
+  font-weight: 500;
+}
+
+.medicineBatch {
+  font-size: 0.75rem; /* text-xs */
+  color: #94a3b8; /* slate-400 */
+  margin-top: 0.125rem;
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menuButton {
+  padding: 0.25rem;
+  border-radius: 9999px;
+  color: #94a3b8; /* slate-400 */
+  transition: background-color 0.3s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 20;
+}
+
+.menuButton:hover {
+  background-color: #f1f5f9; /* slate-100 */
+}
+
+.principleActive {
+  color: #475569; /* slate-600 */
+  font-size: 0.875rem; /* text-sm */
+  margin-bottom: 1rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.cardFooter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f8fafc; /* slate-50 */
+}
+
+/* Progress Bar */
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem; /* text-xs */
+  margin-bottom: 0.375rem;
+  font-weight: 600;
+  color: #475569; /* slate-600 */
+}
+
+.progressTrack {
+  height: 0.5rem;
+  width: 100%;
+  background-color: #f1f5f9; /* slate-100 */
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+.bgGreen500 { background-color: #22c55e; }
+.bgRed500 { background-color: #ef4444; }
+.bgYellow400 { background-color: #facc15; }
+
+/* Expiry Info */
+.expiryContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.expiryDate {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem; /* text-sm */
+  color: #475569; /* slate-600 */
+}
+
+.expiryText {
+  font-weight: 500;
+}
+
+.expiryWarning {
+  font-size: 0.75rem; /* text-xs */
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.textRose600 { color: #e11d48; }
+.textAmber600 { color: #d97706; }
+.iconRose { color: #f43f5e; }
+.iconSlate { color: #94a3b8; }
+
+/* --- Dropdown --- */
+.dropdown {
+  position: absolute;
+  right: 0.75rem;
+  top: 3rem;
+  width: 11rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f1f5f9;
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+  z-index: 30;
+  animation: fadeIn 0.1s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.dropdownItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem; /* text-sm */
+  color: #334155; /* slate-700 */
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background-color: #f8fafc;
+  color: #14b8a6;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background-color: #f1f5f9;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.dropdownItemDelete {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #e11d48; /* rose-600 */
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.dropdownItemDelete:hover {
+  background-color: #fff1f2; /* rose-50 */
+}
+
+/* --- Empty State --- */
+.emptyState {
+  text-center: center;
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+  background-color: white;
+  border-radius: 1rem;
+  border: 1px dashed #cbd5e1; /* slate-300 */
+}
+
+.emptyIconWrapper {
+  background-color: #f8fafc;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 1rem;
+}
+
+.emptyTitle {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.emptyDesc {
+  color: #64748b;
+  max-width: 20rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+
+/* --- Loaders --- */
+.loadingPage {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  border-top: 2px solid #14b8a6;
+  border-bottom: 2px solid #14b8a6;
+  border-left: 2px solid transparent;
+  border-right: 2px solid transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loadingSection {
+  text-center: center;
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+.spinnerSmall {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border-bottom: 2px solid #14b8a6;
+  border-left: 2px solid transparent;
+  border-right: 2px solid transparent;
+  border-top: 2px solid transparent;
+  margin-left: auto;
+  margin-right: auto;
+  animation: spin 1s linear infinite;
+}
+
+.loadingText {
+  margin-top: 1rem;
+  color: #64748b;
+}
+
+/* --- Button --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  outline: none;
+  height: 2.75rem;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  border: none;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background-color: #14b8a6;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btnPrimary:hover {
+  background-color: #0d9488;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.btnSecondary {
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.btnSecondary:hover {
+  background-color: #f8fafc;
+}
+
+/* --- Badges --- */
+.badge {
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.badgeOk { background-color: #14b8a6; color: white; }
+.badgeLow { background-color: #eab308; color: white; }
+.badgeExpiring { background-color: #f97316; color: white; }
+.badgeExpired { background-color: #ef4444; color: white; }
+.badgeTerminated { background-color: #64748b; color: white; }
+
+/* --- Footer --- */
+.footer {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  margin-top: auto;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  background-color: white;
+}
+
+/* --- Utilities (Replacements for remaining Tailwind) --- */
+.iconSm { width: 1rem; height: 1rem; }
+.iconMd { width: 1.25rem; height: 1.25rem; }
+.iconLg { width: 1.75rem; height: 1.75rem; }
+.iconXl { width: 2rem; height: 2rem; }
+.mr2 { margin-right: 0.5rem; }
+
+.textTeal { color: #14b8a6; }
+.textAmber { color: #f59e0b; }
+.textRose { color: #f43f5e; }
+.textSlate300 { color: #cbd5e1; }

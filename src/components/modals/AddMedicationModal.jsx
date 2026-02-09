@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import styles from "./ModalStyles.module.css";
 
 // --- ICONE SVG ---
 const Icons = {
@@ -13,12 +14,8 @@ const Icons = {
 
 // --- COMPONENTS ---
 const Button = ({ children, onClick, variant = "primary", className = "", disabled }) => {
-    const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed h-11 px-5";
-    const variants = {
-        primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-md hover:shadow-lg",
-        secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
-    };
-    return <button onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
+    const variantClass = variant === "primary" ? styles.btnPrimary : styles.btnSecondary;
+    return <button onClick={onClick} disabled={disabled} className={`${styles.btn} ${variantClass} ${className}`}>{children}</button>;
 };
 
 const Modal = ({ isOpen, onClose, title, children, footer }) => {
@@ -34,17 +31,17 @@ const Modal = ({ isOpen, onClose, title, children, footer }) => {
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white text-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                        <div className="bg-teal-50 p-1.5 rounded-lg text-[#14b8a6]"><Icons.Pill className="w-5 h-5" /></div>
+        <div className={styles.overlay}>
+            <div className={styles.container}>
+                <div className={styles.header}>
+                    <h3 className={styles.title}>
+                        <div className={`${styles.iconWrapper} ${styles.iconWrapperTeal}`}><Icons.Pill className="w-5 h-5" /></div>
                         {title}
                     </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-full transition-colors"><Icons.X className="w-5 h-5" /></button>
+                    <button onClick={onClose} className={styles.closeBtn}><Icons.X className="w-5 h-5" /></button>
                 </div>
-                <div className="p-6 overflow-y-auto">{children}</div>
-                {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">{footer}</div>}
+                <div className={styles.content}>{children}</div>
+                {footer && <div className={styles.footer}>{footer}</div>}
             </div>
         </div>,
         document.body
@@ -184,33 +181,36 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId,
                 </>
             }
         >
-            <div className="space-y-4">
+            <div className={styles.spaceY4}>
                 {!preSelectedMedication && (
-                    <div className="relative">
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Cerca Farmaco da aggiungere</label>
-                        <div className="relative">
+                    <div className={styles.relative}>
+                        <label className={styles.label}>Cerca Farmaco da aggiungere</label>
+                        <div className={styles.relative}>
                             <input
                                 type="text"
-                                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                                className={`${styles.input} ${styles.inputWithIcon}`}
                                 placeholder="Digita nome o AIC..."
                                 value={modalSearchTerm}
                                 onChange={e => setModalSearchTerm(e.target.value)}
                             />
-                            <Icons.Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                            {isSearchingDrug && <div className="absolute right-3 top-2.5 w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>}
+                            <Icons.Search className={styles.searchIcon} />
+                            {isSearchingDrug && <div className={`${styles.spinner}`} style={{
+                                position: 'absolute', right: '0.75rem', top: '0.625rem', width: '1rem', height: '1rem',
+                                border: '2px solid #14b8a6', borderTopColor: 'transparent', borderRadius: '50%'
+                            }}></div>}
                         </div>
 
                         {modalSearchResults.length > 0 && (
-                            <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-xl border border-slate-100 max-h-48 overflow-y-auto">
+                            <div className={styles.searchResults}>
                                 {modalSearchResults.map(farmaco => (
                                     <button
                                         type="button"
                                         key={farmaco.codice_aic}
                                         onClick={(e) => { e.preventDefault(); handleSelectDrug(farmaco); }}
-                                        className="w-full text-left px-3 py-2 text-sm hover:bg-teal-50 hover:text-teal-800 transition-colors border-b border-slate-50 last:border-0"
+                                        className={styles.searchResultItem}
                                     >
-                                        <div className="font-bold">{farmaco.denominazione} {farmaco.dosaggio}</div>
-                                        <div className="text-xs text-slate-500 flex justify-between">
+                                        <div className={styles.fontBold}>{farmaco.denominazione} {farmaco.dosaggio}</div>
+                                        <div className={styles.flexBetween} style={{ fontSize: '0.75rem', color: '#64748b' }}>
                                             <span>{farmaco.principio_attivo} - {farmaco.confezione}</span>
                                             <span>AIC: {farmaco.codice_aic}</span>
                                         </div>
@@ -218,7 +218,7 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId,
                                 ))}
                             </div>
                         )}
-                         <div className="h-px bg-slate-100 my-2"></div>
+                         <div style={{ height: '1px', backgroundColor: '#f1f5f9', margin: '0.5rem 0' }}></div>
                     </div>
                 )}
                
@@ -231,12 +231,12 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId,
                     
                     if (conflict) {
                       return (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-start gap-3 animate-pulse">
-                            <div className="text-red-500 mt-0.5"><Icons.AlertTriangle className="w-5 h-5"/></div>
+                        <div className={styles.warningBox}>
+                            <div className={styles.warningBoxIcon}><Icons.AlertTriangle className="w-5 h-5"/></div>
                             <div>
-                              <p className="font-bold text-red-700 text-sm">Attenzione: Possibile allergia</p>
-                              <p className="text-red-600 text-xs">
-                                Questo farmaco contiene <span className="font-bold capitalize">{conflict}</span>, a cui risulti allergico.
+                              <p className={styles.warningBoxTitle}>Attenzione: Possibile allergia</p>
+                              <p className={styles.warningBoxText}>
+                                Questo farmaco contiene <span className={styles.fontBold} style={{ textTransform: 'capitalize' }}>{conflict}</span>, a cui risulti allergico.
                               </p>
                             </div>
                         </div>
@@ -246,52 +246,52 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId,
                })()}
 
                 <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Nome Commerciale</label>
-                    <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm bg-slate-50 text-slate-500"
+                    <label className={styles.label}>Nome Commerciale</label>
+                    <input type="text" className={`${styles.input} ${styles.inputReadOnly}`}
                         value={formData.nome} readOnly disabled />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className={styles.grid2}>
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Principio Attivo</label>
-                        <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm bg-slate-50 text-slate-500"
+                        <label className={styles.label}>Principio Attivo</label>
+                        <input type="text" className={`${styles.input} ${styles.inputReadOnly}`}
                             value={formData.principio} readOnly disabled />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Dosaggio</label>
-                        <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm bg-slate-50 text-slate-500"
+                        <label className={styles.label}>Dosaggio</label>
+                        <input type="text" className={`${styles.input} ${styles.inputReadOnly}`}
                             value={formData.dosaggio} readOnly disabled />
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Lotto di Produzione</label>
-                    <input type="text" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                    <label className={styles.label}>Lotto di Produzione</label>
+                    <input type="text" className={styles.input}
                         value={formData.lotto}
                         onChange={e => setFormData({ ...formData, lotto: e.target.value })}
                         placeholder="Opzionale" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className={styles.grid2}>
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Quantità Rimanente *</label>
+                        <label className={styles.label}>Quantità Rimanente *</label>
                         <input
                             type="number"
                             max={formData.quantita_totale > 0 ? formData.quantita_totale : undefined} min={0}
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                            className={styles.input}
                             value={formData.quantita}
                             onChange={e => setFormData({ ...formData, quantita: e.target.value })}
                         />
-                        {formData.quantita_totale > 0 && <p className="text-xs text-slate-400 mt-1">Massimo: {formData.quantita_totale}</p>}
+                        {formData.quantita_totale > 0 && <p className={styles.textXs} style={{ marginTop: '0.25rem', color: '#94a3b8' }}>Massimo: {formData.quantita_totale}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Scadenza *</label>
-                        <div className="flex gap-2">
+                        <label className={styles.label}>Scadenza *</label>
+                        <div className={styles.dateInputsContainer}>
                             <input
                                 type="number"
                                 min="1" max="31"
                                 placeholder="GG"
-                                className="w-[27%] rounded-lg border border-slate-200 px-2 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                                className={`${styles.input} ${styles.dateInputDay}`}
                                 value={expiryDay}
                                 onChange={e => setExpiryDay(e.target.value)}
                             />
@@ -299,7 +299,7 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId,
                                 type="number"
                                 min="1" max="12"
                                 placeholder="MM"
-                                className="w-[27%] rounded-lg border border-slate-200 px-2 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                                className={`${styles.input} ${styles.dateInputMonth}`}
                                 value={expiryMonth}
                                 onChange={e => setExpiryMonth(e.target.value)}
                             />
@@ -307,12 +307,12 @@ export default function AddMedicationModal({ isOpen, onClose, onSuccess, userId,
                                 type="number"
                                 min={new Date().getFullYear()}
                                 placeholder="AAAA"
-                                className="w-[35%] rounded-lg border border-slate-200 px-2 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#14b8a6]"
+                                className={`${styles.input} ${styles.dateInputYear}`}
                                 value={expiryYear}
                                 onChange={e => setExpiryYear(e.target.value)}
                             />
                         </div>
-                        <label className="text-xs text-slate-400 mt-1">
+                        <label className={styles.textXs} style={{ marginTop: '0.25rem', color: '#94a3b8', display: 'block' }}>
                             {formData.scadenza ? `Data: ${new Date(formData.scadenza).toLocaleDateString('it-IT')}` : "Inserisci Anno e Mese"}
                         </label>
                     </div>

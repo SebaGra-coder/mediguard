@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import styles from "./GuestOverlay.module.css";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -30,20 +31,16 @@ const Icons = {
 
 // --- COMPONENTI UI INTERNI ---
 const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-2xl border border-slate-200 shadow-xl ${className}`}>
+  <div className={`${styles.card} ${className}`}>
     {children}
   </div>
 );
 
 const ButtonLink = ({ href, children, variant = "primary", className = "" }) => {
-  const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none h-11 px-5 w-full";
-  const variants = {
-    primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-md hover:shadow-lg", // Teal MediGuard
-    outline: "border border-slate-300 text-slate-700 bg-white hover:bg-slate-50",
-  };
+  const variantClass = variant === "primary" ? styles.buttonPrimary : styles.buttonOutline;
 
   return (
-    <Link href={href} className={`${base} ${variants[variant]} ${className}`}>
+    <Link href={href} className={`${styles.buttonBase} ${variantClass} ${className}`}>
       {children}
     </Link>
   );
@@ -65,48 +62,48 @@ export function GuestOverlay({ title, description, features }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300 h-screen w-screen overflow-hidden">
-      <Card className="max-w-md w-full mx-auto animate-in zoom-in-95 duration-300 relative z-50">
+    <div className={styles.overlay}>
+      <Card>
         
         {/* Header Card */}
-        <div className="p-6 pb-2 text-center">
-          <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center mx-auto mb-4 text-[#14b8a6]">
-            <Icons.Lock className="w-8 h-8" />
+        <div className={styles.header}>
+          <div className={styles.iconContainer}>
+            <Icons.Lock className={styles.iconLarge} />
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">{title}</h2>
-          <p className="text-slate-500 text-sm leading-relaxed">{description}</p>
+          <h2 className={styles.title}>{title}</h2>
+          <p className={styles.description}>{description}</p>
         </div>
 
         {/* Content Card */}
-        <div className="p-6 space-y-6">
-          <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+        <div className={styles.contentBody}>
+          <div className={styles.featureBox}>
+            <p className={styles.featureLabel}>
               Con un account potrai:
             </p>
-            <ul className="space-y-2.5">
+            <ul className={styles.list}>
               {features.map((feature, index) => (
-                <li key={index} className="flex items-start gap-3 text-sm text-slate-600">
-                  <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#14b8a6] shrink-0" />
+                <li key={index} className={styles.listItem}>
+                  <div className={styles.bullet} />
                   <span>{feature}</span>
                 </li>
               ))}
             </ul>
           </div>
           
-          <div className="flex flex-col gap-3">
+          <div className={styles.actions}>
             <ButtonLink href="Autenticazione?mode=register" variant="primary">
-              <Icons.UserPlus className="w-4 h-4 mr-2" />
+              <Icons.UserPlus className={styles.iconSmall} />
               Registrati Gratis
             </ButtonLink>
             
             <ButtonLink href="Autenticazione" variant="outline">
-              <Icons.LogIn className="w-4 h-4 mr-2" />
+              <Icons.LogIn className={styles.iconSmall} />
               Accedi
             </ButtonLink>
           </div>
           
-          <p className="text-xs text-center text-slate-400 mt-2">
-            Puoi sempre <Link href="/ricerca" className="text-[#14b8a6] font-medium hover:underline">cercare farmaci</Link> senza registrarti
+          <p className={styles.footer}>
+            Puoi sempre <Link href="/ricerca" className={styles.link}>cercare farmaci</Link> senza registrarti
           </p>
         </div>
       </Card>

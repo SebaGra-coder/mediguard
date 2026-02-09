@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/useToast";
+import styles from "./CollegaCaregiver.module.css";
 
 // --- ICONE SVG INTERNE ---
 const Icons = {
@@ -18,25 +19,24 @@ const Icons = {
 };
 
 // --- UI COMPONENTS ---
-const Card = ({ children, className = "", onClick }) => (
-  <div onClick={onClick} className={`bg-white rounded-2xl border border-slate-100 shadow-sm p-6 ${className} transition-all`}>
+const Card = ({ children, className = "", onClick, interactive = false }) => (
+  <div onClick={onClick} className={`${styles.card} ${interactive ? styles.cardInteractive : ''} ${className}`}>
     {children}
   </div>
 );
 
 const Button = ({ children, onClick, variant = "primary", className = "", disabled }) => {
-  const base = "inline-flex items-center justify-center rounded-lg font-bold text-sm transition-all focus:outline-none h-12 px-6 disabled:opacity-50 disabled:cursor-not-allowed w-full";
-  const variants = {
-    primary: "bg-[#14b8a6] text-white hover:bg-[#0d9488] shadow-md hover:shadow-lg", // Teal
-    secondary: "bg-[#f97316] text-white hover:bg-[#ea580c] shadow-md hover:shadow-lg", // Orange
-    outline: "border border-slate-200 text-slate-600 hover:bg-slate-50",
-    ghost: "text-slate-500 hover:bg-slate-100",
+  const variantClass = {
+    primary: styles.btnPrimary,
+    secondary: styles.btnSecondary,
+    outline: styles.btnOutline,
+    ghost: styles.btnGhost,
   };
-  return <button onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
+  return <button onClick={onClick} disabled={disabled} className={`${styles.button} ${variantClass[variant]} ${className}`}>{children}</button>;
 };
 
 const Badge = ({ children }) => (
-  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 mb-6">
+  <span className={styles.badge}>
     {children}
   </span>
 );
@@ -129,19 +129,19 @@ export default function CollegaCaregiver({ isAuthenticated: initialAuth = false 
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 relative">
+    <div className={styles.pageContainer}>
       
       
       {/* Toast Container */}
       <ToastComponent />
 
-      <main className="container mx-auto px-4 pt-10 pb-16">
+      <main className={styles.mainContent}>
         
         {/* Header Page */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <Badge><Icons.Users className="w-3 h-3 mr-2" /> Connessione Caregiver</Badge>
-          <h1 className="text-4xl font-bold text-slate-800 mb-4 tracking-tight">Collega un Caregiver</h1>
-          <p className="text-slate-500 text-lg">
+        <div className={styles.headerSection}>
+          <Badge><Icons.Users className={`${styles.iconSmall} ${styles.mr2}`} /> Connessione Caregiver</Badge>
+          <h1 className={styles.title}>Collega un Caregiver</h1>
+          <p className={styles.subtitle}>
             Scegli se vuoi assistere qualcuno come caregiver o se desideri essere monitorato da un familiare o assistente di fiducia.
           </p>
         </div>
@@ -149,69 +149,69 @@ export default function CollegaCaregiver({ isAuthenticated: initialAuth = false 
         {/* --- SELEZIONE RUOLO (Main View) --- */}
         {!selectedRole && (
           <div>
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <div className={styles.roleSelectionGrid}>
               
               {/* Card Caregiver (Teal) */}
-              <Card className="hover:shadow-xl hover:-translate-y-1 cursor-pointer group border-slate-100">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Icons.Shield className="w-10 h-10 text-[#14b8a6]" />
+              <Card interactive={true} onClick={() => setSelectedRole("caregiver")}>
+                <div className={styles.roleCardContent}>
+                  <div className={`${styles.iconCircle} ${styles.tealBg}`}>
+                    <Icons.Shield className={`${styles.iconXLarge} ${styles.tealText}`} />
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-800 mb-2">Voglio Assistere</h2>
-                  <p className="text-slate-500 mb-8">Diventa caregiver per un familiare o paziente</p>
+                  <h2 className={styles.roleTitle}>Voglio Assistere</h2>
+                  <p className={styles.roleDescription}>Diventa caregiver per un familiare o paziente</p>
                   
-                  <ul className="space-y-4 text-left w-full mb-8 text-sm text-slate-600">
-                    <li className="flex items-center gap-3"><Icons.Eye className="w-5 h-5 text-[#14b8a6]"/> Monitora l'aderenza terapeutica</li>
-                    <li className="flex items-center gap-3"><Icons.Bell className="w-5 h-5 text-[#14b8a6]"/> Ricevi alert per mancate assunzioni</li>
-                    <li className="flex items-center gap-3"><Icons.Smartphone className="w-5 h-5 text-[#14b8a6]"/> Gestisci terapie da remoto</li>
+                  <ul className={styles.featureList}>
+                    <li className={styles.featureItem}><Icons.Eye className={`${styles.iconLarge} ${styles.tealText}`}/> Monitora l'aderenza terapeutica</li>
+                    <li className={styles.featureItem}><Icons.Bell className={`${styles.iconLarge} ${styles.tealText}`}/> Ricevi alert per mancate assunzioni</li>
+                    <li className={styles.featureItem}><Icons.Smartphone className={`${styles.iconLarge} ${styles.tealText}`}/> Gestisci terapie da remoto</li>
                   </ul>
 
-                  <Button variant="primary" onClick={() => setSelectedRole("caregiver")}>
-                    Genera Codice Invito <Icons.ArrowRight className="w-4 h-4 ml-2" />
+                  <Button variant="primary" onClick={(e) => { e.stopPropagation(); setSelectedRole("caregiver"); }}>
+                    Genera Codice Invito <Icons.ArrowRight className={`${styles.iconMedium} ${styles.ml2}`} />
                   </Button>
                 </div>
               </Card>
 
               {/* Card Paziente (Orange) */}
-              <Card className="hover:shadow-xl hover:-translate-y-1 cursor-pointer group border-slate-100">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Icons.Heart className="w-10 h-10 text-[#f97316]" />
+              <Card interactive={true} onClick={() => setSelectedRole("paziente")}>
+                <div className={styles.roleCardContent}>
+                  <div className={`${styles.iconCircle} ${styles.orangeBg}`}>
+                    <Icons.Heart className={`${styles.iconXLarge} ${styles.orangeText}`} />
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-800 mb-2">Voglio Essere Assistito</h2>
-                  <p className="text-slate-500 mb-8">Collega un caregiver per monitorare la tua salute</p>
+                  <h2 className={styles.roleTitle}>Voglio Essere Assistito</h2>
+                  <p className={styles.roleDescription}>Collega un caregiver per monitorare la tua salute</p>
                   
-                  <ul className="space-y-4 text-left w-full mb-8 text-sm text-slate-600">
-                    <li className="flex items-center gap-3"><Icons.Users className="w-5 h-5 text-[#f97316]"/> Un familiare ti terrà d'occhio</li>
-                    <li className="flex items-center gap-3"><Icons.Bell className="w-5 h-5 text-[#f97316]"/> Mai più farmaci dimenticati</li>
-                    <li className="flex items-center gap-3"><Icons.Shield className="w-5 h-5 text-[#f97316]"/> Maggiore sicurezza quotidiana</li>
+                  <ul className={styles.featureList}>
+                    <li className={styles.featureItem}><Icons.Users className={`${styles.iconLarge} ${styles.orangeText}`}/> Un familiare ti terrà d'occhio</li>
+                    <li className={styles.featureItem}><Icons.Bell className={`${styles.iconLarge} ${styles.orangeText}`}/> Mai più farmaci dimenticati</li>
+                    <li className={styles.featureItem}><Icons.Shield className={`${styles.iconLarge} ${styles.orangeText}`}/> Maggiore sicurezza quotidiana</li>
                   </ul>
 
-                  <Button variant="secondary" onClick={() => setSelectedRole("paziente")}>
-                    Inserisci Codice Caregiver <Icons.ArrowRight className="w-4 h-4 ml-2" />
+                  <Button variant="secondary" onClick={(e) => { e.stopPropagation(); setSelectedRole("paziente"); }}>
+                    Inserisci Codice Caregiver <Icons.ArrowRight className={`${styles.iconMedium} ${styles.ml2}`} />
                   </Button>
                 </div>
               </Card>
             </div>
 
             {/* How it works */}
-            <div className="mt-20 text-center max-w-4xl mx-auto">
-               <h3 className="text-xl font-bold text-slate-800 mb-10">Come Funziona?</h3>
-               <div className="grid md:grid-cols-3 gap-10">
+            <div className={styles.howItWorksSection}>
+               <h3 className={styles.howItWorksTitle}>Come Funziona?</h3>
+               <div className={styles.stepsGrid}>
                   <div>
-                     <div className="w-10 h-10 bg-teal-50 text-[#14b8a6] font-bold rounded-full flex items-center justify-center mx-auto mb-4">1</div>
-                     <h4 className="font-bold text-slate-700 mb-2">Genera o Ricevi Codice</h4>
-                     <p className="text-sm text-slate-500">Il caregiver genera un codice univoco da condividere.</p>
+                     <div className={styles.stepNumber}>1</div>
+                     <h4 className={styles.stepTitle}>Genera o Ricevi Codice</h4>
+                     <p className={styles.stepDescription}>Il caregiver genera un codice univoco da condividere.</p>
                   </div>
                   <div>
-                     <div className="w-10 h-10 bg-teal-50 text-[#14b8a6] font-bold rounded-full flex items-center justify-center mx-auto mb-4">2</div>
-                     <h4 className="font-bold text-slate-700 mb-2">Collegamento Sicuro</h4>
-                     <p className="text-sm text-slate-500">Il paziente inserisce il codice per stabilire la connessione.</p>
+                     <div className={styles.stepNumber}>2</div>
+                     <h4 className={styles.stepTitle}>Collegamento Sicuro</h4>
+                     <p className={styles.stepDescription}>Il paziente inserisce il codice per stabilire la connessione.</p>
                   </div>
                   <div>
-                     <div className="w-10 h-10 bg-teal-50 text-[#14b8a6] font-bold rounded-full flex items-center justify-center mx-auto mb-4">3</div>
-                     <h4 className="font-bold text-slate-700 mb-2">Monitoraggio Attivo</h4>
-                     <p className="text-sm text-slate-500">Il caregiver può monitorare e ricevere alert in tempo reale.</p>
+                     <div className={styles.stepNumber}>3</div>
+                     <h4 className={styles.stepTitle}>Monitoraggio Attivo</h4>
+                     <p className={styles.stepDescription}>Il caregiver può monitorare e ricevere alert in tempo reale.</p>
                   </div>
                </div>
             </div>
@@ -220,34 +220,34 @@ export default function CollegaCaregiver({ isAuthenticated: initialAuth = false 
 
         {/* --- CAREGIVER FLOW (Genera Codice) --- */}
         {selectedRole === "caregiver" && (
-          <div className="max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4">
+          <div className={styles.flowContainer}>
             <Card>
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4 text-[#14b8a6]">
-                  <Icons.Shield className="w-8 h-8" />
+              <div className={styles.flowHeader}>
+                <div className={`${styles.flowIconContainer} ${styles.tealBg} ${styles.tealText}`}>
+                  <Icons.Shield className={styles.iconXLarge} />
                 </div>
-                <h2 className="text-xl font-bold text-slate-800">Genera Codice Invito</h2>
-                <p className="text-sm text-slate-500 mt-1">Condividi questo codice con il paziente.</p>
+                <h2 className={styles.roleTitle}>Genera Codice Invito</h2>
+                <p className={styles.roleDescription}>Condividi questo codice con il paziente.</p>
               </div>
 
               {!generatedCode ? (
                 <Button variant="primary" onClick={generateCode}>
-                  <Icons.UserPlus className="w-5 h-5 mr-2" /> Genera Nuovo Codice
+                  <Icons.UserPlus className={`${styles.iconLarge} ${styles.mr2}`} /> Genera Nuovo Codice
                 </Button>
               ) : (
-                <div className="space-y-6">
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center relative group">
-                    <p className="text-3xl font-mono font-bold text-[#14b8a6] tracking-widest">{generatedCode}</p>
-                    <button onClick={copyCode} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-white rounded-lg text-slate-400 hover:text-[#14b8a6] transition-colors">
-                       <Icons.Copy className="w-5 h-5" />
+                <div className={styles.spacerY6}>
+                  <div className={styles.codeDisplayBox}>
+                    <p className={styles.codeText}>{generatedCode}</p>
+                    <button onClick={copyCode} className={styles.copyButton}>
+                       <Icons.Copy className={styles.iconLarge} />
                     </button>
                   </div>
-                  <p className="text-xs text-center text-slate-400">Il codice scade tra 24 ore.</p>
+                  <p className={styles.expirationText}>Il codice scade tra 24 ore.</p>
                   <Button variant="outline" onClick={() => setGeneratedCode(null)}>Rigenera</Button>
                 </div>
               )}
 
-              <button onClick={() => setSelectedRole(null)} className="w-full mt-6 text-sm text-slate-400 hover:text-slate-600">
+              <button onClick={() => setSelectedRole(null)} className={styles.backButton}>
                  ← Torna indietro
               </button>
             </Card>
@@ -256,32 +256,32 @@ export default function CollegaCaregiver({ isAuthenticated: initialAuth = false 
 
         {/* --- PATIENT FLOW (Inserisci Codice) --- */}
         {selectedRole === "paziente" && (
-          <div className="max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4">
+          <div className={styles.flowContainer}>
             <Card>
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 text-[#f97316]">
-                  <Icons.Heart className="w-8 h-8" />
+              <div className={styles.flowHeader}>
+                <div className={`${styles.flowIconContainer} ${styles.orangeBg} ${styles.orangeText}`}>
+                  <Icons.Heart className={styles.iconXLarge} />
                 </div>
-                <h2 className="text-xl font-bold text-slate-800">Inserisci Codice</h2>
-                <p className="text-sm text-slate-500 mt-1">Inserisci il codice ricevuto dal caregiver.</p>
+                <h2 className={styles.roleTitle}>Inserisci Codice</h2>
+                <p className={styles.roleDescription}>Inserisci il codice ricevuto dal caregiver.</p>
               </div>
 
-              <div className="space-y-4">
+              <div className={styles.spacerY4}>
                 <input 
                   type="text" 
                   maxLength={6}
                   placeholder="ES: ABC123"
-                  className="w-full text-center text-2xl font-mono font-bold tracking-widest h-14 rounded-xl border-2 border-slate-200 focus:border-[#f97316] focus:outline-none transition-colors uppercase placeholder:text-slate-300"
+                  className={styles.codeInput}
                   value={inputCode}
                   onChange={(e) => setInputCode(e.target.value.toUpperCase())}
                 />
                 
                 <Button variant="secondary" onClick={submitCode} disabled={inputCode.length !== 6}>
-                   Collega Caregiver <Icons.ArrowRight className="w-4 h-4 ml-2" />
+                   Collega Caregiver <Icons.ArrowRight className={`${styles.iconMedium} ${styles.ml2}`} />
                 </Button>
               </div>
 
-              <button onClick={() => setSelectedRole(null)} className="w-full mt-6 text-sm text-slate-400 hover:text-slate-600">
+              <button onClick={() => setSelectedRole(null)} className={styles.backButton}>
                  ← Torna indietro
               </button>
             </Card>
