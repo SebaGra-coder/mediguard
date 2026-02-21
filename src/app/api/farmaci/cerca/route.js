@@ -10,7 +10,7 @@ export async function GET(request) {
   const query = searchParams.get('q');
 
   // 2. Se la ricerca è vuota o troppo corta, non disturbare il DB
-  if (!query || query.length < 3) {
+  if (!query) {
     return NextResponse.json({ farmaci: [] });
   }
 
