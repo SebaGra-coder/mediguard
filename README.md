@@ -26,6 +26,7 @@ cd mediguard
 Scarica tutte le librerie necessarie (Next.js, React, Prisma, ecc.) tramite npm:
 ```bash
 npm install
+npm install jsonwebtoken bcryptjs
 ```
 
 ### 3. Configura l'Ambiente (.env)
