@@ -1,8 +1,6 @@
 // app/api/farmaci/cerca/route.js
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request) {
   // 1. Prendi il termine di ricerca dalla URL (es: ?q=tachipirina)
@@ -10,13 +8,12 @@ export async function GET(request) {
   const query = searchParams.get('q');
 
   // 2. Se la ricerca è vuota o troppo corta, non disturbare il DB
-  if (!query || query.length < 3) {
+  if (!query) {
     return NextResponse.json({ farmaci: [] });
   }
 
   try {
     // 3. Esegui la query "globale"
-        // 3. Esegui la query "globale"
     // Separa la stringa di ricerca in parole singole (token)
     const terms = query.trim().split(/\s+/);
 

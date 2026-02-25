@@ -4,6 +4,9 @@ import { time } from 'console';
 
 /**
  * GESTIONE POST: Registra una nuova assunzione (o mancata assunzione)
+ * Supporta due modalità operative:
+ * 1. Pianificazione Massiva: Genera automaticamente le assunzioni future basandosi su data inizio/fine e orari.
+ * 2. Inserimento Singolo: Registra un evento specifico (utile per terapie "al bisogno" o aggiustamenti manuali).
  */
 export async function POST(request) {
   try {
@@ -30,7 +33,7 @@ export async function POST(request) {
     // Array per raccogliere tutte le assunzioni create
     const assunzioniCreate = [];
 
-    // --- CASO 1: Generazione massiva (Pianificazione) ---
+    // --- CASO 1: Generazione massiva (Pianificazione Terapeutica) ---
     if (data_inizio && Array.isArray(orari) && orari.length > 0) {
 
       // Cloniamo la data per non modificare l'originale durante il ciclo se servisse
@@ -45,12 +48,12 @@ export async function POST(request) {
         endDate.setDate(endDate.getDate() + 30);
       }
 
-      // Ciclo sui giorni
+      // Ciclo sui giorni: itera dalla data di inizio alla data di fine
       while (currDate <= endDate) {
         // Formattiamo la data corrente in stringa YYYY-MM-DD per concatenarla correttamente
         const dataStr = currDate.toISOString().split('T')[0];
 
-        // Ciclo sugli orari del giorno
+        // Ciclo sugli orari del giorno: per ogni orario previsto, crea un record
         for (const orario of orari) {
           // Creazione corretta della data combinata (Data + Ora)
           // Nota: Assicurati che l'orario sia nel formato "HH:mm"
@@ -81,21 +84,32 @@ export async function POST(request) {
     }
     // --- CASO 2: Inserimento singolo (Opzionale, se serve inserire manualmente un record) ---
     else if (data_programmata) {
-      const farmacoInfo = await prisma.farmaco_armadietto.findUnique({
-        where: { id_farmaco_armadietto: id_farmaco_armadietto_della_terapia } // Recuperalo tramite la terapia
+      
+      // 1. Recupera la terapia per ottenere l'ID del farmaco e la dose singola
+      const terapia = await prisma.piano_terapeutico.findUnique({
+        where: { id_terapia: id_terapia }
       });
 
-      if (esito === true && farmacoInfo.quantita_rimanente < dose_richiesta) {
-        return NextResponse.json({ success: false, error: "Farmaco esaurito" }, { status: 400 });
+      if (!terapia) {
+        return NextResponse.json({ success: false, error: "Terapia non trovata" }, { status: 404 });
+      }
+
+      // 2. Verifica la disponibilità nell'armadietto SOLO se la terapia è collegata a un farmaco
+      // (Ricorda che id_farmaco_armadietto è opzionale nello schema)
+      if (esito === true && terapia.id_farmaco_armadietto) {
+        const farmacoInfo = await prisma.farmaco_armadietto.findUnique({
+          where: { id_farmaco_armadietto: terapia.id_farmaco_armadietto }
+        });
+
+        if (farmacoInfo && farmacoInfo.quantita_rimanente < terapia.dose_singola) {
+          return NextResponse.json({ success: false, error: "Farmaco esaurito" }, { status: 400 });
+        }
       }
       
+      // 3. Crea l'assunzione nel registro
       const singolaAssunzione = await prisma.registro_assunzioni.create({
         data: {
-          terapia: {
-            connect: {
-              id_terapia: id_terapia
-            }
-          },
+          id_terapia: id_terapia, // Puoi passare l'id direttamente
           data_programmata: new Date(data_programmata),
           orario_effettivo: orario_effettivo ? new Date(orario_effettivo) : null,
           esito: esito !== undefined ? Boolean(esito) : null
@@ -106,13 +120,13 @@ export async function POST(request) {
       });
       assunzioniCreate.push(singolaAssunzione);
 
-      // Se l'assunzione è confermata (esito true), scala la quantità dall'armadietto
-      if (singolaAssunzione.esito === true) {
+      // 4. Se l'assunzione è confermata e c'è un farmaco collegato, scala la quantità
+      if (singolaAssunzione.esito === true && terapia.id_farmaco_armadietto) {
         await prisma.farmaco_armadietto.update({
-          where: { id_farmaco_armadietto: singolaAssunzione.terapia.id_farmaco_armadietto },
+          where: { id_farmaco_armadietto: terapia.id_farmaco_armadietto },
           data: {
             quantita_rimanente: {
-              decrement: singolaAssunzione.terapia.dose_singola
+              decrement: terapia.dose_singola
             }
           }
         });
@@ -134,7 +148,7 @@ export async function POST(request) {
       );
     }
     return NextResponse.json(
-      { success: false, error: "Errore interno durante il salvataggio: " + error.message },
+      { success: false, error: "Errore interno durante il salvataggio: " + error.message, details: error.stack, code: error.code },
       { status: 500 }
     );
   }
@@ -142,11 +156,12 @@ export async function POST(request) {
 
 /**
  * GESTIONE GET: Recupera lo storico delle assunzioni
- * Supporta filtri per id_terapia, date range, ecc.
+ * Include una logica di "pulizia automatica": verifica le assunzioni scadute da oltre 3 ore,
+ * le segna come non assunte (esito: false) e tenta di riprogrammarle in coda.
  */
 export async function GET(request) {
   try {
-    // Aggiorna automaticamente a false le assunzioni non confermate dopo 3 ore
+    // Calcola il timestamp di 3 ore fa per identificare le assunzioni "dimenticate"
     const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
 
     // 1. Trova le assunzioni scadute che sono ancora 'null'
@@ -162,7 +177,7 @@ export async function GET(request) {
       }
     });
 
-    // 2. Aggiorna a false e riprogramma in coda
+    // 2. Aggiorna a false (Mancata) e riprogramma in coda al piano terapeutico
     for (const assunzione of assunzioniScadute) {
       // Imposta esito a false
       await prisma.registro_assunzioni.update({
@@ -170,6 +185,7 @@ export async function GET(request) {
         data: { esito: false }
       });
 
+      // Chiama la funzione helper per aggiungere una nuova assunzione alla fine del piano
       await riprogrammaInCoda(assunzione.id_terapia, assunzione.terapia.orari);
     }
 
@@ -184,6 +200,7 @@ export async function GET(request) {
 
     const filtri = {};
 
+    // Costruzione dinamica dei filtri di ricerca
     if (id_terapia) filtri.id_terapia = id_terapia;
     if (id_evento) filtri.id_evento = id_evento;
     if (id_utente) {
@@ -208,7 +225,7 @@ export async function GET(request) {
         lte: fineGiorno
       };
     }
-    // 3. Manteniamo la logica esistente per l'intervallo (se non è presente data_programmata)
+    // 3. Filtro per intervallo di date generico
     else if (data_inizio || data_fine) {
       filtri.data_programmata = {};
       if (data_inizio) filtri.data_programmata.gte = new Date(data_inizio);
@@ -243,13 +260,17 @@ export async function GET(request) {
     console.error("Errore recupero assunzioni:", error);
     return NextResponse.json({
       success: false,
-      error: 'Errore interno durante il recupero dei dati'
+      error: 'Errore interno durante il recupero dei dati: ' + error.message,
+      details: error.stack,
+      code: error.code
     }, { status: 500 });
   }
 }
 
 /**
  * GESTIONE PUT: Aggiorna un'assunzione esistente
+ * Gestisce la logica critica delle scorte: quando un'assunzione viene confermata,
+ * scala la quantità dal farmaco corretto, cercando alternative se la scatola principale è vuota.
 */
 export async function PUT(request) {
   try {
@@ -279,6 +300,7 @@ export async function PUT(request) {
     }
 
 
+    // LOGICA GESTIONE SCORTE: Se stiamo confermando l'assunzione (esito -> true)
     if (Boolean(esito) === true && currentAssunzione.esito !== true) {
       const farmaco = currentAssunzione.terapia.farmaco;
       const dose = currentAssunzione.terapia.dose_singola;
@@ -318,6 +340,7 @@ export async function PUT(request) {
     }
 
 
+    // Preparazione dati aggiornamento
     const dataToUpdate = {};
     if (esito !== undefined) dataToUpdate.esito = Boolean(esito);
     if (orario_effettivo) dataToUpdate.orario_effettivo = new Date(orario_effettivo);
@@ -327,7 +350,7 @@ export async function PUT(request) {
       data: dataToUpdate,
     });
 
-    // Se stiamo confermando l'assunzione (esito passa a true) e prima non lo era, scala la quantità
+    // ESECUZIONE DECREMENTO SCORTE: Se l'aggiornamento è andato a buon fine, scala la quantità
     if (currentAssunzione.esito !== true && Boolean(esito) === true) {
        // Usiamo l'ID identificato prima (o quello originale o quello alternativo)
        const targetBoxId = request.boxToDecrementId || currentAssunzione.terapia.id_farmaco_armadietto;
@@ -355,13 +378,16 @@ export async function PUT(request) {
     }
     return NextResponse.json({
       success: false,
-      error: 'Errore interno durante l\'aggiornamento'
+      error: 'Errore interno durante l\'aggiornamento: ' + error.message,
+      details: error.stack,
+      code: error.code
     }, { status: 500 });
   }
 }
 
 /**
  * Funzione helper per riprogrammare un'assunzione in coda al piano terapeutico
+ * Cerca l'ultimo slot occupato e ne crea uno nuovo successivo basandosi sugli orari della terapia.
  */
 async function riprogrammaInCoda(id_terapia, orari) {
   // 1. Troviamo l'ultima assunzione pianificata per questa terapia
@@ -424,6 +450,8 @@ async function riprogrammaInCoda(id_terapia, orari) {
 
 /**
  * GESTIONE DELETE: Rimuove un'assunzione
+ * - Se invocata con id_terapia: Archivia le assunzioni passate nello storico e pulisce quelle future.
+ * - Se invocata con id_evento: Elimina la singola assunzione.
  */
 export async function DELETE(request) {
   try {
@@ -431,7 +459,7 @@ export async function DELETE(request) {
     const id_evento = searchParams.get('id_evento');
     const id_terapia = searchParams.get('id_terapia');
 
-    // CASO 1: Archiviazione massiva per terapia (Sposta in storico)
+    // CASO 1: Archiviazione massiva per terapia (Sposta in tabella storico per alleggerire quella principale)
     if (id_terapia) {
 
       // Trova le assunzioni completate (esito e orario presenti)
@@ -499,7 +527,9 @@ export async function DELETE(request) {
     }
     return NextResponse.json({
       success: false,
-      error: 'Operazione fallita'
+      error: 'Operazione fallita: ' + error.message,
+      details: error.stack,
+      code: error.code
     }, { status: 500 });
   }
 }

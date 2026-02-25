@@ -1,44 +1,49 @@
+// 'use client' definisce questo file come Client Component: viene inviato al browser e permette l'uso di hook (useState, useEffect) e interazioni utente,
+// a differenza dei Server Components (default) che vengono eseguiti solo sul server.
 'use client';
 
-import { useState, useEffect } from "react";
+// --- IMPORTAZIONI ---
+
+// Hook di React per la gestione dello stato e degli effetti collaterali
+import { useState, useEffect } from "react"; 
+// Componenti e hook di navigazione di Next.js
+
+// Link: Componente per navigazione dichiarativa. Scorrimento fluido e prefetching automatico.
 import Link from "next/link";
+// useParams: Hook per leggere i parametri dinamici dell'URL. Permette di ottenere l'id dell'assistito dalla URL.
+// useRouter: Hook per navigazione imperativa via codice. Permette di reindirizzare.
 import { useParams, useRouter } from "next/navigation";
+// Componenti UI generali
 import { GuestOverlay } from "@/components/GuestOverlay";
+// Modali per la gestione dei farmaci (CRUD)
 import MedicationDetailsModal from "@/components/modals/MedicationDetailsModal";
 import AddMedicationModal from "@/components/modals/AddMedicationModal";
 import EditMedicationModal from "@/components/modals/EditMedicationModal";
 import DeleteMedicationModal from "@/components/modals/DeleteMedicationModal";
+// Modali per la gestione delle terapie (CRUD)
 import AddTherapyModal from "@/components/modals/AddTherapyModal";
 import TherapyDetailsModal from "@/components/modals/TherapyDetailsModal";
 import DeleteTherapyModal from "@/components/modals/DeleteTherapyModal";
+// Modali per la gestione delle allergie
 import AddAllergyModal from "@/components/modals/AddAllergyModal";
 
+// Funzionee per la gestione delle terapie
 import { useTherapies } from "@/hooks/useTherapies";
+// Stili CSS modulari e icone
 import styles from './AssistitoDetails.module.css';
-
-// --- ICONE SVG INTERNE ---
-const Icons = {
-  Plus: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>,
-  Pill: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" /><path d="m8.5 8.5 7 7" /></svg>,
-  Clock: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
-  Eye: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>,
-  CheckCircle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>,
-  Edit: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>,
-  Pause: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>,
-  Play: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>,
-  Trash2: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>,
-  AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" x2="12" y1="9" y2="13" /><line x1="12" x2="12.01" y1="17" y2="17" /></svg>,
-  ArrowLeft: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>,
-  Package: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22v-9" /></svg>,
-  User: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-  Shield: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-};
+import { Icons } from "@/components/ui/Icons";
 
 // --- COMPONENTI UI LOCALI ---
+// Componente Card: Contenitore generico con stile base (bordo, ombra, sfondo bianco).
+// Accetta 'children' per il contenuto e 'className' per stili aggiuntivi.
 const Card = ({ children, className = "" }) => (
   <div className={`${styles.card} ${className}`}>{children}</div>
 );
 
+// Componente Button: Bottone riutilizzabile con diverse varianti di stile.
+// Props:
+// - variant: 'primary' (azione principale), 'secondary' (azione secondaria), 'ghost' (senza sfondo/bordo).
+// - onClick: funzione da eseguire al click.
 const Button = ({ children, onClick, variant = "primary", className = "" }) => {
   const variants = {
     primary: styles.btnPrimary,
@@ -52,6 +57,9 @@ const Button = ({ children, onClick, variant = "primary", className = "" }) => {
   );
 };
 
+// Componente Badge: Etichetta colorata per indicare stati (es. "Assunto", "In scadenza").
+// Props:
+// - variant: 'success' (verde), 'warning' (giallo), 'destructive' (rosso), 'default' (grigio).
 const Badge = ({ children, variant = "default" }) => {
   const badgeStyles = {
     success: styles.badgeSuccess,
@@ -63,20 +71,28 @@ const Badge = ({ children, variant = "default" }) => {
 };
 
 export default function AssistitoDetail() {
+  // --- HOOKS DI NAVIGAZIONE ---
   const params = useParams();
   const router = useRouter();
   const patientId = params.id;
 
+  // --- STATO AUTENTICAZIONE ---
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
+  // Gestisce lo stato di caricamento della verifica auth: true = controllo in corso (mostra spinner), false = controllo finito.
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  // --- STATO INTERFACCIA UTENTE ---
   const [activeTab, setActiveTab] = useState("panoramica");
   const [modalState, setModalState] = useState({ type: null, data: null });
 
+  // --- DATI TERAPIE (Custom Hook) ---
   const { therapyPlans, fetchTherapies, isLoading: isTherapyLoading } = useTherapies();
 
+  // --- STATO ALLERGIE ---
   const [allergies, setAllergies] = useState([]);
   const [availableAllergens, setAvailableAllergens] = useState([]);
 
+  // Recupera le allergie specifiche dell'assistito dal database
   const fetchAllergies = async () => {
     try {
       const res = await fetch(`/api/CRUD-allergia-utente?id_utente=${patientId}`);
@@ -85,6 +101,7 @@ export default function AssistitoDetail() {
     } catch (err) { console.error(err); }
   };
 
+  // Recupera la lista completa degli allergeni disponibili per la selezione
   const fetchAllergens = async () => {
     try {
       const res = await fetch(`/api/visualizza-allergeni`);
@@ -93,6 +110,7 @@ export default function AssistitoDetail() {
     } catch (err) { console.error(err); }
   };
 
+  // Effetto collaterale: Carica i dati delle allergie quando l'utente seleziona la tab "Profilo e Allergie"
   useEffect(() => {
     if (activeTab === "Profilo e Allergie") {
       fetchAllergies();
@@ -100,6 +118,7 @@ export default function AssistitoDetail() {
     }
   }, [activeTab, patientId]);
 
+  // Gestisce l'eliminazione di un'allergia: chiede conferma e chiama l'API DELETE
   const handleDeleteAllergy = async (id) => {
     if(!confirm("Sei sicuro di voler rimuovere questa allergia?")) return;
     try {
@@ -108,6 +127,7 @@ export default function AssistitoDetail() {
     } catch (err) { console.error(err); }
   };
 
+  // Stato principale per i dati dell'assistito, assunzioni odierne e contenuto armadietto
   const [data, setData] = useState({
     info: null,
     assunzioniOggi: [],
@@ -115,6 +135,7 @@ export default function AssistitoDetail() {
     loading: true
   });
 
+  // Gestisce il cambio di stato (Attiva/In pausa) di una terapia tramite chiamata PUT
   const handleToggleStatus = async (terapia) => {
     try {
       const res = await fetch(`/api/terapia`, {
@@ -131,27 +152,33 @@ export default function AssistitoDetail() {
     }
   };
 
+  // Funzione principale di inizializzazione: verifica autenticazione e carica i dati iniziali in 5 step:
   const initPage = async () => {
     try {
+      // 1. Verifica se l'utente (Caregiver) è autenticato
       const authRes = await fetch('/api/auth/me');
       const authData = await authRes.json();
       setIsUserAuthenticated(authData.isAuthenticated);
 
       if (authData.isAuthenticated) {
+        // 2. Recupera i dati dell'account del Caregiver
         const resAccount = await fetch('/api/RUD-account?me');
         const userData = await resAccount.json();
 
+        // 3. Cerca la relazione specifica con l'assistito richiesto (tramite ID URL)
         const relazione = userData.caregiver?.find(r => r.id_assistito === patientId);
         const infoPaziente = relazione?.assistito;
 
         if (!infoPaziente) {
           console.error("Assistito non trovato o non collegato");
+          // Interrompe il caricamento se l'assistito non è associato a questo caregiver
           setData(prev => ({ ...prev, loading: false }));
           return;
         }
 
         fetchTherapies(patientId);
 
+        // 4. Recupera le assunzioni programmate per la data odierna
         const oggi = new Date().toISOString().split('T')[0];
         const resAssunzioni = await fetch(`/api/assunzione?id_utente=${patientId}&data_programmata=${oggi}`);
         const assunzioniData = await resAssunzioni.json();
@@ -161,9 +188,11 @@ export default function AssistitoDetail() {
           new Date(a.data_programmata) - new Date(b.data_programmata)
         );
 
+        // 5. Recupera il contenuto dell'armadietto farmaci
         const resArmadietto = await fetch(`/api/armadietto?id_utente=${patientId}`);
         const armadiettoData = await resArmadietto.json();
 
+        // Aggiorna lo stato con tutti i dati recuperati
         setData({
           info: infoPaziente,
           assunzioniOggi: sortedAssunzioni,
@@ -179,25 +208,20 @@ export default function AssistitoDetail() {
     }
   };
 
+  // Callback eseguita dopo il successo di un'operazione modale (es. aggiunta farmaco) per ricaricare i dati
   const handleSuccess = () => {
     initPage();
     setModalState({ type: null, data: null });
   };
 
+  // Effetto iniziale: avvia initPage quando il componente viene montato o cambia l'ID paziente
   useEffect(() => {
     if (patientId) {
       initPage();
     }
   }, [patientId]);
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      setIsUserAuthenticated(false);
-      window.location.href = '/Pages/Autenticazione';
-    } catch (err) { console.error(err); }
-  };
-
+  // Mostra uno spinner di caricamento mentre si verificano i dati
   if (isAuthChecking || data.loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -206,10 +230,11 @@ export default function AssistitoDetail() {
     );
   }
 
+  // Destructuring dei dati per facilitarne l'uso nel JSX
   const { info, assunzioniOggi, armadietto } = data;
   const stats = info?.dashboardStats || {};
 
-  // Da inserire dentro AssistitoDetail, prima del return
+  // Logica per generare avvisi (Alerts) basati su assunzioni mancate e scorte in esaurimento
   const generateAlerts = () => {
     const alerts = [];
     const oraAttuale = new Date();
@@ -217,10 +242,12 @@ export default function AssistitoDetail() {
     // 1. Alert Ritardo e Mancata Assunzione
     assunzioniOggi.forEach(ass => {
       const dataProgrammata = new Date(ass.data_programmata);
+      // Calcola la differenza in minuti tra l'ora attuale e l'ora programmata (conversione da millisecondi)
       const differenzaMinuti = (oraAttuale - dataProgrammata) / (1000 * 60);
 
       if (!ass.esito) { // Se non è ancora stata assunta
         if (differenzaMinuti > 120) { // Più di 2 ore di ritardo
+          // Aggiunge un nuovo elemento alla fine della lista (array)
           alerts.push({
             id: `mancata-${ass.id_evento}`,
             type: 'critical',
@@ -242,7 +269,7 @@ export default function AssistitoDetail() {
 
     // 2. Alert Scorte Basse e Scadute
     armadietto.forEach(item => {
-      // Controllo Scorte Basse
+      // Controllo Scorte Basse (50%)
       if (((item.quantita_rimanente / (item.farmaco.quantita_confezione || 100)) * 100) < 50) {
         alerts.push({
           id: `scorte-${item.id_farmaco_armadietto}`,
@@ -257,6 +284,7 @@ export default function AssistitoDetail() {
       if (item.data_scadenza) {
         const dataScadenza = new Date(item.data_scadenza);
         const diffMs = dataScadenza - oraAttuale;
+        // Calcola i giorni rimanenti convertendo la differenza da millisecondi a giorni
         const diffGiorni = diffMs / (1000 * 60 * 60 * 24);
 
         if (diffMs < 0) {
@@ -288,8 +316,7 @@ export default function AssistitoDetail() {
 
   return (
     <div className={styles.pageContainer}>
-      
-
+      {/* Overlay mostrato se l'utente non è autenticato (protezione client-side) */}
       {!isUserAuthenticated && (
         <GuestOverlay
           title="Dettaglio Assistito"
@@ -300,10 +327,12 @@ export default function AssistitoDetail() {
 
       <main className={styles.main}>
         <div className={styles.container}>
+          {/* Link per tornare alla dashboard principale */}
           <Link href="/Pages/Caregiver" className={styles.backLink}>
             <Icons.ArrowLeft className={styles.backLinkIcon} /> Torna alla Dashboard Caregiver
           </Link>
 
+          {/* Intestazione con nome assistito e azione rapida */}
           <div className={styles.header}>
             <div>
               <h1 className={styles.title}>{info?.nome} {info?.cognome}</h1>
@@ -314,6 +343,7 @@ export default function AssistitoDetail() {
             </div>
           </div>
 
+          {/* Griglia delle statistiche riassuntive */}
           <div className={styles.statsGrid}>
             <StatCard icon={<Icons.Pill className={styles.textTeal} />} bg={styles.bgTeal50} value={therapyPlans.length} label="Terapie Totali" />
             <StatCard icon={<Icons.Clock className={styles.textBlue} />} bg={styles.bgBlue50} value={therapyPlans.filter(t => t.stato === 'attiva').length} label="Terapie Attive" />
@@ -321,6 +351,7 @@ export default function AssistitoDetail() {
             <StatCard icon={<Icons.AlertTriangle className={styles.textRose} />} bg={styles.bgRose50} value={activeAlerts.length} label="Alert Attivi" />
           </div>
 
+          {/* Navigazione a schede (Tabs) */}
           <div className={styles.tabsContainer}>
             {["panoramica", "armadietto", "terapie", "Profilo e Allergie"].map((tab) => (
               <button
@@ -333,7 +364,9 @@ export default function AssistitoDetail() {
             ))}
           </div>
 
+          {/* Contenuto dinamico in base alla tab selezionata */}
           <div className={styles.spaceY6}>
+            {/* TAB: PANORAMICA - Mostra assunzioni odierne e avvisi */}
             {activeTab === "panoramica" && (
               <div className={styles.panoramicaGrid}>
                 <div className={styles.mainColumn}>
@@ -356,7 +389,7 @@ export default function AssistitoDetail() {
                     </div>
                   </Card>
                 </div>
-                {/* Sezione Alert nella colonna di destra della Panoramica */}
+                {/* Colonna laterale: Lista degli Alert attivi */}
                 <div className={styles.sideColumn}>
                   <h3 className={styles.sectionTitle}>
                     <Icons.AlertTriangle className={styles.sectionTitleIcon} />
@@ -390,6 +423,7 @@ export default function AssistitoDetail() {
               </div>
             )}
 
+            {/* TAB: ARMADIETTO - Lista farmaci disponibili */}
             {activeTab === "armadietto" && (
               <div className={styles.armadiettoGrid}>
                 {armadietto.map(item => (
@@ -411,6 +445,7 @@ export default function AssistitoDetail() {
               </div>
             )}
 
+            {/* TAB: TERAPIE - Lista piani terapeutici */}
             {activeTab === "terapie" && (
               <div className={styles.terapieContainer}>
                 {/* Header Tab Terapie */}
@@ -449,6 +484,14 @@ export default function AssistitoDetail() {
 
                       {/* Azioni Terapia */}
                       <div className={styles.cardActions}>
+                        <Button 
+                          variant="ghost" 
+                          className={styles.btnIcon} 
+                          onClick={() => handleToggleStatus(terapia)} 
+                          title={terapia.terapia_attiva ? "Sospendi Terapia" : "Riattiva Terapia"}
+                        >
+                          <Icons.CheckCircle className={`${styles.iconSmall} ${terapia.terapia_attiva ? styles.textTeal : styles.textSlate400}`} />
+                        </Button>
                         <Button variant="ghost" className={styles.btnIcon} onClick={() => setModalState({ type: 'view_th', data: terapia })} title="Dettagli"><Icons.Eye className={styles.iconSmall} /></Button>
                         <Button variant="ghost" className={styles.btnIcon} onClick={() => setModalState({ type: 'edit_th', data: terapia })} title="Modifica"><Icons.Edit className={styles.iconSmall} /></Button>
                         <Button variant="ghost" className={`${styles.btnIcon} ${styles.btnGhostDanger}`} onClick={() => setModalState({ type: 'delete_th', data: terapia })}><Icons.Trash2 className={styles.iconSmall} /></Button>
@@ -464,6 +507,7 @@ export default function AssistitoDetail() {
               </div>
             )}
 
+            {/* TAB: PROFILO E ALLERGIE - Dati anagrafici e lista allergie */}
             {activeTab === "Profilo e Allergie" && (
               <div className={styles.profiloGrid}>
                  <Card className={`${styles.profiloCard} p-6`}>
@@ -517,11 +561,14 @@ export default function AssistitoDetail() {
         </div>
       </main>
 
-      {/* Modali */}
+      {/* --- MODALI --- */}
+      {/* Modali per la gestione CRUD dei Farmaci nell'armadietto */}
       <MedicationDetailsModal isOpen={modalState.type === 'view'} onClose={() => setModalState({ type: null, data: null })} farmaco={modalState.data} />
       <AddMedicationModal isOpen={modalState.type === 'add'} onClose={() => setModalState({ type: null, data: null })} onSuccess={handleSuccess} userId={patientId} />
       <EditMedicationModal isOpen={modalState.type === 'edit'} onClose={() => setModalState({ type: null, data: null })} medicine={modalState.data} onSuccess={handleSuccess} />
       <DeleteMedicationModal isOpen={modalState.type === 'delete'} onClose={() => setModalState({ type: null, data: null })} medicine={modalState.data} onSuccess={handleSuccess} />
+      
+      {/* Modali per la gestione CRUD delle Terapie */}
       <AddTherapyModal
         isOpen={modalState.type === 'add_th' || modalState.type === 'edit_th'}
         onClose={() => setModalState({ type: null, data: null })}
@@ -544,6 +591,7 @@ export default function AssistitoDetail() {
         onSuccess={handleSuccess}
       />
       
+      {/* Modale per l'aggiunta di Allergie */}
       <AddAllergyModal
         isOpen={modalState.type === 'add_allergy'}
         onClose={() => setModalState({ type: null, data: null })}
@@ -560,6 +608,7 @@ export default function AssistitoDetail() {
 }
 
 // --- HELPER COMPONENTS ---
+// Componente per visualizzare una singola statistica (es. Terapie Totali)
 function StatCard({ icon, bg, value, label }) {
   return (
     <Card className={styles.statCard}>
@@ -574,6 +623,7 @@ function StatCard({ icon, bg, value, label }) {
   );
 }
 
+// Componente per visualizzare una riga nella lista delle assunzioni giornaliere
 function DailyIntakeRow({ name, dose, time, status }) {
   return (
     <div className={styles.dailyRow}>

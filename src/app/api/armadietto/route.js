@@ -11,7 +11,6 @@ import { prisma } from '@/lib/prisma';
  
  */
 
-"api/armadietto"
 export async function POST(request) {
   try {
     // Legge il corpo della richiesta (il JSON inviato dal client) 

@@ -5,28 +5,9 @@ import styles from './Profilo.module.css';
 import { GuestOverlay } from "@/components/GuestOverlay";
 import AddAllergyModal from "@/components/modals/AddAllergyModal";
 import { useToast } from "@/hooks/useToast";
+import { Icons } from "@/components/ui/Icons";
 
 // --- ICONE SVG INLINE (Coerenti con lo stile MediGuard) ---
-const Icons = {
-    User: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-    ),
-    AlertTriangle: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" x2="12" y1="9" y2="13" /><line x1="12" x2="12.01" y1="17" y2="17" /></svg>
-    ),
-    Save: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
-    ),
-    Edit: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
-    ),
-    Plus: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
-    ),
-    X: () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-    )
-};
 
 export default function ProfiloPage() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -146,14 +127,14 @@ export default function ProfiloPage() {
                             <section className={styles.card}>
                                 <div className={styles.cardHeader}>
                                     <div className={styles.cardTitle}>
-                                        <div className={styles.iconTeal}><Icons.User /></div>
+                                        <div className={styles.iconTeal}><Icons.User width={20} height={20} /></div>
                                         Informazioni Personali
                                     </div>
                                     <button
                                         onClick={() => isEditing ? handleUpdateProfile() : setIsEditing(true)}
                                         className={`${styles.actionButton} ${isEditing ? styles.saveButton : styles.editButton}`}
                                     >
-                                        {isEditing ? <><Icons.Save /> Salva</> : <><Icons.Edit /> Modifica</>}
+                                        {isEditing ? <><Icons.Save width={18} height={18} /> Salva</> : <><Icons.Edit width={18} height={18} /> Modifica</>}
                                     </button>
                                 </div>
 
@@ -218,13 +199,13 @@ export default function ProfiloPage() {
                             <section className={styles.card}>
                                 <div className={styles.allergyHeader}>
                                     <div className={styles.allergyTitle}>
-                                        <Icons.AlertTriangle /> Allergie
+                                        <Icons.AlertTriangle width={20} height={20} /> Allergie
                                     </div>
                                     <button
                                         onClick={() => setShowAllergyModal(true)}
                                         className={styles.addButton}
                                     >
-                                        <Icons.Plus />
+                                        <Icons.Plus width={18} height={18} />
                                     </button>
                                 </div>
                                 <div className={styles.allergyList}>
@@ -241,7 +222,7 @@ export default function ProfiloPage() {
                                                     onClick={() => handleDeleteAllergy(al.id_allergia)}
                                                     className={styles.deleteButton}
                                                 >
-                                                    <Icons.X />
+                                                    <Icons.X width={18} height={18} />
                                                 </button>
                                             </div>
                                         ))

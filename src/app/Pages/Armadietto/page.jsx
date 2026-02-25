@@ -291,7 +291,7 @@ export default function Inventario({ isAuthenticated: initialAuth = false }) {
             </div>
           ) : (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIconBox}><Icons.Package className={`${styles.iconXl} ${styles.textSlate300}`} /></div>
+              <center><div className={styles.emptyIconBox}><Icons.Package className={`${styles.iconXl} ${styles.textSlate300}`} /></div></center>
               <h3 className={styles.emptyTitle}>Nessun farmaco trovato</h3>
               <p className={styles.emptyDesc}>Non abbiamo trovato corrispondenze. Prova a cambiare i filtri o aggiungi un nuovo farmaco.</p>
               <Button onClick={() => setModalState({ type: 'add', data: null })}>Aggiungi il primo farmaco</Button>

@@ -4,6 +4,7 @@ export function useTherapies() {
     const [therapyPlans, setTherapyPlans] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    // useCallback memorizza la funzione per evitare che venga ricreata ad ogni render, prevenendo loop infiniti nei useEffect
     const fetchTherapies = useCallback(async (userId) => {
         if (!userId) return;
         
@@ -33,9 +34,7 @@ export function useTherapies() {
                                     .map(d => d.toISOString().split('T')[1].slice(0, 5))
                             );
 
-                            return assunzioniGiornaliere.size > 0
-                                ? `${assunzioniGiornaliere.size} volte al giorno`
-                                : "N/D";
+                            return assunzioniGiornaliere.size > 0 ? `${assunzioniGiornaliere.size} volte al giorno`: "N/D";
                         })(),
                     duration: t.data_fine ? "Fino a: " + t.data_fine.split('T')[0] : "Continuativa",
                     startDate: t.data_inizio ? t.data_inizio.split('T')[0] : "",

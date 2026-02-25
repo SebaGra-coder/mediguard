@@ -1,3 +1,5 @@
+// 'use client' indica che questo componente viene eseguito nel browser (Client Component)
+// Necessario per gestire stato, effetti e interazioni utente
 'use client';
 
 import { useRouter } from "next/navigation";
@@ -5,24 +7,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { GuestOverlay } from "@/components/GuestOverlay";
 import styles from './Caregiver.module.css';
-
-// --- ICONE SVG INTERNE ---
-const Icons = {
-    Plus: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>,
-    Users: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
-    AlertTriangle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" x2="12" y1="9" y2="13" /><line x1="12" x2="12.01" y1="17" y2="17" /></svg>,
-    Clock: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
-    Bell: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>,
-    Phone: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>,
-    Mail: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>,
-    Settings: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>,
-    ChevronRight: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>,
-    Shield: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /></svg>,
-    Heart: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg>,
-    Calendar: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>,
-};
+import { Icons } from "@/components/ui/Icons";
 
 // --- COMPONENTI UI RIUTILIZZABILI ---
+// Componenti stilizzati localmente per garantire coerenza visiva nella dashboard
 const Card = ({ children, className = "", variant = "default", onClick, style }) => {
     const classList = [styles.card];
     if (variant === "elevated") classList.push(styles.cardElevated);
@@ -74,11 +62,13 @@ const Avatar = ({ children, className = "" }) => <div className={`${styles.avata
 const AvatarFallback = ({ children, className = "" }) => <div className={`${styles.avatarFallback} ${className}`}>{children}</div>;
 
 // --- VISTA ASSISTITO (My Caregivers) ---
+// Componente visualizzato quando l'utente agisce come "Assistito".
+// Mostra la lista delle persone (Caregiver) che hanno accesso ai suoi dati.
 function AssistedView({ caregivers }) {
     const handleEmailCaregiver = (email, e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        window.location.assign(`mailto:${email}`);
+        e.preventDefault(); // Previene il comportamento predefinito del browser
+        e.stopPropagation(); // Impedisce al click di propagarsi alla card genitore (evitando aperture indesiderate)
+        window.location.assign(`mailto:${email}`); // Apre il client di posta predefinito con l'indirizzo destinatario
     };
 
     return (
@@ -91,6 +81,7 @@ function AssistedView({ caregivers }) {
                         Le persone che ti assistono e monitorano le tue terapie
                     </p>
                 </div>
+                {/* Pulsante di navigazione per collegare un nuovo caregiver */}
                 <Link href="/Pages/CollegaCaregiver" passHref>
                     <Button variant="default" asChild>
                         <span style={{ cursor: 'pointer' }}>
@@ -173,7 +164,7 @@ function AssistedView({ caregivers }) {
                         </Card>
                     ))}
 
-                    <Card variant="default" style={{ borderStyle: 'dashed', backgroundColor: '#f8fafc' }}>
+                    <Card variant="default" style={{  textAlign: 'center', borderStyle: 'dashed', backgroundColor: '#f8fafc' }}>
                         <CardContent style={{ textAlign: 'center', padding: '2rem' }}>
                             <div className={`${styles.avatarLg} ${styles.flexCenter}`} style={{ backgroundColor: '#f1f5f9', margin: '0 auto 1rem auto' }}>
                                 <Icons.Plus className={styles.iconMd} style={{ color: '#94a3b8' }} />
@@ -222,9 +213,14 @@ function AssistedView({ caregivers }) {
 }
 
 // --- VISTA CAREGIVER (Dashboard) ---
+// Componente visualizzato quando l'utente agisce come "Caregiver".
+// Mostra la lista dei pazienti seguiti, statistiche aggregate e alert recenti.
 function CaregiverView({ patients, recentAlerts }) {
+    // .reduce() riduce l'array a un singolo valore: parte da 0 (valore iniziale) e accumula gli alert di ogni paziente (p) nella somma (sum)
     const totalAlerts = patients.reduce((sum, p) => sum + p.alerts + p.lowStock, 0);
+    // Calcola la media dell'aderenza: somma tutte le percentuali con .reduce() e divide per il numero di pazienti
     const avgAdherence = patients.length > 0 ? Math.round(patients.reduce((sum, p) => sum + p.adherenceWeek, 0) / patients.length) : 0;
+    // Aggrega il conteggio delle scorte basse usando la stessa logica di accumulo
     const lowStockCount = patients.reduce((sum, p) => sum + p.lowStock, 0);
 
     return (
@@ -344,12 +340,13 @@ function CaregiverView({ patients, recentAlerts }) {
 }
 
 // --- LOGICA PRINCIPALE ---
+// Componente Container che gestisce il recupero dati e lo switch tra le viste
 export default function CaregiverDashboard({ isAuthenticated: initialAuth = false }) {
     const router = useRouter();
     const [isUserAuthenticated, setIsUserAuthenticated] = useState(initialAuth);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-    // Dati
+    // Stati per i dati
     const [patients, setPatients] = useState([]); // Pazienti di cui sono caregiver
     const [caregivers, setCaregivers] = useState([]); // Caregiver che mi assistono
     const [recentAlerts, setRecentAlerts] = useState([]);
@@ -377,7 +374,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
                         let mappedPatients = [];
                         let generatedAlerts = [];
                         if (userData.caregiver && Array.isArray(userData.caregiver)) {
-                            // ... logica esistente ...
+                            // Mappa i dati grezzi del DB in un formato ottimizzato per la UI
                             mappedPatients = userData.caregiver.map(rel => {
                                 const p = rel.assistito;
                                 if (!p) return null;
@@ -397,6 +394,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
                                 };
                             }).filter(Boolean);
 
+                            // Generazione Alert locali: Analizza terapie e armadietto per creare notifiche
                             const now = new Date();
                             userData.caregiver.forEach(rel => {
                                 const p = rel.assistito;
@@ -407,6 +405,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
                                         if (t.assunzioni) {
                                             t.assunzioni.forEach(a => {
                                                 const d = new Date(a.data_programmata);
+                                                // Verifica assunzioni recenti (ultime 24h) mancate o in ritardo
                                                 const isRecent = d > new Date(now.getTime() - 24 * 60 * 60 * 1000) && d <= now;
                                                 const isMissed = a.esito === false;
                                                 const isLate = a.esito === null && d < new Date(now.getTime() - 60 * 60 * 1000);
@@ -465,6 +464,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
                         setCaregivers(mappedCaregivers);
 
                         // --- DECISIONE VISTA INIZIALE ---
+                        // Determina quale vista mostrare in base ai dati disponibili
                         if (mappedPatients.length > 0) {
                             setViewMode('caregiver');
                         } else if (mappedCaregivers.length > 0) {
@@ -498,6 +498,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
 
     return (
         <div className={styles.pageContainer}>
+            {/* Overlay per utenti non autenticati */}
             {!isUserAuthenticated && (
                 <GuestOverlay
                     title="MediGuard Connect"
@@ -532,6 +533,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
                 </div>
             )}
 
+            {/* Rendering condizionale della vista in base alla modalità selezionata */}
             {viewMode === 'assisted' ? (
                 <AssistedView caregivers={caregivers} />
             ) : (
@@ -546,6 +548,7 @@ export default function CaregiverDashboard({ isAuthenticated: initialAuth = fals
 }
 
 // --- HELPER COMPONENTS ---
+// Componente per visualizzare una singola statistica nella dashboard
 function StatCard({ icon, bgClass, bgStyle, value, label }) {
     // combine bgClass and bgStyle logic 
     const iconContainerClass = `${styles.statIconBox} ${bgClass || ''}`;

@@ -23,8 +23,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="it">
+      {/* Aggiungi suppressHydrationWarning qui */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning 
       >
         <ClientLayout>
             {/* Non serve più passare userId come prop */}

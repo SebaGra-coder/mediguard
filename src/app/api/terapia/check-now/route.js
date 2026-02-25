@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import webpush from 'web-push';
-
-const prisma = new PrismaClient();
 
 // Configurazione Web Push (assicurati che le variabili .env siano caricate)
 webpush.setVapidDetails(
